@@ -5,13 +5,13 @@ class AgeDobField extends StatefulWidget {
   final TextEditingController ageController;
 
   const AgeDobField({
-    Key? key,
+    super.key,
     required this.dobController,
     required this.ageController,
-  }) : super(key: key);
+  });
 
   @override
-  _AgeDobFieldState createState() => _AgeDobFieldState();
+  State<AgeDobField> createState() => _AgeDobFieldState();
 }
 
 class _AgeDobFieldState extends State<AgeDobField> {

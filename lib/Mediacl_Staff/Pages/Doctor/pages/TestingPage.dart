@@ -9,7 +9,6 @@ import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/Scan_Test_Get-Service.dart';
 import '../../../../Services/consultation_service.dart';
 import '../../../../Services/socket_service.dart';
-import '../../../../Services/testing&scanning_service.dart';
 import '../../../../utils/utils.dart';
 
 class TestingPage extends StatefulWidget {
@@ -45,8 +44,8 @@ class _TestingPageState extends State<TestingPage> {
   List<Map<String, dynamic>> tests = [];
   final ScanTestGetService _testScanService = ScanTestGetService();
 
-  final TestingScanningService _CurrentTestingScanningService =
-      TestingScanningService();
+  // final TestingScanningService _CurrentTestingScanningService =
+  //     TestingScanningService();
   final TextEditingController descController = TextEditingController();
   List<Map<String, dynamic>> submittedTests = [];
   Map<String, List<Map<String, dynamic>>> mergedPaymentGroups = {};
@@ -62,8 +61,8 @@ class _TestingPageState extends State<TestingPage> {
     try {
       final fetchedTests = await _testScanService.fetchTests('TEST');
 
-      final currentSubmitTest =
-          await _CurrentTestingScanningService.getAllTestingAndScanningData();
+      // final currentSubmitTest =
+      //     await _CurrentTestingScanningService.getAllTestingAndScanningData();
 
       setState(() {
         tests = fetchedTests;
@@ -71,9 +70,11 @@ class _TestingPageState extends State<TestingPage> {
       });
     } catch (e) {
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to fetch tests: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to fetch tests: $e')));
+      }
     }
   }
 
@@ -126,7 +127,7 @@ class _TestingPageState extends State<TestingPage> {
       final hospitalId = widget.consultation['hospital_Id'];
       final patientId = widget.consultation['patient_Id'];
       final consultationId = widget.consultation['id'];
-      if (consultationId == null) {
+      if (consultationId == null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Consultation ID not found')),
         );
@@ -165,29 +166,33 @@ class _TestingPageState extends State<TestingPage> {
       setState(() {
         scanningTesting = true;
       });
-      final consultation = await ConsultationService().updateConsultation(
-        consultationId,
-        {
-          'status': 'ONGOING',
-          'scanningTesting': scanningTesting,
-          // 'medicineTonic': medicineTonicInjection,
-          // 'Injection': injection,
-          'queueStatus': 'COMPLETED',
-          'updatedAt': _dateTime.toString(),
-        },
-      );
-      Navigator.pop(context, true);
+      await ConsultationService().updateConsultation(consultationId, {
+        'status': 'ONGOING',
+        'scanningTesting': scanningTesting,
+        // 'medicineTonic': medicineTonicInjection,
+        // 'Injection': injection,
+        'queueStatus': 'COMPLETED',
+        'updatedAt': _dateTime.toString(),
+      });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('tests submitted!'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      if (mounted) {
+        Navigator.pop(context, true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('tests submitted!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     } finally {
       setState(() => _isSubmitting = false);
       setState(() => scanningTesting = false);
@@ -306,7 +311,7 @@ class _TestingPageState extends State<TestingPage> {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: primaryColor.withOpacity(0.4),
+                            color: primaryColor.withValues(alpha: 0.4),
                             width: 1,
                           ),
                           boxShadow: [
@@ -345,7 +350,7 @@ class _TestingPageState extends State<TestingPage> {
                                 child: Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    color: primaryColor.withOpacity(0.05),
+                                    color: primaryColor.withValues(alpha: 0.05),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Column(
@@ -409,17 +414,11 @@ class _TestingPageState extends State<TestingPage> {
                       ),
                     ),
 
-                  Container(
-                    child: Column(
-                      children: [
-                        for (
-                          int index = 0;
-                          index < filteredTests.length;
-                          index++
-                        )
-                          _buildTestCard(filteredTests[index], index),
-                      ],
-                    ),
+                  Column(
+                    children: [
+                      for (int index = 0; index < filteredTests.length; index++)
+                        _buildTestCard(filteredTests[index], index),
+                    ],
                   ),
 
                   SizedBox(height: 80),
@@ -488,11 +487,11 @@ class _TestingPageState extends State<TestingPage> {
         key: ValueKey('test_$index'),
         leading: anyCompleted
             ? CircleAvatar(
-                backgroundColor: Colors.green.withOpacity(0.15),
+                backgroundColor: Colors.green.withValues(alpha: 0.15),
                 child: Icon(Icons.science, color: Colors.green),
               )
             : CircleAvatar(
-                backgroundColor: primaryColor.withOpacity(0.15),
+                backgroundColor: primaryColor.withValues(alpha: 0.15),
                 child: Icon(Icons.science, color: primaryColor),
               ),
         title: Center(
@@ -514,7 +513,7 @@ class _TestingPageState extends State<TestingPage> {
         children: [
           Divider(
             thickness: 1.5,
-            color: primaryColor.withOpacity(0.6),
+            color: primaryColor.withValues(alpha: 0.6),
             indent: 30,
             endIndent: 30,
           ),
@@ -543,13 +542,13 @@ class _TestingPageState extends State<TestingPage> {
                 margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: isCompleted
-                      ? Colors.green.withOpacity(0.08)
+                      ? Colors.green.withValues(alpha: 0.08)
                       : Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isCompleted
                         ? Colors.green
-                        : primaryColor.withOpacity(0.4),
+                        : primaryColor.withValues(alpha: 0.4),
                     width: 1,
                   ),
                 ),
@@ -589,7 +588,7 @@ class _TestingPageState extends State<TestingPage> {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.green.withOpacity(0.05),
+                              color: Colors.green.withValues(alpha: 0.05),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(

@@ -16,8 +16,7 @@ class EegPage extends StatefulWidget {
   final int mode;
   // final Function(bool) onRefresh;
 
-  const EegPage({Key? key, required this.record, required this.mode})
-    : super(key: key);
+  const EegPage({super.key, required this.record, required this.mode});
 
   @override
   State<EegPage> createState() => _EegPageState();
@@ -27,15 +26,15 @@ class _EegPageState extends State<EegPage> with SingleTickerProviderStateMixin {
   final socketService = SocketService();
   final Color primaryColor = const Color(0xFFBF955E);
   bool _isPatientExpanded = false;
-  bool _isXrayExpanded = false;
+  // bool _isXrayExpanded = false;
   bool _isLoading = false; // <-- Add this to your State class
   String? _dateTime;
   // File? _pickedImage;
-  List<File> _pickedImages = [];
+  final List<File> _pickedImages = [];
   Map<String, TextEditingController> noteControllers = {};
-  bool _isCompleted = false;
+  bool isCompleted = false;
   String? logo;
-  late Map<String, dynamic> _currentRecord;
+  late Map<String, dynamic> currentRecord;
 
   late final AnimationController _patientController;
   late final Animation<double> _patientExpandAnimation;
@@ -46,7 +45,7 @@ class _EegPageState extends State<EegPage> with SingleTickerProviderStateMixin {
   void initState() {
     super.initState();
     _updateTime();
-    _currentRecord = Map<String, dynamic>.from(widget.record);
+    currentRecord = Map<String, dynamic>.from(widget.record);
     _patientController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
@@ -88,11 +87,11 @@ class _EegPageState extends State<EegPage> with SingleTickerProviderStateMixin {
     });
   }
 
-  void _toggleXrayExpand() {
-    setState(() {
-      _isXrayExpanded = !_isXrayExpanded;
-    });
-  }
+  // void _toggleXrayExpand() {
+  //   setState(() {
+  //     _isXrayExpanded = !_isXrayExpanded;
+  //   });
+  // }
 
   String _formatDob(String? dob) {
     if (dob == null || dob.isEmpty) return 'N/A';
@@ -159,19 +158,19 @@ class _EegPageState extends State<EegPage> with SingleTickerProviderStateMixin {
     setState(() => _isLoading = true); // <-- Start loading
 
     try {
-      final Id = widget.record['id'];
+      final id = widget.record['id'];
       final prefs = await SharedPreferences.getInstance();
 
-      final Staff_Id = prefs.getString('userId');
-      final patient = widget.record['Patient'] ?? {};
-      final consultationList = patient['Consultation'] ?? [];
+      final staffId = prefs.getString('userId');
+      // final patient = widget.record['Patient'] ?? {};
+      // final consultationList = patient['Consultation'] ?? [];
 
       // 🧾 Update Testing and Scanning record
-      await TestingScanningService().updateScanning(Id, {
+      await TestingScanningService().updateScanning(id, {
         'result': description,
         // 'status': 'COMPLETED',
         'updatedAt': _dateTime.toString(),
-        'staff_Id': Staff_Id.toString(),
+        'staff_Id': staffId.toString(),
         'selectedOptionResults': resultMap,
       }, _pickedImages);
       // widget.onRefresh(true);
@@ -183,32 +182,38 @@ class _EegPageState extends State<EegPage> with SingleTickerProviderStateMixin {
       //     'updatedAt': _dateTime.toString(),
       //   });
       // }
-      await TestingScanningService().updateTesting(Id, {
+      await TestingScanningService().updateTesting(id, {
         'queueStatus': 'COMPLETED',
       });
 
-      // ✅ Show success snackbar
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('EEG marked as Completed ✅'),
-          backgroundColor: primaryColor,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('EEG marked as Completed ✅'),
+            backgroundColor: primaryColor,
+          ),
+        );
+        Navigator.pop(context, true);
+      }
 
       // await widget.onRefresh(true);
       // ✅ Update the current record
       // xrayRefreshNotifier.value = true;
-      Navigator.pop(context, true);
 
       setState(() {
-        _isCompleted = true;
+        isCompleted = true;
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     } finally {
-      setState(() => _isLoading = false); // <-- Stop loading
+      setState(() => _isLoading = false);
     }
   }
 
@@ -219,9 +224,9 @@ class _EegPageState extends State<EegPage> with SingleTickerProviderStateMixin {
           ? widget.record['consulateId']
           : null;
 
-      final Id = widget.record['id'];
+      final id = widget.record['id'];
       // 🧾 Update Testing and Scanning record
-      await TestingScanningService().updateTesting(Id, {'status': 'COMPLETED'});
+      await TestingScanningService().updateTesting(id, {'status': 'COMPLETED'});
 
       // 🧾 Update Consultation record
       if (consultationId != null) {
@@ -232,20 +237,24 @@ class _EegPageState extends State<EegPage> with SingleTickerProviderStateMixin {
         });
       }
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('EEG Report Submitted ✅'),
-          backgroundColor: primaryColor,
-        ),
-      );
-      Navigator.pop(context, true);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('EEG Report Submitted ✅'),
+            backgroundColor: primaryColor,
+          ),
+        );
+        Navigator.pop(context, true);
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('$e Error: failed to submit EEG Report'),
-          backgroundColor: primaryColor,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$e Error: failed to submit EEG Report'),
+            backgroundColor: primaryColor,
+          ),
+        );
+      }
     } finally {
       setState(() => _isLoading = false);
     }
@@ -274,7 +283,7 @@ class _EegPageState extends State<EegPage> with SingleTickerProviderStateMixin {
       phone = 'N/A';
     }
 
-    final patientId = patient['id'].toString() ?? 'N/A';
+    final patientId = patient['id'].toString();
 
     final address = patient['address']?['Address'] ?? 'N/A';
     // final doctorName = ((record['Hospital']?['Admins'] as List?) ?? [])
@@ -289,13 +298,13 @@ class _EegPageState extends State<EegPage> with SingleTickerProviderStateMixin {
     // final doctorId = record['doctor_Id'] != null
     //     ? (record['doctor_Id'] as List).join(", ")
     //     : 'N/A';
-    final hospitalAdmins = record['Hospital']?['Admins'];
-    List<Map<String, dynamic>> adminList = [];
-
-    if (hospitalAdmins is List) {
-      // only cast if it's really a List
-      adminList = hospitalAdmins.whereType<Map<String, dynamic>>().toList();
-    }
+    // final hospitalAdmins = record['Hospital']?['Admins'];
+    // List<Map<String, dynamic>> adminList = [];
+    //
+    // if (hospitalAdmins is List) {
+    //   // only cast if it's really a List
+    //   adminList = hospitalAdmins.whereType<Map<String, dynamic>>().toList();
+    // }
 
     final doctorIdList = patient['doctor']?['id'] ?? '-';
     String doctorId = '';
@@ -305,11 +314,11 @@ class _EegPageState extends State<EegPage> with SingleTickerProviderStateMixin {
     } else if (doctorIdList is String) {
       doctorId = doctorIdList;
     }
-
-    final doctor = adminList.firstWhere(
-      (a) => a['user_Id'].toString() == doctorId,
-      orElse: () => {'name': 'N/A'},
-    );
+    //
+    // final doctor = adminList.firstWhere(
+    //   (a) => a['user_Id'].toString() == doctorId,
+    //   orElse: () => {'name': 'N/A'},
+    // );
 
     final doctorName = patient['doctor']?['name'] ?? '-';
 
@@ -338,7 +347,7 @@ class _EegPageState extends State<EegPage> with SingleTickerProviderStateMixin {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -431,7 +440,7 @@ class _EegPageState extends State<EegPage> with SingleTickerProviderStateMixin {
                       borderRadius: BorderRadius.circular(18),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 8,
                           offset: const Offset(0, 3),
                         ),
@@ -549,7 +558,7 @@ class _EegPageState extends State<EegPage> with SingleTickerProviderStateMixin {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -578,7 +587,7 @@ class _EegPageState extends State<EegPage> with SingleTickerProviderStateMixin {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: primaryColor.withOpacity(0.15),
+                    color: primaryColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -659,7 +668,7 @@ class _EegPageState extends State<EegPage> with SingleTickerProviderStateMixin {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -795,8 +804,8 @@ class _EegPageState extends State<EegPage> with SingleTickerProviderStateMixin {
                     final picker = ImagePicker();
                     final picked = await picker.pickMultiImage();
 
-                    if (picked != null && picked.isNotEmpty) {
-                      if (_pickedImages.length + picked.length > 6) {
+                    if (picked.isNotEmpty) {
+                      if (_pickedImages.length + picked.length > 6 && mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text("Maximum 6 images allowed!"),
@@ -812,12 +821,14 @@ class _EegPageState extends State<EegPage> with SingleTickerProviderStateMixin {
                         );
                       });
 
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text("${picked.length} image(s) added"),
-                          backgroundColor: primaryColor,
-                        ),
-                      );
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text("${picked.length} image(s) added"),
+                            backgroundColor: primaryColor,
+                          ),
+                        );
+                      }
                     }
                   },
                   icon: const Icon(Icons.attach_file, color: Colors.white),
@@ -848,7 +859,7 @@ class _EegPageState extends State<EegPage> with SingleTickerProviderStateMixin {
                     );
 
                     if (picked != null) {
-                      if (_pickedImages.length + 1 > 6) {
+                      if (_pickedImages.length + 1 > 6 && mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text("Maximum 6 images allowed!"),
@@ -862,12 +873,14 @@ class _EegPageState extends State<EegPage> with SingleTickerProviderStateMixin {
                         _pickedImages.add(File(picked.path));
                       });
 
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text("1 image added from Camera"),
-                          backgroundColor: primaryColor,
-                        ),
-                      );
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text("1 image added from Camera"),
+                            backgroundColor: primaryColor,
+                          ),
+                        );
+                      }
                     }
                   },
                   icon: const Icon(Icons.camera_alt, color: Colors.white),

@@ -265,8 +265,8 @@ class _PatientHomeState extends State<PatientHome> {
       }
     }
 
-    final now = DateTime.now();
-    final hour = now.hour;
+    // final now = DateTime.now();
+    // final hour = now.hour;
 
     // bool showMorning =
     //     hour < 11 &&
@@ -677,7 +677,7 @@ class _PatientHomeState extends State<PatientHome> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.15),
+                color: statusColor.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(

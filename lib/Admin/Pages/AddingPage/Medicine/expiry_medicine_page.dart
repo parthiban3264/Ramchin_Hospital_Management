@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
 import '../../../../Services/Medicine_Service.dart';
 
 class ExpiryMedicinePage extends StatefulWidget {
-  const ExpiryMedicinePage({Key? key}) : super(key: key);
+  const ExpiryMedicinePage({super.key});
 
   @override
   State<ExpiryMedicinePage> createState() => _ExpiryMedicinePageState();
@@ -72,7 +73,7 @@ class _ExpiryMedicinePageState extends State<ExpiryMedicinePage> {
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -86,7 +87,7 @@ class _ExpiryMedicinePageState extends State<ExpiryMedicinePage> {
               leading: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: danger.withOpacity(0.15),
+                  color: danger.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.warning, color: danger, size: 28),
@@ -114,7 +115,7 @@ class _ExpiryMedicinePageState extends State<ExpiryMedicinePage> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: danger.withOpacity(0.15),
+                  color: danger.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Text(

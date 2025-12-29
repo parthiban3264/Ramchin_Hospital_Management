@@ -270,7 +270,7 @@ class _LabDashboardPageState extends State<LabDashboardPage> {
                                         context,
                                         MaterialPageRoute(
                                           builder: (_) =>
-                                              const UltersoundQueuePage(),
+                                              const UltrasoundQueuePage(),
                                         ),
                                       );
                                     },

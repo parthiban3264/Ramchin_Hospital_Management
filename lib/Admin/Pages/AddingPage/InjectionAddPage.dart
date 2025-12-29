@@ -6,7 +6,7 @@ import '../../../Pages/NotificationsPage.dart';
 import '../../../Services/Injection_Service.dart';
 
 class AddInjectionPage extends StatefulWidget {
-  const AddInjectionPage({Key? key}) : super(key: key);
+  const AddInjectionPage({super.key});
 
   @override
   State<AddInjectionPage> createState() => _AddInjectionPageState();
@@ -117,7 +117,7 @@ class _AddInjectionPageState extends State<AddInjectionPage> {
 
       final result = await InjectionService().createInjection(injectionData);
 
-      if (result['status'] == 'success') {
+      if (result['status'] == 'success' && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(result['message'] ?? "Injection added successfully!"),
@@ -130,17 +130,21 @@ class _AddInjectionPageState extends State<AddInjectionPage> {
           _addVialRow();
         });
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result['error'] ?? "Failed to add injection"),
-            backgroundColor: Colors.red,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['error'] ?? "Failed to add injection"),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
+        );
+      }
     } finally {
       setState(() => _isLoading = false);
     }
@@ -164,7 +168,7 @@ class _AddInjectionPageState extends State<AddInjectionPage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),

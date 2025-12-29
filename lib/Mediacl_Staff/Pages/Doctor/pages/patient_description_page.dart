@@ -34,7 +34,7 @@ class _PatientDescriptionPageState extends State<PatientDescriptionPage>
   // final Color primaryColor = Colors.white;
   bool _showSelectedOptions = false;
   bool _isPatientExpanded = false;
-  String? _dateTime;
+  String? dateTime;
   final socketService = SocketService();
 
   bool scanningTesting = false;
@@ -47,7 +47,7 @@ class _PatientDescriptionPageState extends State<PatientDescriptionPage>
   bool showTestReport = false;
   bool showScanReport = false;
   late AnimationController _controller;
-  late Animation<double> _expandAnimation;
+  late Animation<double> expandAnimation;
   String _labName = '';
 
   @override
@@ -60,7 +60,7 @@ class _PatientDescriptionPageState extends State<PatientDescriptionPage>
       vsync: this,
       duration: const Duration(milliseconds: 250),
     );
-    _expandAnimation = CurvedAnimation(
+    expandAnimation = CurvedAnimation(
       parent: _controller,
       curve: Curves.easeOutCubic,
     );
@@ -92,7 +92,7 @@ class _PatientDescriptionPageState extends State<PatientDescriptionPage>
 
   void _updateTime() {
     setState(() {
-      _dateTime = DateFormat('yyyy-MM-dd hh:mm a').format(DateTime.now());
+      dateTime = DateFormat('yyyy-MM-dd hh:mm a').format(DateTime.now());
     });
   }
 
@@ -142,7 +142,7 @@ class _PatientDescriptionPageState extends State<PatientDescriptionPage>
       setState(() {
         isLoading = true;
       });
-      final consultation = await ConsultationService.updateQueueStatus(
+      await ConsultationService.updateQueueStatus(
         consultationId,
         'COMPLETED',
         //     // {
@@ -201,10 +201,9 @@ class _PatientDescriptionPageState extends State<PatientDescriptionPage>
       //   consultationId,
       //   {status: 'COMPLETED'},
       // );
-      final consultation = await ConsultationService().updateConsultation(
-        consultationId,
-        {'status': 'COMPLETED'},
-      );
+      await ConsultationService().updateConsultation(consultationId, {
+        'status': 'COMPLETED',
+      });
 
       //   //
       //   //   if (consultation != null) {
@@ -443,7 +442,7 @@ class _PatientDescriptionPageState extends State<PatientDescriptionPage>
     final createdAt = consultation['createdAt'] ?? '';
     final doctorName = consultation['Doctor']?['name'] ?? '_';
 
-    final temperature = consultation['temperature'].toString() ?? '_';
+    final temperature = consultation['temperature'].toString();
     final bloodPressure = consultation['bp'] ?? '_';
     final sugar = consultation['sugar'] ?? '_';
     final height = consultation['height'].toString() ?? '_';
@@ -470,7 +469,7 @@ class _PatientDescriptionPageState extends State<PatientDescriptionPage>
 
           if (scanningTesting || medicineTonicInjection) {
             bool confirm = await _showExitConfirmation(context);
-            if (confirm) Navigator.pop(context);
+            if (confirm && context.mounted) Navigator.pop(context);
           } else {
             Navigator.pop(context);
           }
@@ -691,7 +690,7 @@ class _PatientDescriptionPageState extends State<PatientDescriptionPage>
                   onPressed: () async {
                     if (scanningTesting || medicineTonicInjection) {
                       bool confirm = await _showExitConfirmation(context);
-                      if (confirm) Navigator.pop(context);
+                      if (confirm && mounted) Navigator.pop(context);
                     } else {
                       Navigator.pop(context);
                     }
@@ -1155,7 +1154,7 @@ class _PatientDescriptionPageState extends State<PatientDescriptionPage>
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: genderColor.withOpacity(0.15),
+                      color: genderColor.withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(genderIcon, color: genderColor, size: 22),

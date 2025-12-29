@@ -10,7 +10,7 @@ class AccountIncomePage extends StatefulWidget {
   const AccountIncomePage({super.key});
 
   @override
-  _AccountIncomePageState createState() => _AccountIncomePageState();
+  State<AccountIncomePage> createState() => _AccountIncomePageState();
 }
 
 class _AccountIncomePageState extends State<AccountIncomePage> {
@@ -95,14 +95,14 @@ class _AccountIncomePageState extends State<AccountIncomePage> {
       _submitting = true;
       _error = null;
     });
-    final admin_Id = _prefs?.getString('userId');
+    final adminId = _prefs?.getString('userId');
     final hospitalId = _prefs?.getString('hospitalId');
     final data = {
       'hospital_Id': int.parse(hospitalId!),
       'reason': reasonController.text.trim(),
       'amount': double.tryParse(amountController.text.trim()) ?? 0,
       'type': 'INCOME',
-      'admin_Id': admin_Id,
+      'admin_Id': adminId,
       'createdAt': _dateTime,
     };
     try {
@@ -182,7 +182,7 @@ class _AccountIncomePageState extends State<AccountIncomePage> {
                               borderRadius: BorderRadius.circular(18),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.08),
+                                  color: Colors.black.withValues(alpha: 0.08),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 ),
@@ -194,7 +194,7 @@ class _AccountIncomePageState extends State<AccountIncomePage> {
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    color: Colors.white.withOpacity(0.7),
+                                    color: Colors.white.withValues(alpha: 0.7),
                                   ),
                                   child: Text(
                                     typeLetter,
@@ -224,7 +224,9 @@ class _AccountIncomePageState extends State<AccountIncomePage> {
                                         drawer['admin_Id'] ?? '',
                                         style: TextStyle(
                                           fontSize: 14,
-                                          color: textColor.withOpacity(0.7),
+                                          color: textColor.withValues(
+                                            alpha: 0.7,
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -264,7 +266,7 @@ class _AccountIncomePageState extends State<AccountIncomePage> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.15),
+              color: Colors.black.withValues(alpha: 0.15),
               blurRadius: 6,
               offset: const Offset(0, 3),
             ),
@@ -370,7 +372,7 @@ class _AccountIncomePageState extends State<AccountIncomePage> {
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: Colors.teal.withOpacity(0.15),
+              color: Colors.teal.withValues(alpha: 0.15),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -418,14 +420,14 @@ class _AccountIncomePageState extends State<AccountIncomePage> {
       child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.white, Colors.teal.shade50.withOpacity(0.4)],
+            colors: [Colors.white, Colors.teal.shade50.withValues(alpha: 0.4)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(22),
           boxShadow: [
             BoxShadow(
-              color: Colors.teal.shade200.withOpacity(0.25),
+              color: Colors.teal.shade200.withValues(alpha: 0.25),
               blurRadius: 18,
               offset: const Offset(0, 6),
             ),
@@ -561,7 +563,7 @@ class _AccountIncomePageState extends State<AccountIncomePage> {
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.teal.shade300.withOpacity(0.35),
+                      color: Colors.teal.shade300.withValues(alpha: 0.35),
                       blurRadius: 12,
                       offset: const Offset(0, 5),
                     ),
@@ -632,7 +634,7 @@ class _AccountIncomePageState extends State<AccountIncomePage> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),

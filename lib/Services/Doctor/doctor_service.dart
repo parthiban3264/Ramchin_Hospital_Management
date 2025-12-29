@@ -115,7 +115,7 @@ class DoctorService {
       } else {
         return [];
       }
-    } catch (e, stack) {
+    } catch (e) {
       return [];
     }
   }
@@ -155,7 +155,7 @@ class DoctorService {
       } else {
         return [];
       }
-    } catch (e, stack) {
+    } catch (e) {
       return [];
     }
   }

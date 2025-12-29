@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
 import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
+
 import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/testing&scanning_service.dart';
 import '../Page/CtScanPage.dart';
 
 class CtScanQueuePage extends StatefulWidget {
-  const CtScanQueuePage({Key? key}) : super(key: key);
+  const CtScanQueuePage({super.key});
 
   @override
-  _CtScanQueuePageState createState() => _CtScanQueuePageState();
+  State<CtScanQueuePage> createState() => _CtScanQueuePageState();
 }
 
 class _CtScanQueuePageState extends State<CtScanQueuePage> {
@@ -99,7 +100,7 @@ class _CtScanQueuePageState extends State<CtScanQueuePage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -181,7 +182,7 @@ class _CtScanQueuePageState extends State<CtScanQueuePage> {
                   border: Border.all(color: primaryColor, width: 2),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
@@ -204,9 +205,7 @@ class _CtScanQueuePageState extends State<CtScanQueuePage> {
               ),
 
               // Queue List
-
               Expanded(child: _buildQueueList(tabRecords[_currentIndex])),
-
             ],
           );
         },
@@ -289,10 +288,10 @@ class _CtScanQueuePageState extends State<CtScanQueuePage> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: primaryColor.withOpacity(0.7)),
+              border: Border.all(color: primaryColor.withValues(alpha: 0.7)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black45.withOpacity(0.35),
+                  color: Colors.black45.withValues(alpha: 0.35),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -363,10 +362,7 @@ class _CtScanQueuePageState extends State<CtScanQueuePage> {
                   Row(
                     children: [
                       Expanded(
-                        child: _infoText(
-                          "ID",
-                          patient['id'].toString() ?? 'N/A',
-                        ),
+                        child: _infoText("ID", patient['id'].toString()),
                       ),
                     ],
                   ),

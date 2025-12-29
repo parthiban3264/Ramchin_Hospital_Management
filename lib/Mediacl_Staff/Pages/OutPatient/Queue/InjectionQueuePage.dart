@@ -40,7 +40,7 @@ class _InjectionQueuePageState extends State<InjectionQueuePage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),
@@ -136,12 +136,12 @@ class _InjectionQueuePageState extends State<InjectionQueuePage> {
               final address = patient?['address']?['Address'] ?? 'N/A';
               final cell = patient?['phone']?['mobile'] ?? 'N/A';
               final doctor = c['Doctor']?['name'] ?? 'Unknown Doctor';
-              final queueStatus = c['queueStatus'] ?? 'PENDING';
-              final statusColor = queueStatus == 'COMPLETED'
-                  ? Colors.green
-                  : queueStatus == 'ONGOING'
-                  ? Colors.orange
-                  : Colors.blueGrey;
+              // final queueStatus = c['queueStatus'] ?? 'PENDING';
+              // final statusColor = queueStatus == 'COMPLETED'
+              //     ? Colors.green
+              //     : queueStatus == 'ONGOING'
+              //     ? Colors.orange
+              //     : Colors.blueGrey;
 
               return GestureDetector(
                 onTap: () async {
@@ -166,7 +166,7 @@ class _InjectionQueuePageState extends State<InjectionQueuePage> {
                     color: Colors.white,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),

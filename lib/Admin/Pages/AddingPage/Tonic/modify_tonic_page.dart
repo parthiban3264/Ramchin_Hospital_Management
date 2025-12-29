@@ -1,10 +1,12 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
 import '../../../../Services/Tonic_Service.dart';
 
 class ModifyTonicPage extends StatefulWidget {
-  const ModifyTonicPage({Key? key}) : super(key: key);
+  const ModifyTonicPage({super.key});
 
   @override
   State<ModifyTonicPage> createState() => _ModifyTonicPageState();
@@ -157,7 +159,7 @@ class _ModifyTonicPageState extends State<ModifyTonicPage> {
                 "amount": updatedAmount,
               });
 
-              Navigator.pop(context);
+              if (mounted) Navigator.pop(context);
               fetchTonics();
             },
             child: const Text("Update"),
@@ -183,7 +185,7 @@ class _ModifyTonicPageState extends State<ModifyTonicPage> {
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
               await TonicService().deleteTonic(id);
-              Navigator.pop(context);
+              if (mounted) Navigator.pop(context);
               fetchTonics();
             },
             child: const Text("Delete"),
@@ -238,7 +240,7 @@ class _ModifyTonicPageState extends State<ModifyTonicPage> {
                         borderRadius: BorderRadius.circular(22),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.06),
+                            color: Colors.black.withValues(alpha: 0.06),
                             blurRadius: 12,
                           ),
                         ],
@@ -264,7 +266,9 @@ class _ModifyTonicPageState extends State<ModifyTonicPage> {
                                   vertical: 6,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: statusColor(days).withOpacity(0.15),
+                                  color: statusColor(
+                                    days,
+                                  ).withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: Text(

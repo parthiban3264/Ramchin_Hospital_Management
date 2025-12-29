@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 
 import '../../../Pages/NotificationsPage.dart';
 import '../../../Services/admin_service.dart';
@@ -72,13 +71,13 @@ class _AdministratorAddAdminState extends State<AdministratorAddAdmin> {
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery);
-    if (picked != null) {
-      setState(() => _profileImage = File(picked.path));
-    }
-  }
+  // Future<void> _pickImage() async {
+  //   final picker = ImagePicker();
+  //   final picked = await picker.pickImage(source: ImageSource.gallery);
+  //   if (picked != null) {
+  //     setState(() => _profileImage = File(picked.path));
+  //   }
+  // }
 
   // ---------------------------------------------------------------
   // SAVE USER
@@ -93,12 +92,14 @@ class _AdministratorAddAdminState extends State<AdministratorAddAdmin> {
       final hospitalId = await widget.hospitalData['id'];
 
       if (hospitalId == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Hospital ID not found. Please login again."),
-            backgroundColor: Colors.red,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Hospital ID not found. Please login again."),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
         return;
       }
 
@@ -120,12 +121,14 @@ class _AdministratorAddAdminState extends State<AdministratorAddAdmin> {
       final result = await AdminService().createAdmin(userData);
 
       if (result["success"] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result["message"] ?? "Admin created successfully"),
-            backgroundColor: Colors.green,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result["message"] ?? "Admin created successfully"),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
         widget.onHospitalUpdated?.call();
 
         _formKey.currentState!.reset();
@@ -134,19 +137,23 @@ class _AdministratorAddAdminState extends State<AdministratorAddAdmin> {
           _profileImage = null;
         });
 
-        Navigator.pop(context);
+        if (mounted) Navigator.pop(context);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result["message"] ?? "Failed to create admin"),
-            backgroundColor: Colors.red,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result["message"] ?? "Failed to create admin"),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
+        );
+      }
     } finally {
       setState(() => _isLoading = false);
     }
@@ -228,7 +235,7 @@ class _AdministratorAddAdminState extends State<AdministratorAddAdmin> {
               child: Column(
                 children: [
                   const SizedBox(height: 8),
-                  NeumorphicInputBox(
+                  NumericInputBox(
                     controller: userIdController,
                     label: "User ID",
                     icon: Icons.perm_identity,
@@ -236,7 +243,7 @@ class _AdministratorAddAdminState extends State<AdministratorAddAdmin> {
                   ),
                   const SizedBox(height: 12),
 
-                  NeumorphicInputBox(
+                  NumericInputBox(
                     controller: nameController,
                     label: "Full Name *",
                     icon: Icons.person_outline,
@@ -245,7 +252,7 @@ class _AdministratorAddAdminState extends State<AdministratorAddAdmin> {
 
                   const SizedBox(height: 12),
 
-                  NeumorphicInputBox(
+                  NumericInputBox(
                     controller: passwordController,
                     label: "Password *",
                     icon: Icons.lock_outline,
@@ -255,7 +262,7 @@ class _AdministratorAddAdminState extends State<AdministratorAddAdmin> {
 
                   const SizedBox(height: 12),
 
-                  NeumorphicDropdown(
+                  NumericDropdown(
                     label: "Gender *",
                     icon: Icons.wc,
                     value: selectedGender,
@@ -265,7 +272,7 @@ class _AdministratorAddAdminState extends State<AdministratorAddAdmin> {
                     onChanged: (v) => setState(() => selectedGender = v),
                   ),
                   const SizedBox(height: 12),
-                  NeumorphicInputBox(
+                  NumericInputBox(
                     controller: phoneController,
                     label: "Phone *",
                     icon: Icons.phone,
@@ -275,7 +282,7 @@ class _AdministratorAddAdminState extends State<AdministratorAddAdmin> {
                   ),
                   const SizedBox(height: 12),
 
-                  NeumorphicInputBox(
+                  NumericInputBox(
                     controller: designationController,
                     label: "Designation",
                     icon: Icons.work_outline,
@@ -284,7 +291,7 @@ class _AdministratorAddAdminState extends State<AdministratorAddAdmin> {
 
                   const SizedBox(height: 12),
 
-                  NeumorphicInputBox(
+                  NumericInputBox(
                     controller: emailController,
                     label: "Email",
 
@@ -295,7 +302,7 @@ class _AdministratorAddAdminState extends State<AdministratorAddAdmin> {
 
                   const SizedBox(height: 12),
 
-                  NeumorphicInputBox(
+                  NumericInputBox(
                     controller: addressController,
                     label: "Address",
 
@@ -348,10 +355,7 @@ class _AdministratorAddAdminState extends State<AdministratorAddAdmin> {
   }
 }
 
-// ---------------------------------------------------------------
-// NEW: Neumorphic Input Style Widget
-// ---------------------------------------------------------------
-class NeumorphicInputBox extends StatefulWidget {
+class NumericInputBox extends StatefulWidget {
   final TextEditingController controller;
   final String label;
   final IconData icon;
@@ -361,7 +365,7 @@ class NeumorphicInputBox extends StatefulWidget {
   final String? prefixText;
   final bool isPassword;
 
-  const NeumorphicInputBox({
+  const NumericInputBox({
     super.key,
     required this.controller,
     required this.label,
@@ -374,10 +378,10 @@ class NeumorphicInputBox extends StatefulWidget {
   });
 
   @override
-  State<NeumorphicInputBox> createState() => _NeumorphicInputBoxState();
+  State<NumericInputBox> createState() => _NumericInputBoxState();
 }
 
-class _NeumorphicInputBoxState extends State<NeumorphicInputBox> {
+class _NumericInputBoxState extends State<NumericInputBox> {
   bool _obscureText = true;
 
   @override
@@ -445,10 +449,7 @@ class _NeumorphicInputBoxState extends State<NeumorphicInputBox> {
   }
 }
 
-// ---------------------------------------------------------------
-// NEW: Neumorphic Dropdown Widget
-// ---------------------------------------------------------------
-class NeumorphicDropdown extends StatelessWidget {
+class NumericDropdown extends StatelessWidget {
   final String label;
   final IconData icon;
   final Color color;
@@ -457,7 +458,7 @@ class NeumorphicDropdown extends StatelessWidget {
   final Function(String?) onChanged;
   final String? Function(String?)? validator;
 
-  const NeumorphicDropdown({
+  const NumericDropdown({
     super.key,
     required this.label,
     required this.icon,

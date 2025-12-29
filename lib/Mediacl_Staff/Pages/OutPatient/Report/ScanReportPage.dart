@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:http/http.dart' as http;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -456,7 +455,7 @@ class _ScanReportCardState extends State<ScanReportCard> {
         border: Border.all(color: Colors.grey.shade300, width: 0.9),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.08),
+            color: Colors.grey.withValues(alpha: 0.08),
             blurRadius: 6,
             offset: const Offset(0, 3),
           ),
@@ -993,7 +992,7 @@ class _ScanReportCardState extends State<ScanReportCard> {
         return GestureDetector(
           onTap: () => Navigator.pop(context),
           child: Container(
-            color: Colors.black.withOpacity(0.9),
+            color: Colors.black.withValues(alpha: 0.9),
             child: PageView.builder(
               controller: controller,
               itemCount: images.length,
@@ -1134,19 +1133,19 @@ class _ScanReportCardState extends State<ScanReportCard> {
     final images = List<String>.from(testDetails["scanImages"] ?? []);
 
     // Load fonts
-    pw.Font bodyFont;
-    pw.Font boldFont;
-    try {
-      final fontData = await rootBundle.load("assets/fonts/Roboto-Regular.ttf");
-      final fontBoldData = await rootBundle.load(
-        "assets/fonts/Roboto-Bold.ttf",
-      );
-      bodyFont = pw.Font.ttf(fontData);
-      boldFont = pw.Font.ttf(fontBoldData);
-    } catch (e) {
-      bodyFont = pw.Font.helvetica();
-      boldFont = pw.Font.helveticaBold();
-    }
+    // pw.Font bodyFont;
+    // pw.Font boldFont;
+    // try {
+    //   final fontData = await rootBundle.load("assets/fonts/Roboto-Regular.ttf");
+    //   final fontBoldData = await rootBundle.load(
+    //     "assets/fonts/Roboto-Bold.ttf",
+    //   );
+    //   bodyFont = pw.Font.ttf(fontData);
+    //   boldFont = pw.Font.ttf(fontBoldData);
+    // } catch (e) {
+    //   bodyFont = pw.Font.helvetica();
+    //   boldFont = pw.Font.helveticaBold();
+    // }
 
     // Load hospital logo for PDF header
     pw.ImageProvider? logoProvider;
@@ -1208,7 +1207,7 @@ class _ScanReportCardState extends State<ScanReportCard> {
       return str != "N/A" && str.isNotEmpty;
     }).toList();
 
-    final theme = pw.ThemeData.withFont(base: bodyFont, bold: boldFont);
+    // final theme = pw.ThemeData.withFont(base: bodyFont, bold: boldFont);
 
     pdf.addPage(
       pw.MultiPage(
@@ -1496,7 +1495,7 @@ class _ScanReportCardState extends State<ScanReportCard> {
         //   ),
         // ),
         pw.SizedBox(height: 8),
-        pw.Table.fromTextArray(
+        pw.TableHelper.fromTextArray(
           headers: headers,
           data: data
               .map((row) => row.map((cell) => cell.toString()).toList())

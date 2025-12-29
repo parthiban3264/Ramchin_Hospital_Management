@@ -190,8 +190,9 @@ class _DrOutPatientQueuePageState extends State<DrOutPatientQueuePage> {
           type.contains('mri-scan') ||
           type.contains('ultrasound') ||
           type.contains('ecg') ||
-          type.contains('eeg'))
+          type.contains('eeg')) {
         hasScan = true;
+      }
     }
 
     if (hasTest && hasScan) return 3; // Both Test + Scan
@@ -248,12 +249,12 @@ class _DrOutPatientQueuePageState extends State<DrOutPatientQueuePage> {
     final patient = consultation['Patient'] ?? {};
     final name = patient['name'] ?? 'Unknown';
 
-    final id = consultation['patient_Id'].toString() ?? '_';
+    final id = consultation['patient_Id'].toString();
 
     final phone = patient['phone'] ?? '-';
     final address = patient['address']?['Address'] ?? '-';
     final gender = patient['gender'] ?? '';
-    final status = (consultation['status'] ?? 'Unknown').toString();
+    // final status = (consultation['status'] ?? 'Unknown').toString();
     final testingAndScanning = consultation['TeatingAndScanningPatient'];
     final type =
         (testingAndScanning is List &&
@@ -280,13 +281,18 @@ class _DrOutPatientQueuePageState extends State<DrOutPatientQueuePage> {
           );
         }
 
-        final result = await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                PatientDescriptionPage(consultation: consultation, mode: mode),
-          ),
-        );
+        dynamic result;
+        if (mounted) {
+          result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => PatientDescriptionPage(
+                consultation: consultation,
+                mode: mode,
+              ),
+            ),
+          );
+        }
         // await ConsultationService.updateQueueStatus(
         //   consultation['id'],
         //   'ONGOING',
@@ -403,7 +409,7 @@ class _DrOutPatientQueuePageState extends State<DrOutPatientQueuePage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withValues(alpha: 0.2),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -468,7 +474,7 @@ class _DrOutPatientQueuePageState extends State<DrOutPatientQueuePage> {
                     vertical: 14,
                   ),
                   decoration: BoxDecoration(
-                    color: primaryColor.withOpacity(0.1),
+                    color: primaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: primaryColor),
                   ),

@@ -58,7 +58,7 @@ class _AppWrapperState extends State<AppWrapper> {
 
         // If ACTIVE and dialog is open → close it
         if (status == "ACTIVE") {
-          if (dialogOpen) {
+          if (dialogOpen && mounted) {
             Navigator.of(navigatorKey.currentState!.overlay!.context).pop();
           }
           dialogOpen = false;

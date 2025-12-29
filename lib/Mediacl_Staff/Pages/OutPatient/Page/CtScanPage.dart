@@ -15,8 +15,7 @@ class CtScanPage extends StatefulWidget {
   final Map<String, dynamic> record;
   final int mode;
 
-  const CtScanPage({Key? key, required this.record, required this.mode})
-    : super(key: key);
+  const CtScanPage({super.key, required this.record, required this.mode});
 
   @override
   State<CtScanPage> createState() => _CtScanPageState();
@@ -27,10 +26,10 @@ class _CtScanPageState extends State<CtScanPage>
   final socketService = SocketService();
   final Color primaryColor = const Color(0xFFBF955E);
   bool _isPatientExpanded = false;
-  bool _isXrayExpanded = false;
+  bool isXrayExpanded = false;
   bool _isLoading = false; // <-- Add this to your State class
   String? _dateTime;
-  List<File> _pickedImages = [];
+  final List<File> _pickedImages = [];
   Map<String, TextEditingController> noteControllers = {};
   String? logo;
 
@@ -84,11 +83,11 @@ class _CtScanPageState extends State<CtScanPage>
     });
   }
 
-  void _toggleXrayExpand() {
-    setState(() {
-      _isXrayExpanded = !_isXrayExpanded;
-    });
-  }
+  // void _toggleXrayExpand() {
+  //   setState(() {
+  //     _isXrayExpanded = !_isXrayExpanded;
+  //   });
+  // }
 
   String _formatDob(String? dob) {
     if (dob == null || dob.isEmpty) return 'N/A';
@@ -150,7 +149,7 @@ class _CtScanPageState extends State<CtScanPage>
   //           'status': 'ONGOING',
   //           'updatedAt': _dateTime.toString(),
   //         });
-  //     // For now, just showing a confirmation snackbar
+  //
   //     ScaffoldMessenger.of(context).showSnackBar(
   //       SnackBar(
   //         content: const Text('X-Ray marked as Completed ✅'),
@@ -204,48 +203,53 @@ class _CtScanPageState extends State<CtScanPage>
     setState(() => _isLoading = true); // <-- Start loading
 
     try {
-      final Id = widget.record['id'];
+      final id = widget.record['id'];
       final prefs = await SharedPreferences.getInstance();
-      final Staff_Id = prefs.getString('userId');
-      final patient = widget.record['Patient'] ?? {};
-      final consultationList = patient['Consultation'] ?? [];
+      final staffId = prefs.getString('userId');
+      // final patient = widget.record['Patient'] ?? {};
+      // final consultationList = patient['Consultation'] ?? [];
 
-      final consultationId = (consultationList.isNotEmpty)
-          ? consultationList[0]['id']
-          : null;
+      // final consultationId = (consultationList.isNotEmpty)
+      //     ? consultationList[0]['id']
+      //     : null;
 
       // // 🧾 Update Testing and Scanning record
       // await TestingScanningService().updateTesting(Id, {
       //   'result': description,
       //   'status': 'COMPLETED',
       //   'updatedAt': _dateTime.toString(),
-      //   'staff_Id': Staff_Id,
+      //   'staff_Id': staffId,
       // });
-      await TestingScanningService().updateScanning(Id, {
+      await TestingScanningService().updateScanning(id, {
         'result': description,
         // 'status': 'COMPLETED',
         'updatedAt': _dateTime.toString(),
-        'staff_Id': Staff_Id.toString(),
+        'staff_Id': staffId.toString(),
         'selectedOptionResults': resultMap,
       }, _pickedImages);
-      await TestingScanningService().updateTesting(Id, {
+      await TestingScanningService().updateTesting(id, {
         'queueStatus': 'COMPLETED',
       });
       // 🧾 Update Consultation record
 
-      // ✅ Show success snackbar
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('X-Ray marked as Completed ✅'),
-          backgroundColor: primaryColor,
-        ),
-      );
-
-      Navigator.pop(context, true);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('X-Ray marked as Completed ✅'),
+            backgroundColor: primaryColor,
+          ),
+        );
+        Navigator.pop(context, true);
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     } finally {
       setState(() => _isLoading = false); // <-- Stop loading
     }
@@ -258,9 +262,9 @@ class _CtScanPageState extends State<CtScanPage>
           ? widget.record['consulateId']
           : null;
 
-      final Id = widget.record['id'];
+      final id = widget.record['id'];
       // 🧾 Update Testing and Scanning record
-      await TestingScanningService().updateTesting(Id, {'status': 'COMPLETED'});
+      await TestingScanningService().updateTesting(id, {'status': 'COMPLETED'});
 
       // 🧾 Update Consultation record
       if (consultationId != null) {
@@ -271,20 +275,24 @@ class _CtScanPageState extends State<CtScanPage>
         });
       }
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Ct-scan Report Submitted ✅'),
-          backgroundColor: primaryColor,
-        ),
-      );
-      Navigator.pop(context, true);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Ct-scan Report Submitted ✅'),
+            backgroundColor: primaryColor,
+          ),
+        );
+        Navigator.pop(context, true);
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('$e Error: failed to submit Ct-scan Report'),
-          backgroundColor: primaryColor,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$e Error: failed to submit Ct-scan Report'),
+            backgroundColor: primaryColor,
+          ),
+        );
+      }
     } finally {
       setState(() => _isLoading = false);
     }
@@ -296,16 +304,16 @@ class _CtScanPageState extends State<CtScanPage>
     final patient = record['Patient'] ?? {};
     final phone = patient['phone'] ?? 'N/A';
 
-    final patientId = patient['id'].toString() ?? 'N/A';
+    final patientId = patient['id'].toString();
 
     final address = patient['address']?['Address'] ?? 'N/A';
-    final hospitalAdmins = record['Hospital']?['Admins'];
-    List<Map<String, dynamic>> adminList = [];
-
-    if (hospitalAdmins is List) {
-      // only cast if it's really a List
-      adminList = hospitalAdmins.whereType<Map<String, dynamic>>().toList();
-    }
+    // final hospitalAdmins = record['Hospital']?['Admins'];
+    // List<Map<String, dynamic>> adminList = [];
+    //
+    // if (hospitalAdmins is List) {
+    //   // only cast if it's really a List
+    //   adminList = hospitalAdmins.whereType<Map<String, dynamic>>().toList();
+    // }
 
     final doctorIdList = patient['doctor']?['id'] ?? '-';
     String doctorId = '';
@@ -316,10 +324,10 @@ class _CtScanPageState extends State<CtScanPage>
       doctorId = doctorIdList;
     }
 
-    final doctor = adminList.firstWhere(
-      (a) => a['user_Id'].toString() == doctorId,
-      orElse: () => {'name': 'N/A'},
-    );
+    // final doctor = adminList.firstWhere(
+    //   (a) => a['user_Id'].toString() == doctorId,
+    //   orElse: () => {'name': 'N/A'},
+    // );
 
     // final doctorName = doctor['name']?.toString() ?? 'N/A';
     final doctorName = patient['doctor']?['name'] ?? '-';
@@ -349,7 +357,7 @@ class _CtScanPageState extends State<CtScanPage>
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -442,7 +450,7 @@ class _CtScanPageState extends State<CtScanPage>
                       borderRadius: BorderRadius.circular(18),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 8,
                           offset: const Offset(0, 3),
                         ),
@@ -561,7 +569,7 @@ class _CtScanPageState extends State<CtScanPage>
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -590,7 +598,7 @@ class _CtScanPageState extends State<CtScanPage>
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: primaryColor.withOpacity(0.15),
+                    color: primaryColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -671,7 +679,7 @@ class _CtScanPageState extends State<CtScanPage>
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -770,8 +778,8 @@ class _CtScanPageState extends State<CtScanPage>
                     final picker = ImagePicker();
                     final picked = await picker.pickMultiImage();
 
-                    if (picked != null && picked.isNotEmpty) {
-                      if (_pickedImages.length + picked.length > 6) {
+                    if (picked.isNotEmpty) {
+                      if (_pickedImages.length + picked.length > 6 && mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text("Maximum 6 images allowed!"),
@@ -787,12 +795,14 @@ class _CtScanPageState extends State<CtScanPage>
                         );
                       });
 
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text("${picked.length} image(s) added"),
-                          backgroundColor: primaryColor,
-                        ),
-                      );
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text("${picked.length} image(s) added"),
+                            backgroundColor: primaryColor,
+                          ),
+                        );
+                      }
                     }
                   },
                   icon: const Icon(Icons.attach_file, color: Colors.white),
@@ -823,7 +833,7 @@ class _CtScanPageState extends State<CtScanPage>
                     );
 
                     if (picked != null) {
-                      if (_pickedImages.length + 1 > 6) {
+                      if (_pickedImages.length + 1 > 6 && mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text("Maximum 6 images allowed!"),
@@ -837,12 +847,14 @@ class _CtScanPageState extends State<CtScanPage>
                         _pickedImages.add(File(picked.path));
                       });
 
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text("1 image added from Camera"),
-                          backgroundColor: primaryColor,
-                        ),
-                      );
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text("1 image added from Camera"),
+                            backgroundColor: primaryColor,
+                          ),
+                        );
+                      }
                     }
                   },
                   icon: const Icon(Icons.camera_alt, color: Colors.white),

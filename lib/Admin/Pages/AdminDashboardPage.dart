@@ -180,7 +180,7 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(22),
                       ),
-                      color: Colors.white.withOpacity(0.95),
+                      color: Colors.white.withValues(alpha: 0.95),
                       elevation: 8,
                       shadowColor: Colors.black26,
                       child: Padding(
@@ -288,7 +288,7 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(22),
                     ),
-                    color: Colors.white.withOpacity(0.95),
+                    color: Colors.white.withValues(alpha: 0.95),
                     elevation: 8,
                     shadowColor: Colors.black26,
                     child: Padding(
@@ -367,7 +367,7 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(22),
                     ),
-                    color: Colors.white.withOpacity(0.95),
+                    color: Colors.white.withValues(alpha: 0.95),
                     elevation: 8,
                     shadowColor: Colors.black26,
                     child: Padding(
@@ -416,7 +416,7 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(22),
                     ),
-                    color: Colors.white.withOpacity(0.95),
+                    color: Colors.white.withValues(alpha: 0.95),
                     elevation: 8,
                     shadowColor: Colors.black26,
                     child: Padding(
@@ -495,7 +495,7 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(22),
                     ),
-                    color: Colors.white.withOpacity(0.95),
+                    color: Colors.white.withValues(alpha: 0.95),
                     elevation: 8,
                     shadowColor: Colors.black26,
                     child: Padding(
@@ -640,7 +640,7 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => const DlopplerQueuePage(),
+                                      builder: (_) => const DopplerQueuePage(),
                                     ),
                                   );
                                 },
@@ -689,7 +689,7 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (_) =>
-                                          const UltersoundQueuePage(),
+                                          const UltrasoundQueuePage(),
                                     ),
                                   );
                                 },
@@ -755,7 +755,7 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(22),
                     ),
-                    color: Colors.white.withOpacity(0.95),
+                    color: Colors.white.withValues(alpha: 0.95),
                     elevation: 8,
                     shadowColor: Colors.black26,
                     child: Padding(
@@ -803,7 +803,7 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(22),
                     ),
-                    color: Colors.white.withOpacity(0.95),
+                    color: Colors.white.withValues(alpha: 0.95),
                     elevation: 8,
                     shadowColor: Colors.black26,
                     child: Padding(
@@ -863,7 +863,7 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
             Color(0xFFEDBA77),
             Color(0xFFC59A62),
             // Color(0xFFEDBA77),
-          ], //customGold.withOpacity(0.8)
+          ], //customGold.withValues(alpha:0.8)
           begin: Alignment.topLeft,
           end: Alignment.bottomLeft,
         ),
@@ -944,7 +944,7 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
               // ★ Smooth depth shadow
               boxShadow: [
                 BoxShadow(
-                  color: Colors.brown.withOpacity(0.15),
+                  color: Colors.brown.withValues(alpha: 0.15),
                   blurRadius: 10,
                   offset: const Offset(0, 5),
                 ),

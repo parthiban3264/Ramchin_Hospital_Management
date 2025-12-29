@@ -1,22 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
 import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
+
 import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/testing&scanning_service.dart';
-
-import '../Page/CtScanPage.dart';
 import '../Page/EcgPage.dart';
-
 
 class EcgQueuePage extends StatefulWidget {
   const EcgQueuePage({super.key});
 
   @override
-  _EcgQueuePageState createState() => _EcgQueuePageState();
+  State<EcgQueuePage> createState() => _EcgQueuePageState();
 }
 
 class _EcgQueuePageState extends State<EcgQueuePage> {
-
   late Future<List<dynamic>> futureCtScanQueue;
 
   final Color primaryColor = const Color(0xFFBF955E);
@@ -29,7 +26,6 @@ class _EcgQueuePageState extends State<EcgQueuePage> {
     futureCtScanQueue = TestingScanningService().getAllTestingAndScanning(
       'ECG',
     );
-
   }
 
   String _formatDate(String? dateStr) {
@@ -106,7 +102,7 @@ class _EcgQueuePageState extends State<EcgQueuePage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -149,7 +145,6 @@ class _EcgQueuePageState extends State<EcgQueuePage> {
         ),
       ),
       body: FutureBuilder<List<dynamic>>(
-
         future: futureCtScanQueue,
 
         builder: (context, snapshot) {
@@ -190,7 +185,7 @@ class _EcgQueuePageState extends State<EcgQueuePage> {
                   border: Border.all(color: primaryColor, width: 2),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
@@ -213,9 +208,7 @@ class _EcgQueuePageState extends State<EcgQueuePage> {
               ),
 
               // Queue List
-
               Expanded(child: _buildQueueList(tabRecords[_currentIndex])),
-
             ],
           );
         },
@@ -298,10 +291,10 @@ class _EcgQueuePageState extends State<EcgQueuePage> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: primaryColor.withOpacity(0.7)),
+              border: Border.all(color: primaryColor.withValues(alpha: 0.7)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black45.withOpacity(0.35),
+                  color: Colors.black45.withValues(alpha: 0.35),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -372,10 +365,7 @@ class _EcgQueuePageState extends State<EcgQueuePage> {
                   Row(
                     children: [
                       Expanded(
-                        child: _infoText(
-                          "ID",
-                          patient['id'].toString() ?? 'N/A',
-                        ),
+                        child: _infoText("ID", patient['id'].toString()),
                       ),
                     ],
                   ),

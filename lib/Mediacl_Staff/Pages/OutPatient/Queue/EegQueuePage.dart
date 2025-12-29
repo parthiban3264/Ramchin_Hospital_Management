@@ -1,25 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
 import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
+
 import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/testing&scanning_service.dart';
-
 import '../Page/CtScanPage.dart';
 
 class EegQueuePage extends StatefulWidget {
-  const EegQueuePage({Key? key}) : super(key: key);
-
+  const EegQueuePage({super.key});
 
   @override
-  _EegQueuePageState createState() => _EegQueuePageState();
+  State<EegQueuePage> createState() => _EegQueuePageState();
 }
 
 class _EegQueuePageState extends State<EegQueuePage> {
-
   late Future<List<dynamic>> futureCtScanQueue;
   final Color primaryColor = const Color(0xFFBF955E);
   int _currentIndex = 0; // Bottom tab index
-
 
   @override
   void initState() {
@@ -28,7 +25,6 @@ class _EegQueuePageState extends State<EegQueuePage> {
     futureCtScanQueue = TestingScanningService().getAllTestingAndScanning(
       'EEG',
     );
-
   }
 
   String _formatDate(String? dateStr) {
@@ -92,8 +88,6 @@ class _EegQueuePageState extends State<EegQueuePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
-
       backgroundColor: Colors.white,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(100),
@@ -107,7 +101,7 @@ class _EegQueuePageState extends State<EegQueuePage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -171,7 +165,6 @@ class _EegQueuePageState extends State<EegQueuePage> {
 
           final records = snapshot.data ?? [];
 
-
           // Separate pending and completed records
           List<dynamic> pendingRecords = records
               .where((r) => r['queueStatus']?.toString() == 'PENDING')
@@ -187,14 +180,13 @@ class _EegQueuePageState extends State<EegQueuePage> {
               Container(
                 margin: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: primaryColor, width: 2),
 
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
@@ -214,14 +206,11 @@ class _EegQueuePageState extends State<EegQueuePage> {
                       color: Colors.black,
                     ),
                   ),
-
                 ),
               ),
 
               // Queue List
-
               Expanded(child: _buildQueueList(tabRecords[_currentIndex])),
-
             ],
           );
         },
@@ -305,10 +294,10 @@ class _EegQueuePageState extends State<EegQueuePage> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: primaryColor.withOpacity(0.7)),
+              border: Border.all(color: primaryColor.withValues(alpha: 0.7)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black45.withOpacity(0.35),
+                  color: Colors.black45.withValues(alpha: 0.35),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -379,10 +368,7 @@ class _EegQueuePageState extends State<EegQueuePage> {
                   Row(
                     children: [
                       Expanded(
-                        child: _infoText(
-                          "ID",
-                          patient['id'].toString() ?? 'N/A',
-                        ),
+                        child: _infoText("ID", patient['id'].toString()),
                       ),
                     ],
                   ),
@@ -412,7 +398,6 @@ class _EegQueuePageState extends State<EegQueuePage> {
           ),
         );
       },
-
     );
   }
 

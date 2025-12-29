@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hospitrax/Admin/Pages/AdminEditProfilePage.dart';
-import '../Services/hospital_Service.dart';
+
 import '../Pages/NotificationsPage.dart';
+import '../Services/hospital_Service.dart';
 import 'Overall_Administrator_Dashboard.dart';
 
 class AdministratorBlock extends StatefulWidget {
@@ -41,18 +42,22 @@ class _AdministratorBlockState extends State<AdministratorBlock> {
       setState(() {
         hospital["HospitalStatus"] = newStatus;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            "Hospital ${newStatus == "ACTIVE" ? "unblocked" : "blocked"} successfully!",
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              "Hospital ${newStatus == "ACTIVE" ? "unblocked" : "blocked"} successfully!",
+            ),
           ),
-        ),
-      );
+        );
+      }
       widget.onHospitalUpdated?.call();
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Failed to update hospital status")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Failed to update hospital status")),
+        );
+      }
     }
   }
 
@@ -90,14 +95,18 @@ class _AdministratorBlockState extends State<AdministratorBlock> {
     setState(() => isLoading = false);
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Hospital deleted successfully!")),
-      );
-      Navigator.pop(context); // Go back after deletion
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Hospital deleted successfully!")),
+        );
+        Navigator.pop(context);
+      }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Failed to delete hospital")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Failed to delete hospital")),
+        );
+      }
     }
   }
 
@@ -124,9 +133,9 @@ class _AdministratorBlockState extends State<AdministratorBlock> {
 
   @override
   Widget build(BuildContext context) {
-    Color statusColor = hospital["HospitalStatus"] == "ACTIVE"
-        ? Colors.green
-        : Colors.red;
+    // Color statusColor = hospital["HospitalStatus"] == "ACTIVE"
+    //     ? Colors.green
+    //     : Colors.red;
 
     List<dynamic> admins = getSortedAdmins();
 
@@ -143,7 +152,7 @@ class _AdministratorBlockState extends State<AdministratorBlock> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -202,7 +211,9 @@ class _AdministratorBlockState extends State<AdministratorBlock> {
                         width: 1,
                       ), // border
                     ),
-                    color: Colors.white.withOpacity(0.95), // subtle card color
+                    color: Colors.white.withValues(
+                      alpha: 0.95,
+                    ), // subtle card color
                     elevation: 8,
                     shadowColor: Colors.black26,
                     child: Padding(
@@ -454,8 +465,9 @@ class _AdministratorBlockState extends State<AdministratorBlock> {
 
                                 if (role == "admin") return 1;
                                 if (role == "medical staff" &&
-                                    designation == "doctor")
+                                    designation == "doctor") {
                                   return 2;
+                                }
                                 if (designation == "nurse") return 3;
                                 if (designation == "lab") return 4;
                                 if (designation == "cashier") return 5;
@@ -511,7 +523,9 @@ class _AdministratorBlockState extends State<AdministratorBlock> {
                                 children: [
                                   CircleAvatar(
                                     radius: 20,
-                                    backgroundColor: roleColor.withOpacity(0.2),
+                                    backgroundColor: roleColor.withValues(
+                                      alpha: 0.2,
+                                    ),
                                     child: Icon(Icons.person, color: roleColor),
                                   ),
                                   const SizedBox(width: 12),
@@ -536,7 +550,7 @@ class _AdministratorBlockState extends State<AdministratorBlock> {
                                       vertical: 6,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: roleColor.withOpacity(0.2),
+                                      color: roleColor.withValues(alpha: 0.2),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Text(

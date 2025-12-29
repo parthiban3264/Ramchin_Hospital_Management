@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../Services/Medicine_Service.dart';
 
 class AddMedicianPage extends StatefulWidget {
-  const AddMedicianPage({Key? key}) : super(key: key);
+  const AddMedicianPage({super.key});
 
   @override
   State<AddMedicianPage> createState() => _AddMedicianPageState();
@@ -73,7 +73,7 @@ class _AddMedicianPageState extends State<AddMedicianPage> {
 
       final result = await MedicineService().createMedician(medicianData);
 
-      if (result['status'] == 'success') {
+      if (result['status'] == 'success' && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(result['message'] ?? "Medician successfully added!"),
@@ -83,17 +83,21 @@ class _AddMedicianPageState extends State<AddMedicianPage> {
         _formKey.currentState!.reset();
         dispose();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result['error'] ?? "Failed to add medician"),
-            backgroundColor: Colors.red,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['error'] ?? "Failed to add medician"),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
+        );
+      }
     } finally {
       setState(() => _isLoading = false); // 🔹 hide loading
     }

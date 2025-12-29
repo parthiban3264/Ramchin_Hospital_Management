@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
 import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
+
 import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/testing&scanning_service.dart';
 import '../../../Widgets/global_notifiers.dart';
 import '../Page/EchoPage.dart';
-import '../Page/X-RayPage.dart';
 
 class EchoQueuePage extends StatefulWidget {
   const EchoQueuePage({super.key});
 
   @override
-  _EchoQueuePageState createState() => _EchoQueuePageState();
+  State<EchoQueuePage> createState() => _EchoQueuePageState();
 }
 
 class _EchoQueuePageState extends State<EchoQueuePage> {
@@ -111,7 +111,7 @@ class _EchoQueuePageState extends State<EchoQueuePage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -192,7 +192,7 @@ class _EchoQueuePageState extends State<EchoQueuePage> {
                   border: Border.all(color: primaryColor, width: 2),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
@@ -300,10 +300,10 @@ class _EchoQueuePageState extends State<EchoQueuePage> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: primaryColor.withOpacity(0.7)),
+              border: Border.all(color: primaryColor.withValues(alpha: 0.7)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black45.withOpacity(0.35),
+                  color: Colors.black45.withValues(alpha: 0.35),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -373,10 +373,7 @@ class _EchoQueuePageState extends State<EchoQueuePage> {
                   Row(
                     children: [
                       Expanded(
-                        child: _infoText(
-                          "ID",
-                          patient['id'].toString() ?? 'N/A',
-                        ),
+                        child: _infoText("ID", patient['id'].toString()),
                       ),
                     ],
                   ),

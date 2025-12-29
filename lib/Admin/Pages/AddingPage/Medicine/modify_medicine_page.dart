@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
 import '../../../../Services/Medicine_Service.dart';
 
 class ModifyMedicinePage extends StatefulWidget {
-  const ModifyMedicinePage({Key? key}) : super(key: key);
+  const ModifyMedicinePage({super.key});
 
   @override
   State<ModifyMedicinePage> createState() => _ModifyMedicinePageState();
@@ -105,7 +106,7 @@ class _ModifyMedicinePageState extends State<ModifyMedicinePage> {
                 "stock": int.parse(stockCtrl.text),
                 "amount": double.parse(amountCtrl.text),
               });
-              Navigator.pop(context);
+              if (mounted) Navigator.pop(context);
               fetchMedicines();
             },
             child: const Text("Update"),
@@ -131,7 +132,7 @@ class _ModifyMedicinePageState extends State<ModifyMedicinePage> {
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
               await MedicineService().deleteMedicine(id);
-              Navigator.pop(context);
+              if (mounted) Navigator.pop(context);
               fetchMedicines();
             },
             child: const Text("Delete"),
@@ -207,7 +208,7 @@ class _ModifyMedicinePageState extends State<ModifyMedicinePage> {
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
@@ -235,7 +236,7 @@ class _ModifyMedicinePageState extends State<ModifyMedicinePage> {
                                     vertical: 6,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: color.withOpacity(0.15),
+                                    color: color.withValues(alpha: 0.15),
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   child: Text(

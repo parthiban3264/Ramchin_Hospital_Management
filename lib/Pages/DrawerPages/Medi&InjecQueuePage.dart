@@ -1,6 +1,8 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
 import '../../Admin/Colors/Colors.dart';
 import '../../Services/Medicine&Injection_service.dart';
 import '../NotificationsPage.dart';
@@ -111,7 +113,9 @@ class _MedicineQueuePageState extends State<MedicineQueuePage> {
           } else if (status == 'ONGOING') {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => MediAndInjecPage(data: item)),
+              MaterialPageRoute(
+                builder: (_) => MediAndInjectionPage(data: item),
+              ),
             );
           }
         },

@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../Services/Tonic_Service.dart'; // ✅ use tonic service
 
 class AddTonicPage extends StatefulWidget {
-  const AddTonicPage({Key? key}) : super(key: key);
+  const AddTonicPage({super.key});
 
   @override
   State<AddTonicPage> createState() => _AddTonicPageState();
@@ -109,7 +109,7 @@ class _AddTonicPageState extends State<AddTonicPage> {
 
       final result = await TonicService().createTonic(tonicData); // ✅
 
-      if (result['status'] == 'success') {
+      if (result['status'] == 'success' && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(result['message'] ?? "Tonic added successfully!"),
@@ -122,17 +122,21 @@ class _AddTonicPageState extends State<AddTonicPage> {
           _addPackRow();
         });
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result['error'] ?? "Failed to add tonic"),
-            backgroundColor: Colors.red,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['error'] ?? "Failed to add tonic"),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
+        );
+      }
     } finally {
       setState(() => _isLoading = false);
     }

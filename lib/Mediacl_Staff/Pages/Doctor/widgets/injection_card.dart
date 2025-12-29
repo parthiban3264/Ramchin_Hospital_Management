@@ -425,7 +425,7 @@ class _InjectionCardState extends State<InjectionCard>
   // }
   void _onTrySave(int index) {
     if (index >= injectionEntries.length) return;
-    final eny = injectionEntries[index].triggerFieldsChanged;
+    // final eny = injectionEntries[index].triggerFieldsChanged;
     final entry = injectionEntries[index];
     final inj = _buildIfValid(entry);
 

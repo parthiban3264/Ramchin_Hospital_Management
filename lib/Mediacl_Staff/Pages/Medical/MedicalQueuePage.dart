@@ -1,7 +1,9 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
-import '../../../services/consultation_service.dart';
+
 import '../../../Pages/NotificationsPage.dart';
+import '../../../services/consultation_service.dart';
 import 'medicalFeePage.dart';
 
 class MedicalQueuePage extends StatefulWidget {
@@ -57,7 +59,6 @@ class _MedicalQueuePageState extends State<MedicalQueuePage> {
   void dispose() {
     refreshTimer?.cancel();
     super.dispose();
-
   }
 
   @override
@@ -79,7 +80,7 @@ class _MedicalQueuePageState extends State<MedicalQueuePage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),
@@ -145,9 +146,7 @@ class _MedicalQueuePageState extends State<MedicalQueuePage> {
                       style: const TextStyle(color: Colors.red, fontSize: 16),
                     ),
                   );
-
                 }
-
 
                 firstLoad = false; // disable loader forever
 
@@ -176,7 +175,7 @@ class _MedicalQueuePageState extends State<MedicalQueuePage> {
         final c = consultations[index];
         final patient = c['Patient'];
         final name = patient?['name'] ?? 'Unknown';
-        final patientId = c['patient_Id'].toString() ?? '';
+        final patientId = c['patient_Id'].toString();
         final address = patient?['address']?['Address'] ?? 'N/A';
         final cell = patient?['phone']?['mobile'] ?? 'N/A';
         final doctor = c['Doctor']?['name'] ?? 'Unknown Doctor';
@@ -243,7 +242,7 @@ class _MedicalQueuePageState extends State<MedicalQueuePage> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),

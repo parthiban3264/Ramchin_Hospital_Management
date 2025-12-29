@@ -19,10 +19,10 @@ class MedicalFeePage extends StatefulWidget {
   final Map<String, dynamic> consultation;
   final int index;
   const MedicalFeePage({
-    Key? key,
+    super.key,
     required this.consultation,
     required this.index,
-  }) : super(key: key);
+  });
 
   @override
   State<MedicalFeePage> createState() => _MedicalFeePageState();
@@ -33,7 +33,7 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
   final Color primaryColor = const Color(0xFFBF955E);
   final socketService = SocketService();
   bool showAll = false;
-  final MedicineService _medicineService = MedicineService();
+  final MedicineService medicineService = MedicineService();
   bool _isLoading = false;
   bool paymentSuccess = false;
 
@@ -301,7 +301,7 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
         injObj['stock'] ?? {},
       );
       String dose = inj['Doase'] ?? '';
-      int qtyUsed = (inj['quantity'] as num?)?.toInt() ?? 0;
+      // int qtyUsed = (inj['quantity'] as num?)?.toInt() ?? 0;
 
       int oldStock = (stockMap[dose] as num?)?.toInt() ?? 0;
       int remaining = oldStock - 1;
@@ -417,7 +417,7 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
       );
 
       String dose = inj['Doase'] ?? "";
-      int qtyUsed = ((inj['quantity'] ?? 0) as num).toInt();
+      // int qtyUsed = ((inj['quantity'] ?? 0) as num).toInt();
 
       int current = ((stockMap[dose] ?? 0) as num).toInt();
       int newStock = current - 1;
@@ -556,7 +556,7 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
                           itemBuilder: (_, index) {
                             final item = filteredItems[index];
                             final isError = item['isError'] == true;
-                            final isWarning = item['isWarning'] == true;
+                            // final isWarning = item['isWarning'] == true;
 
                             final Color color = isError
                                 ? Colors.red
@@ -565,10 +565,10 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
                             return Container(
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
-                                color: color.withOpacity(0.08),
+                                color: color.withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: color.withOpacity(0.6),
+                                  color: color.withValues(alpha: 0.6),
                                   width: 1,
                                 ),
                               ),
@@ -747,9 +747,11 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
         ).showSnackBar(SnackBar(content: Text(userMessage)));
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to update status: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to update status: $e')));
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -1061,7 +1063,7 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
     setState(() => _isLoading = true);
 
     try {
-      final consultationId = consultation['id'];
+      // final consultationId = consultation['id'];
       int? paymentId;
 
       if (consultation['MedicinePatient']?.isNotEmpty ?? false) {
@@ -1087,7 +1089,7 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
         tonics: (tonics).cast<Map<String, dynamic>>(),
       );
 
-      if (!canProceed) {
+      if (!canProceed && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Payment cancelled due to stock error.'),
@@ -1100,13 +1102,16 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
       setState(() => _isLoading = false);
 
       // 2️⃣ Show payment modal
-      final paymentResult = await showDialog<Map<String, dynamic>>(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => PaymentModal(registrationFee: totalCharges),
-      );
+      Map<String, dynamic>? paymentResult;
+      if (mounted) {
+        paymentResult = await showDialog<Map<String, dynamic>>(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => PaymentModal(registrationFee: totalCharges),
+        );
+      }
 
-      if (paymentResult == null) {
+      if (paymentResult == null && mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('Payment cancelled')));
@@ -1115,7 +1120,7 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
 
       setState(() => _isLoading = true);
       final prefs = await SharedPreferences.getInstance();
-      final String paymentMode = paymentResult['paymentMode'] ?? 'unknown';
+      final String paymentMode = paymentResult?['paymentMode'] ?? 'unknown';
       final staffId = prefs.getString('userId');
 
       await PaymentService().updatePayment(paymentId, {'amount': totalCharges});
@@ -1144,12 +1149,14 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
         await updateMedicationStatus();
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Medical Payment failed: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Medical Payment failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -1179,7 +1186,7 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -1365,12 +1372,12 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
             double.tryParse(med['Medician']?['amount'].toString() ?? "0") ?? 0;
         final total = totalQty * price;
 
-        final afterEat = med['afterEat'] == true ? "AF" : "BF";
-        final sessions = [
-          if (med['morning'] == true) "M",
-          if (med['afternoon'] == true) "AF",
-          if (med['night'] == true) "N",
-        ].join(", ");
+        // final afterEat = med['afterEat'] == true ? "AF" : "BF";
+        // final sessions = [
+        //   if (med['morning'] == true) "M",
+        //   if (med['afternoon'] == true) "AF",
+        //   if (med['night'] == true) "N",
+        // ].join(", ");
 
         return [
           _selectToggleButton(med),
@@ -1471,12 +1478,12 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
         final name = tonic['Tonic']?['tonicName'] ?? "Tonic";
         final qty = (tonic['quantity'] ?? 0).toDouble();
         final total = (tonic['total'] ?? 0).toDouble();
-        final afterEat = tonic['afterEat'] == true ? "AF" : "BF";
-        final sessions = [
-          if (tonic['morning'] == true) "M",
-          if (tonic['afternoon'] == true) "AF",
-          if (tonic['night'] == true) "N",
-        ].join(", ");
+        // final afterEat = tonic['afterEat'] == true ? "AF" : "BF";
+        // final sessions = [
+        //   if (tonic['morning'] == true) "M",
+        //   if (tonic['afternoon'] == true) "AF",
+        //   if (tonic['night'] == true) "N",
+        // ].join(", ");
         return [
           _selectToggleButton(tonic),
           name,
@@ -1610,7 +1617,7 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
                         );
                       }).toList(),
                     );
-                  }).toList(),
+                  }),
                 ],
               ),
             ),
@@ -1668,7 +1675,7 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
         .where((m) => m['selected'] == true && m['status'] != 'CANCELLED')
         .toList();
 
-    for (var m in medicines) {}
+    // for (var m in medicines) {}
 
     final selectedTonics = tonics
         .where((t) => t['selected'] == true && t['status'] != 'CANCELLED')
@@ -1750,7 +1757,7 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
                     final name =
                         i['Injection']?['injectionName'] ?? "Injection";
                     final qty = (i['Doase'] ?? 0).toString();
-                    double price = 0;
+                    // double price = 0;
                     // if (i['Injection']?['amount'] is Map) {
                     //   final amounts = Map<String, dynamic>.from(
                     //     i['Injection']['amount'],
@@ -1761,7 +1768,7 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
                     // }
                     final amt = (i['total'] ?? 0).toStringAsFixed(1);
 
-                    return [name, "$qty", "₹ $amt"];
+                    return [name, qty, "₹ $amt"];
                   }).toList(),
                 ),
                 const SizedBox(height: 12),
@@ -2072,19 +2079,19 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
     );
   }
 
-  Widget _emptyCard(String message) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(28),
-        child: Center(
-          child: Text(
-            message,
-            style: const TextStyle(color: Colors.grey, fontSize: 14),
-          ),
-        ),
-      ),
-    );
-  }
+  // Widget _emptyCard(String message) {
+  //   return Card(
+  //     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+  //     elevation: 2,
+  //     child: Padding(
+  //       padding: const EdgeInsets.all(28),
+  //       child: Center(
+  //         child: Text(
+  //           message,
+  //           style: const TextStyle(color: Colors.grey, fontSize: 14),
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 }

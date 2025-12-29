@@ -352,11 +352,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 //   }
 // }
 
-
 import '../../../../Services/Medicine_Service.dart';
 
 class AddMedicianPage extends StatefulWidget {
-  const AddMedicianPage({Key? key}) : super(key: key);
+  const AddMedicianPage({super.key});
 
   @override
   State<AddMedicianPage> createState() => _AddMedicianPageState();
@@ -434,16 +433,20 @@ class _AddMedicianPageState extends State<AddMedicianPage> {
       expiryDateController.clear();
       manufacturingDateController.clear();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Medicine added successfully"),
-          backgroundColor: Colors.green,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Medicine added successfully"),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("$e"), backgroundColor: Colors.red),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("$e"), backgroundColor: Colors.red),
+        );
+      }
     } finally {
       setState(() => _isLoading = false);
     }

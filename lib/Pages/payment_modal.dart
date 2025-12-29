@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 
@@ -49,50 +50,50 @@ class _PaymentModalState extends State<PaymentModal> {
     }
   }
 
-  void _openRazorpay() {
-    var options = {
-      'key': 'rzp_test_EH1UEwLILEPXCj',
-      'amount': (widget.registrationFee * 100).toInt(),
-      'name': 'Hospital Management',
-      'description': 'Consultation Payment',
-      'prefill': {'contact': '9999999999', 'email': 'test@example.com'},
-      'theme.color': '#BF955E',
-    };
-
-    try {
-      _razorpay.open(options);
-    } catch (e) {
-      Navigator.pop(context, {
-        'paymentStatus': false,
-        'paymentMode': 'OnlinePay',
-        'amount': widget.registrationFee,
-      });
-    }
-  }
-
-  void _manualPayDialog() async {
-    final result = await showDialog<Map<String, dynamic>>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => ManualPayDialog(
-        primaryColor: hospitalAccentColor,
-        registrationFee: widget.registrationFee,
-      ),
-    );
-    if (result != null && mounted) Navigator.pop(context, result);
-  }
-
-  void _finalPayDialog() async {
-    final result = await showDialog<Map<String, dynamic>>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => FinalPayDialog(
-        primaryColor: hospitalAccentColor,
-        finalFee: widget.registrationFee,
-      ),
-    );
-    if (result != null && mounted) Navigator.pop(context, result);
-  }
+  // void _openRazorpay() {
+  //   var options = {
+  //     'key': 'rzp_test_EH1UEwLILEPXCj',
+  //     'amount': (widget.registrationFee * 100).toInt(),
+  //     'name': 'Hospital Management',
+  //     'description': 'Consultation Payment',
+  //     'prefill': {'contact': '9999999999', 'email': 'test@example.com'},
+  //     'theme.color': '#BF955E',
+  //   };
+  //
+  //   try {
+  //     _razorpay.open(options);
+  //   } catch (e) {
+  //     Navigator.pop(context, {
+  //       'paymentStatus': false,
+  //       'paymentMode': 'OnlinePay',
+  //       'amount': widget.registrationFee,
+  //     });
+  //   }
+  // }
+  //
+  // void _manualPayDialog() async {
+  //   final result = await showDialog<Map<String, dynamic>>(
+  //     context: context,
+  //     barrierDismissible: false,
+  //     builder: (_) => ManualPayDialog(
+  //       primaryColor: hospitalAccentColor,
+  //       registrationFee: widget.registrationFee,
+  //     ),
+  //   );
+  //   if (result != null && mounted) Navigator.pop(context, result);
+  // }
+  //
+  // void _finalPayDialog() async {
+  //   final result = await showDialog<Map<String, dynamic>>(
+  //     context: context,
+  //     barrierDismissible: false,
+  //     builder: (_) => FinalPayDialog(
+  //       primaryColor: hospitalAccentColor,
+  //       finalFee: widget.registrationFee,
+  //     ),
+  //   );
+  //   if (result != null && mounted) Navigator.pop(context, result);
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -177,12 +178,12 @@ class _PaymentModalState extends State<PaymentModal> {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
-      splashColor: hospitalAccentColor.withOpacity(0.25),
+      splashColor: hospitalAccentColor.withValues(alpha: 0.25),
       child: Container(
         decoration: BoxDecoration(
           color: cardColor,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: hospitalAccentColor.withOpacity(0.3)),
+          border: Border.all(color: hospitalAccentColor.withValues(alpha: 0.3)),
           boxShadow: const [
             BoxShadow(
               color: Colors.black12,
@@ -243,10 +244,11 @@ class _ManualPayDialogState extends State<ManualPayDialog> {
     super.initState();
     _secondsLeft = 240;
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (_secondsLeft > 0)
+      if (_secondsLeft > 0) {
         setState(() => _secondsLeft--);
-      else
+      } else {
         _timer?.cancel();
+      }
     });
   }
 

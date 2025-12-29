@@ -737,9 +737,11 @@ class _ScanningPageState extends State<ScanningPage> {
       });
     } catch (e) {
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to fetch scans: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to fetch scans: $e')));
+      }
     }
   }
 
@@ -835,12 +837,14 @@ class _ScanningPageState extends State<ScanningPage> {
         ),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error submitting scans: $e'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error submitting scans: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     } finally {
       setState(() => _isSubmitting = false);
       setState(() => scanningTesting = false);
@@ -867,13 +871,11 @@ class _ScanningPageState extends State<ScanningPage> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Container(
-                    child: Column(
-                      children: [
-                        for (int index = 0; index < scans.length; index++)
-                          _buildScanCard(scans[index], index),
-                      ],
-                    ),
+                  Column(
+                    children: [
+                      for (int index = 0; index < scans.length; index++)
+                        _buildScanCard(scans[index], index),
+                    ],
                   ),
 
                   SizedBox(height: 80),
@@ -973,7 +975,7 @@ class _ScanningPageState extends State<ScanningPage> {
         children: [
           Divider(
             thickness: 1.5,
-            color: primaryColor.withOpacity(0.6),
+            color: primaryColor.withValues(alpha: 0.6),
             indent: 30,
             endIndent: 30,
           ),

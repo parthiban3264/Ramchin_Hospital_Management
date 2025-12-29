@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../pages/patient_description_page.dart';
-
 class DoctorPatientPage extends StatefulWidget {
   const DoctorPatientPage({
     super.key,
@@ -53,11 +51,11 @@ class _DoctorPatientPageState extends State<DoctorPatientPage> {
                 var age = calculateExactAge(patient['dob']);
 
                 final gender = patient['gender'] ?? 'N/A';
-                final symptoms = consultation['symptoms'] == 'null'
-                    ? 'Not specified'
-                    : consultation['symptoms'] ?? 'Not specified';
+                // final symptoms = consultation['symptoms'] == 'null'
+                //     ? 'Not specified'
+                //     : consultation['symptoms'] ?? 'Not specified';
                 final purpose = consultation['purpose'] ?? 'No details';
-                final patientId = patient['user_Id'] ?? '';
+                // final patientId = patient['user_Id'] ?? '';
 
                 return Card(
                   elevation: 3,

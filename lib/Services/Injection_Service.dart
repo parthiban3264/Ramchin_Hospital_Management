@@ -97,7 +97,7 @@ class InjectionService {
       } else {
         return [];
       }
-    } catch (e, stack) {
+    } catch (e) {
       return [];
     }
   }

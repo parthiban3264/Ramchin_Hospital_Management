@@ -13,7 +13,7 @@ class AccountDrawerPage extends StatefulWidget {
   const AccountDrawerPage({super.key});
 
   @override
-  _AccountDrawerPageState createState() => _AccountDrawerPageState();
+  State<AccountDrawerPage> createState() => _AccountDrawerPageState();
 }
 
 class _AccountDrawerPageState extends State<AccountDrawerPage> {
@@ -216,7 +216,9 @@ class _AccountDrawerPageState extends State<AccountDrawerPage> {
       amountController.clear();
       showForm = false;
       await fetchDrawers();
-    } catch (e) {}
+    } catch (e) {
+      setState(() {});
+    }
   }
 
   @override

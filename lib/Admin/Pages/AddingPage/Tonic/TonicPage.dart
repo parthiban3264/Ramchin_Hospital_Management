@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+
 import '../../../../Pages/NotificationsPage.dart';
 import 'TonicAddPage.dart';
-import 'modify_tonic_page.dart';
 import 'expiry_tonic_page.dart';
+import 'modify_tonic_page.dart';
 
 class TonicPage extends StatefulWidget {
-  const TonicPage({Key? key}) : super(key: key);
+  const TonicPage({super.key});
 
   @override
   State<TonicPage> createState() => _TonicPageState();

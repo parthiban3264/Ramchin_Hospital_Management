@@ -9,10 +9,10 @@ class MedicationDetailPage extends StatelessWidget {
   final Map<String, dynamic> data;
 
   const MedicationDetailPage({
-    Key? key,
+    super.key,
     required this.title,
     required this.data,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +74,7 @@ class MedicationDetailPage extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
+            color: Colors.black.withValues(alpha: 0.15),
             blurRadius: 12,
             offset: const Offset(0, 5),
           ),
@@ -143,7 +143,7 @@ class MedicationDetailPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.09),
+            color: Colors.black.withValues(alpha: 0.09),
             blurRadius: 16,
             spreadRadius: 2,
             offset: Offset(0, 6),
@@ -231,7 +231,7 @@ class MedicationDetailPage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: c.withOpacity(0.15),
+        color: c.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -368,7 +368,7 @@ class MedicationDetailPage extends StatelessWidget {
               ),
               TableRow(
                 children: [
-                  _tableCell("${m["quantity"]}ml".toString() ?? "-"),
+                  _tableCell("${m["quantity"]}ml".toString()),
                   _tableCell(
                     m["morning"] == true
                         ? "${m["Doase"].toString().split('.').first}ml"

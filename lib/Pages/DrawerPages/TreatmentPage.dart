@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../Services/treatment_service.dart';
 import '../NotificationsPage.dart';
 
@@ -7,7 +8,7 @@ const Color primaryColor = Color(0xFFBF955E);
 class TreatmentPage extends StatefulWidget {
   final Map<String, dynamic> treatment;
 
-  const TreatmentPage({Key? key, required this.treatment}) : super(key: key);
+  const TreatmentPage({super.key, required this.treatment});
 
   @override
   State<TreatmentPage> createState() => _TreatmentPageState();
@@ -84,7 +85,7 @@ class _TreatmentPageState extends State<TreatmentPage> {
               : _progressController.text;
         });
 
-        if (newStatus == 'COMPLETED') {
+        if (newStatus == 'COMPLETED' && mounted) {
           showDialog(
             context: context,
             builder: (_) => AlertDialog(
@@ -105,19 +106,25 @@ class _TreatmentPageState extends State<TreatmentPage> {
             ),
           );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("✅ Progress updated successfully!")),
-          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("✅ Progress updated successfully!")),
+            );
+          }
         }
       } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("⚠️ ${response['message']}")));
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text("⚠️ ${response['message']}")));
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Error updating status: $e")));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Error updating status: $e")));
+      }
     } finally {
       setState(() => _isUpdating = false);
     }
@@ -188,9 +195,9 @@ class _TreatmentPageState extends State<TreatmentPage> {
     final progress = treatment['progress'] ?? '0';
 
     final emailPersonal = patient?['email']?['personal'] ?? '-';
-    final emailGuardian = patient?['email']?['guardian'] ?? '-';
+    // final emailGuardian = patient?['email']?['guardian'] ?? '-';
     final phoneMobile = patient?['phone']?['mobile'] ?? '-';
-    final phoneEmergency = patient?['phone']?['emergency'] ?? '-';
+    // final phoneEmergency = patient?['phone']?['emergency'] ?? '-';
     final dob = patient?['dob'] != null
         ? patient!['dob'].toString().split('T')[0]
         : '-';
@@ -208,7 +215,7 @@ class _TreatmentPageState extends State<TreatmentPage> {
 
     final bool isCompleted = status == 'COMPLETED';
     final bool isPending = status == 'PENDING';
-    final bool isOngoing = status == 'ONGOING';
+    // final bool isOngoing = status == 'ONGOING';
 
     final String buttonText = isCompleted
         ? 'Completed'
@@ -284,7 +291,9 @@ class _TreatmentPageState extends State<TreatmentPage> {
                         children: [
                           CircleAvatar(
                             radius: 28,
-                            backgroundColor: primaryColor.withOpacity(0.2),
+                            backgroundColor: primaryColor.withValues(
+                              alpha: 0.2,
+                            ),
                             child: const Icon(
                               Icons.person,
                               color: primaryColor,
@@ -315,7 +324,7 @@ class _TreatmentPageState extends State<TreatmentPage> {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: statusColor.withOpacity(0.2),
+                              color: statusColor.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(

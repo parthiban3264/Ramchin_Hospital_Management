@@ -174,7 +174,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
       builder: (_) => PaymentModal(registrationFee: amount),
     );
 
-    if (paymentResult == null) {
+    if (paymentResult == null && mounted) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Payment cancelled')));
@@ -189,12 +189,12 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
     final response = await PaymentService().updatePayment(paymentId, {
       'status': 'PAID',
       // 'transactionId': paymentResult['transactionId'],
-      "staff_Id": Staff_Id.toString(),
+      "staff_Id": staffId.toString(),
       "paymentType": paymentMode,
       "updatedAt": _dateTime.toString(),
     });
 
-    final Id = widget.patient['Consultation']?[0]?['id'];
+    // final Id = widget.patient['Consultation']?[0]?['id'];
     final consultationId = widget.fee['consultation_Id'];
 
     if (type == 'REGISTRATIONFEE') {
@@ -223,7 +223,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
 
     setState(() => _isProcessing = false);
 
-    if (response != null && response['status'] == 'success') {
+    if (response != null && response['status'] == 'success' && mounted) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('✅ Payment Successful')));
@@ -389,7 +389,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -447,7 +447,7 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),
@@ -1771,11 +1771,11 @@ class _FeesPaymentPageState extends State<FeesPaymentPage> {
     );
   }
 
-  String _calculateTax(dynamic amount) {
-    if (amount == null) return "0.00";
-    double tax = (amount * 0.05);
-    return tax.toStringAsFixed(0);
-  }
+  // String _calculateTax(dynamic amount) {
+  //   if (amount == null) return "0.00";
+  //   double tax = (amount * 0.05);
+  //   return tax.toStringAsFixed(0);
+  // }
 
   String _calculateTotal(dynamic amount) {
     if (amount == null) return "0.00";

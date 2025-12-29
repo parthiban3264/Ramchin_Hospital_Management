@@ -34,8 +34,8 @@ class _FinancePageState extends State<FinancePage> {
   DateTime? _rangeStartDate;
   DateTime? _rangeEndDate;
 
-  DateTime? _endDate;
-  DateTime? _startDate;
+  DateTime? endDate;
+  DateTime? startDate;
 
   bool _loading = false;
   String? _error;
@@ -321,8 +321,8 @@ class _FinancePageState extends State<FinancePage> {
                       _tempDate = DateTime.now();
                       _rangeStartDate = null;
                       _rangeEndDate = null;
-                      _startDate = null;
-                      _endDate = null;
+                      startDate = null;
+                      endDate = null;
                     });
                   },
 
@@ -798,7 +798,7 @@ class _FinancePageState extends State<FinancePage> {
                   child: YearPicker(
                     firstDate: DateTime(2000),
                     lastDate: DateTime(2100),
-                    initialDate: _selectedDate,
+                    // initialDate: _selectedDate,
                     selectedDate: _selectedDate,
                     onChanged: (date) {
                       Navigator.pop(ctx, date.year);
@@ -1092,7 +1092,7 @@ class _FinancePageState extends State<FinancePage> {
       );
     }
 
-    Widget CashStatCard(
+    Widget cashStatCard(
       String title,
       double value, {
       Color color = Colors.blue,
@@ -1254,11 +1254,11 @@ class _FinancePageState extends State<FinancePage> {
         Row(
           children: [
             Expanded(
-              child: CashStatCard("Cash", totalCash, color: Colors.purple),
+              child: cashStatCard("Cash", totalCash, color: Colors.purple),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: CashStatCard("Online", totalOnline, color: Colors.red),
+              child: cashStatCard("Online", totalOnline, color: Colors.red),
             ),
           ],
         ),
@@ -1314,7 +1314,7 @@ class _FinancePageState extends State<FinancePage> {
         Row(
           children: [
             Expanded(
-              child: CashStatCard(
+              child: cashStatCard(
                 "Cash",
                 totalRegisterCash,
                 color: Colors.purple,
@@ -1322,7 +1322,7 @@ class _FinancePageState extends State<FinancePage> {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: CashStatCard(
+              child: cashStatCard(
                 "Online",
                 totalRegisterOnline,
                 color: Colors.red,
@@ -1367,7 +1367,7 @@ class _FinancePageState extends State<FinancePage> {
             }).toList(),
           ),
         );
-        ;
+
 
         rows.add(const SizedBox(height: 12));
       }
@@ -1382,7 +1382,7 @@ class _FinancePageState extends State<FinancePage> {
         Row(
           children: [
             Expanded(
-              child: CashStatCard(
+              child: cashStatCard(
                 "Cash",
                 totalMedicalCash,
                 color: Colors.purple,
@@ -1390,7 +1390,7 @@ class _FinancePageState extends State<FinancePage> {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: CashStatCard(
+              child: cashStatCard(
                 "Online",
                 totalMedicalOnline,
                 color: Colors.red,
@@ -1432,11 +1432,11 @@ class _FinancePageState extends State<FinancePage> {
         Row(
           children: [
             Expanded(
-              child: CashStatCard("Cash", totalTestCash, color: Colors.purple),
+              child: cashStatCard("Cash", totalTestCash, color: Colors.purple),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: CashStatCard(
+              child: cashStatCard(
                 "Online",
                 totalRegisterOnline,
                 color: Colors.red,
@@ -1503,11 +1503,11 @@ class _FinancePageState extends State<FinancePage> {
         Row(
           children: [
             Expanded(
-              child: CashStatCard("Cash", totalScanCash, color: Colors.purple),
+              child: cashStatCard("Cash", totalScanCash, color: Colors.purple),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: CashStatCard("Online", totalScanOnline, color: Colors.red),
+              child: cashStatCard("Online", totalScanOnline, color: Colors.red),
             ),
           ],
         ),

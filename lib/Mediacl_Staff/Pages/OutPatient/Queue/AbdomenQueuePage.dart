@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
 import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
+
 import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/testing&scanning_service.dart';
 import '../../../Widgets/global_notifiers.dart';
 import '../Page/AbdomenScanPage.dart';
-import '../Page/X-RayPage.dart';
 
 class AbdomenQueuePage extends StatefulWidget {
   const AbdomenQueuePage({super.key});
 
   @override
-  _AbdomenQueuePageState createState() => _AbdomenQueuePageState();
+  State<AbdomenQueuePage> createState() => _AbdomenQueuePageState();
 }
 
 class _AbdomenQueuePageState extends State<AbdomenQueuePage> {
@@ -113,7 +113,7 @@ class _AbdomenQueuePageState extends State<AbdomenQueuePage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -194,7 +194,7 @@ class _AbdomenQueuePageState extends State<AbdomenQueuePage> {
                   border: Border.all(color: primaryColor, width: 2),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
@@ -302,10 +302,10 @@ class _AbdomenQueuePageState extends State<AbdomenQueuePage> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: primaryColor.withOpacity(0.7)),
+              border: Border.all(color: primaryColor.withValues(alpha: 0.7)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black45.withOpacity(0.35),
+                  color: Colors.black45.withValues(alpha: 0.35),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -375,10 +375,7 @@ class _AbdomenQueuePageState extends State<AbdomenQueuePage> {
                   Row(
                     children: [
                       Expanded(
-                        child: _infoText(
-                          "ID",
-                          patient['id'].toString() ?? 'N/A',
-                        ),
+                        child: _infoText("ID", patient['id'].toString()),
                       ),
                     ],
                   ),

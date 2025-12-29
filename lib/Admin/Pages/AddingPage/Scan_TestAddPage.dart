@@ -221,7 +221,7 @@ import '../../../Pages/NotificationsPage.dart';
 import '../../../Services/Scan_Test_Get-Service.dart';
 
 class AddScanAndTestPage extends StatefulWidget {
-  const AddScanAndTestPage({Key? key}) : super(key: key);
+  const AddScanAndTestPage({super.key});
 
   @override
   State<AddScanAndTestPage> createState() => _AddScanAndTestPageState();

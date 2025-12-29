@@ -91,7 +91,7 @@ class _ReceptionDeskPageState extends State<ReceptionDeskPage> {
     setState(() => isFetching = true);
     try {
       final res = await patientService.getPatientByUserId(userId);
-      if (res != null && res['status'] == 'success') {
+      if (res['status'] == 'success') {
         setState(() => patientData = res['data'] ?? {});
       } else {
         _showSnackBar('Patient not found');
@@ -103,29 +103,29 @@ class _ReceptionDeskPageState extends State<ReceptionDeskPage> {
     }
   }
 
-  void _filterDoctors() {
-    final complaint = purposeController.text.toLowerCase();
-    String filterDept = '';
-    List<String> dermKeywords = ['skin', 'hair', 'nail', 'derma', 'rash'];
-
-    if (complaint.contains('heart') || complaint.contains('cardio')) {
-      filterDept = 'Cardiology';
-    } else if (dermKeywords.any((term) => complaint.contains(term))) {
-      filterDept = 'Dermatology';
-    }
-
-    setState(() {
-      filteredDoctors = filterDept.isEmpty
-          ? allDoctors
-          : allDoctors
-                .where(
-                  (d) =>
-                      d['department'].toString().toLowerCase() ==
-                      filterDept.toLowerCase(),
-                )
-                .toList();
-    });
-  }
+  // void _filterDoctors() {
+  //   final complaint = purposeController.text.toLowerCase();
+  //   String filterDept = '';
+  //   List<String> dermKeywords = ['skin', 'hair', 'nail', 'derma', 'rash'];
+  //
+  //   if (complaint.contains('heart') || complaint.contains('cardio')) {
+  //     filterDept = 'Cardiology';
+  //   } else if (dermKeywords.any((term) => complaint.contains(term))) {
+  //     filterDept = 'Dermatology';
+  //   }
+  //
+  //   setState(() {
+  //     filteredDoctors = filterDept.isEmpty
+  //         ? allDoctors
+  //         : allDoctors
+  //               .where(
+  //                 (d) =>
+  //                     d['department'].toString().toLowerCase() ==
+  //                     filterDept.toLowerCase(),
+  //               )
+  //               .toList();
+  //   });
+  // }
 
   // Fetch All doctors from DB
   Future<void> _fetchDoctors() async {
@@ -179,7 +179,7 @@ class _ReceptionDeskPageState extends State<ReceptionDeskPage> {
       }
 
       final bool paymentStatus = paymentResult['paymentStatus'] ?? false;
-      final String paymentMode = paymentResult['paymentMode'] ?? 'unknown';
+      // final String paymentMode = paymentResult['paymentMode'] ?? 'unknown';
       //
       final hospitalId = await doctorService.getHospitalId();
       final response = await consultationService.createConsultation({
@@ -205,12 +205,12 @@ class _ReceptionDeskPageState extends State<ReceptionDeskPage> {
         "sugar": sugarController.text,
       });
 
-      final a = {
-        "height": int.parse(heightController.text),
-        "weight": int.parse(weightController.text),
-        "bp": bpController.text,
-        "sugar": sugarController.text,
-      };
+      // final a = {
+      //   "height": int.parse(heightController.text),
+      //   "weight": int.parse(weightController.text),
+      //   "bp": bpController.text,
+      //   "sugar": sugarController.text,
+      // };
 
       if (response['status'] == 'success' &&
           patientUpdate['status'] == 'success') {
@@ -361,7 +361,9 @@ class _ReceptionDeskPageState extends State<ReceptionDeskPage> {
               margin: const EdgeInsets.all(8),
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: isSelected ? customGold.withOpacity(0.25) : Colors.white,
+                color: isSelected
+                    ? customGold.withValues(alpha: 0.25)
+                    : Colors.white,
                 border: Border.all(
                   color: isSelected ? customGold : Colors.grey.shade300,
                   width: isSelected ? 2 : 1,
@@ -369,7 +371,7 @@ class _ReceptionDeskPageState extends State<ReceptionDeskPage> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
+                    color: Colors.grey.withValues(alpha: 0.1),
                     blurRadius: 4,
                     offset: const Offset(1, 2),
                   ),
@@ -447,7 +449,7 @@ class _ReceptionDeskPageState extends State<ReceptionDeskPage> {
                               ),
                               decoration: BoxDecoration(
                                 color: selected
-                                    ? customGold.withOpacity(0.2)
+                                    ? customGold.withValues(alpha: 0.2)
                                     : Colors.white,
                                 border: Border.all(
                                   color: selected
@@ -491,7 +493,7 @@ class _ReceptionDeskPageState extends State<ReceptionDeskPage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),

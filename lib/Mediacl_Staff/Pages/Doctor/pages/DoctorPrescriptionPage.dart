@@ -16,11 +16,10 @@ import '../widgets/tonic_card.dart';
 class DoctorsPrescriptionPage extends StatefulWidget {
   final Map<String, dynamic> consultation;
 
-  const DoctorsPrescriptionPage({Key? key, required this.consultation})
-    : super(key: key);
+  const DoctorsPrescriptionPage({super.key, required this.consultation});
 
   @override
-  _DoctorsPrescriptionPageState createState() =>
+  State<DoctorsPrescriptionPage> createState() =>
       _DoctorsPrescriptionPageState();
 }
 
@@ -272,7 +271,7 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
         prescriptionData,
       );
       final consultationId = widget.consultation['id'];
-      if (consultationId == null) {
+      if (consultationId == null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Consultation ID not found')),
         );
@@ -292,36 +291,37 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
         }
       });
 
-      final consultation = await ConsultationService().updateConsultation(
-        consultationId,
-        {
-          'status': 'ONGOING',
-          // 'scanningTesting': scanningTesting,
-          'medicineTonic': medicineTonicInjection,
-          'Injection': injection,
-          'queueStatus': 'COMPLETED', //change
-          'updatedAt': _dateTime.toString(),
-        },
-      );
-      Navigator.pop(context, {
-        'medicine': submittedMedicines.isNotEmpty,
-        'tonic': submittedTonics.isNotEmpty,
-        'injection': submittedInjections.isNotEmpty,
+      await ConsultationService().updateConsultation(consultationId, {
+        'status': 'ONGOING',
+        // 'scanningTesting': scanningTesting,
+        'medicineTonic': medicineTonicInjection,
+        'Injection': injection,
+        'queueStatus': 'COMPLETED', //change
+        'updatedAt': _dateTime.toString(),
       });
+      if (mounted) {
+        Navigator.pop(context, {
+          'medicine': submittedMedicines.isNotEmpty,
+          'tonic': submittedTonics.isNotEmpty,
+          'injection': submittedInjections.isNotEmpty,
+        });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Prescription submitted successfully!"),
-          backgroundColor: Colors.green,
-        ),
-      );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Prescription submitted successfully!"),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Failed to submit: $e"),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Failed to submit: $e"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } finally {
       setState(() {
         _isLoading = false;
@@ -351,7 +351,7 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withValues(alpha: 0.2),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),
@@ -407,7 +407,7 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
                   ),
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(25),
                   ),
                   child: SizedBox(
@@ -423,7 +423,7 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
                         borderRadius: BorderRadius.circular(25),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.white.withOpacity(0.5),
+                            color: Colors.white.withValues(alpha: 0.5),
                             blurRadius: 5,
                             offset: const Offset(0, 2),
                           ),
@@ -671,26 +671,25 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
       return const SizedBox.shrink();
     }
 
-    double totalSum = 0.0;
+    // double parseTotal(dynamic total) {
+    //   return double.tryParse(total?.toString() ?? '0') ?? 0.0;
+    // }
+    //
+    // double totalSum = 0.0;
+    // totalSum += submittedMedicines.fold(
+    //   0.0,
+    //   (sum, item) => sum + parseTotal(item['total']),
+    // );
+    // totalSum += submittedTonics.fold(
+    //   0.0,
+    //   (sum, item) => sum + parseTotal(item['total']),
+    // );
+    // totalSum += submittedInjections.fold(
+    //   0.0,
+    //   (sum, item) => sum + parseTotal(item['total']),
+    // );
 
-    double _parseTotal(dynamic total) {
-      return double.tryParse(total?.toString() ?? '0') ?? 0.0;
-    }
-
-    totalSum += submittedMedicines.fold(
-      0.0,
-      (sum, item) => sum + _parseTotal(item['total']),
-    );
-    totalSum += submittedTonics.fold(
-      0.0,
-      (sum, item) => sum + _parseTotal(item['total']),
-    );
-    totalSum += submittedInjections.fold(
-      0.0,
-      (sum, item) => sum + _parseTotal(item['total']),
-    );
-
-    Widget _buildSection(String title, List<Map<String, dynamic>> items) {
+    Widget buildSection(String title, List<Map<String, dynamic>> items) {
       if (items.isEmpty) return const SizedBox.shrink();
 
       return Padding(
@@ -731,7 +730,7 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
               final mn = item['morning'] == true ? qtyI : 0;
               final af = item['afternoon'] == true ? qtyI : 0;
               final nt = item['night'] == true ? qtyI : 0;
-              final total = item['total']?.toString().trim() ?? '';
+              // final total = item['total']?.toString().trim() ?? '';
               final afterEat = item['afterEat'] == true
                   ? Colors.green.withValues(alpha: 0.2)
                   : Colors.orangeAccent.withValues(alpha: 0.2);
@@ -856,9 +855,9 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage>
               textAlign: TextAlign.center,
             ),
             const Divider(thickness: 2, color: Colors.grey, height: 24),
-            _buildSection("Medicines", submittedMedicines),
-            _buildSection("Tonics", submittedTonics),
-            _buildSection("Injections", submittedInjections),
+            buildSection("Medicines", submittedMedicines),
+            buildSection("Tonics", submittedTonics),
+            buildSection("Injections", submittedInjections),
             const SizedBox(height: 12),
             // Divider(color: Colors.grey.shade300),
             // Text(

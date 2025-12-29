@@ -38,7 +38,7 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
     String? role = prefs.getString('role');
     String? designation = prefs.getString('designation');
     String? hospitalName = prefs.getString('hospitalName');
-    String? hospitalId = prefs.getString('hospitalId');
+    // String? hospitalId = prefs.getString('hospitalId');
     String? hospitalStatus = prefs.getString('hospitalStatus');
     String? staffStatus = prefs.getString('staffStatus');
 

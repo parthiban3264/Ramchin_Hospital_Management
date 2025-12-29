@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
 
 import '../../../../utils/utils.dart';
 
@@ -97,7 +96,7 @@ class _UploadMedicineState extends State<UploadMedicine> {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final dir = await getApplicationDocumentsDirectory();
+        // final dir = await getApplicationDocumentsDirectory();
         final file = File(
           '/storage/emulated/0/Download/medicine_template.xlsx',
         );

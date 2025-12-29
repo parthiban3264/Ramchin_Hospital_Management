@@ -13,10 +13,10 @@ class DoctorScanPage extends StatefulWidget {
   final String scanName;
 
   const DoctorScanPage({
-    Key? key,
+    super.key,
     required this.scanName,
     required this.consultation,
-  }) : super(key: key);
+  });
 
   @override
   State<DoctorScanPage> createState() => _DoctorScanPageState();
@@ -164,7 +164,7 @@ class _DoctorScanPageState extends State<DoctorScanPage> {
     try {
       final hospitalId = widget.consultation['hospital_Id'];
       final patientId = widget.consultation['patient_Id'];
-      final consultationId = widget.consultation['id'];
+      // final consultationId = widget.consultation['id'];
       final prefs = await SharedPreferences.getInstance();
 
       final doctorId = prefs.getString('userId') ?? '';
@@ -201,13 +201,16 @@ class _DoctorScanPageState extends State<DoctorScanPage> {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Scan saved for ${widget.scanName}'),
-            backgroundColor: Colors.green.shade600,
-          ),
-        );
-        Navigator.pop(context, true);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Scan saved for ${widget.scanName}'),
+              backgroundColor: Colors.green.shade600,
+            ),
+          );
+          Navigator.pop(context, true);
+        }
+
         // Navigator.push(
         //   context,
         //   MaterialPageRoute(builder: (_) => const DrOutPatientQueuePage()),
@@ -216,12 +219,14 @@ class _DoctorScanPageState extends State<DoctorScanPage> {
         throw Exception('Failed to save scan: ${response.body}');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error saving scan: $e'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving scan: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     } finally {
       setState(() => _isLoading = false);
     }
@@ -246,7 +251,7 @@ class _DoctorScanPageState extends State<DoctorScanPage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),

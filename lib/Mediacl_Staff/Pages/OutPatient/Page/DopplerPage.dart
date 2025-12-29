@@ -294,12 +294,12 @@ class _DopplerPageState extends State<DopplerPage>
     // final doctorId = record['doctor_Id'] != null
     //     ? (record['doctor_Id'] as List).join(", ")
     //     : 'N/A';
-    final hospitalAdmins = record['Hospital']?['Admins'];
-    List<Map<String, dynamic>> adminList = [];
-
-    if (hospitalAdmins is List) {
-      adminList = hospitalAdmins.whereType<Map<String, dynamic>>().toList();
-    }
+    // final hospitalAdmins = record['Hospital']?['Admins'];
+    // List<Map<String, dynamic>> adminList = [];
+    //
+    // if (hospitalAdmins is List) {
+    //   adminList = hospitalAdmins.whereType<Map<String, dynamic>>().toList();
+    // }
 
     final doctorIdList = patient['doctor']?['id'] ?? '-';
     String doctorId = '';

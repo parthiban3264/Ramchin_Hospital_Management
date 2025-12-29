@@ -30,13 +30,13 @@ class _AssignRoleButtonState extends State<AssignRoleButton> {
       final permData = await ButtonPermissionService().getAllByHospital();
 
       // Remove Admin / Super Admin
-      final filteredStaff = (staffData ?? []).where((user) {
+      final filteredStaff = (staffData).where((user) {
         final role = (user["role"] ?? "").toString().toLowerCase();
         final status = (user["status"] ?? "").toString().toLowerCase();
         return role != "admin" && status != "inactive";
       }).toList();
 
-      final filteredDoctor = (staffData ?? []).where((user) {
+      final filteredDoctor = (staffData).where((user) {
         final role = (user["role"] ?? "").toString().toLowerCase() == "doctor";
         return role;
       }).toList();
@@ -55,7 +55,7 @@ class _AssignRoleButtonState extends State<AssignRoleButton> {
       setState(() {
         staff = filteredStaff;
         doctor = filteredDoctor;
-        permissions = permData ?? [];
+        permissions = permData;
         loading = false;
       });
     } catch (e) {
@@ -110,7 +110,7 @@ class _AssignRoleButtonState extends State<AssignRoleButton> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),

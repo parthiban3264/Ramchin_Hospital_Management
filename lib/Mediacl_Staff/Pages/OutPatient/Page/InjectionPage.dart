@@ -42,7 +42,7 @@ class _InjectionPageState extends State<InjectionPage> {
     setState(() => isLoading = true);
 
     final consultationId = widget.consultation['id'];
-    final queuestatus = widget.consultation['queueStatus'];
+    // final queuestatus = widget.consultation['queueStatus'];
     final bool scanningTesting =
         widget.consultation['scanningTesting'] ?? false;
     String newStatus = scanningTesting ? 'ENDPROCESSING' : 'COMPLETED';

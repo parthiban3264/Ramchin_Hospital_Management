@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
 import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
+
 import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/testing&scanning_service.dart';
 import '../../../Widgets/global_notifiers.dart';
 import '../Page/DopplerPage.dart';
-import '../Page/X-RayPage.dart';
 
-class DlopplerQueuePage extends StatefulWidget {
-  const DlopplerQueuePage({super.key});
+class DopplerQueuePage extends StatefulWidget {
+  const DopplerQueuePage({super.key});
 
   @override
-  _DlopplerQueuePageState createState() => _DlopplerQueuePageState();
+  State<DopplerQueuePage> createState() => _DopplerQueuePageState();
 }
 
-class _DlopplerQueuePageState extends State<DlopplerQueuePage> {
+class _DopplerQueuePageState extends State<DopplerQueuePage> {
   late Future<List<dynamic>> futureXRayQueue;
   final Color primaryColor = const Color(0xFFBF955E);
   int _currentIndex = 0; // Bottom tab index
@@ -113,7 +113,7 @@ class _DlopplerQueuePageState extends State<DlopplerQueuePage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -194,7 +194,7 @@ class _DlopplerQueuePageState extends State<DlopplerQueuePage> {
                   border: Border.all(color: primaryColor, width: 2),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
@@ -302,10 +302,10 @@ class _DlopplerQueuePageState extends State<DlopplerQueuePage> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: primaryColor.withOpacity(0.7)),
+              border: Border.all(color: primaryColor.withValues(alpha: 0.7)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black45.withOpacity(0.35),
+                  color: Colors.black45.withValues(alpha: 0.35),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -375,10 +375,7 @@ class _DlopplerQueuePageState extends State<DlopplerQueuePage> {
                   Row(
                     children: [
                       Expanded(
-                        child: _infoText(
-                          "ID",
-                          patient['id'].toString() ?? 'N/A',
-                        ),
+                        child: _infoText("ID", patient['id'].toString()),
                       ),
                     ],
                   ),

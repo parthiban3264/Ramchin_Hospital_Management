@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
 import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
+
 import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/testing&scanning_service.dart';
 import '../../../Widgets/global_notifiers.dart';
@@ -21,8 +22,6 @@ class _XRayQueuePageState extends State<XRayQueuePage> {
   @override
   void initState() {
     super.initState();
-
-
 
     xrayRefreshNotifier.addListener(() {
       if (xrayRefreshNotifier.value == true) {
@@ -218,10 +217,8 @@ class _XRayQueuePageState extends State<XRayQueuePage> {
                 ),
               ),
 
-
               // Queue list
               Expanded(child: _buildQueueList(tabRecords[_currentIndex])),
-
             ],
           );
         },
@@ -379,10 +376,7 @@ class _XRayQueuePageState extends State<XRayQueuePage> {
                   Row(
                     children: [
                       Expanded(
-                        child: _infoText(
-                          "ID",
-                          patient['id'].toString() ?? 'N/A',
-                        ),
+                        child: _infoText("ID", patient['id'].toString()),
                       ),
                     ],
                   ),

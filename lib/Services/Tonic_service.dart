@@ -113,7 +113,7 @@ class TonicService {
       } else {
         return [];
       }
-    } catch (e, stack) {
+    } catch (e) {
       return [];
     }
   }

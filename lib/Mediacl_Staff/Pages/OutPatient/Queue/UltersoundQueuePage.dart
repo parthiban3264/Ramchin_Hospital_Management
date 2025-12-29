@@ -1,26 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
 import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
+
 import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/testing&scanning_service.dart';
-
-import '../Page/CtScanPage.dart';
 import '../Page/UlterSoundPage.dart';
 
-class UltersoundQueuePage extends StatefulWidget {
-  const UltersoundQueuePage({Key? key}) : super(key: key);
-
+class UltrasoundQueuePage extends StatefulWidget {
+  const UltrasoundQueuePage({super.key});
 
   @override
-  _UltersoundQueuePageState createState() => _UltersoundQueuePageState();
+  State<UltrasoundQueuePage> createState() => _UltrasoundQueuePageState();
 }
 
-class _UltersoundQueuePageState extends State<UltersoundQueuePage> {
-
+class _UltrasoundQueuePageState extends State<UltrasoundQueuePage> {
   late Future<List<dynamic>> futureCtScanQueue;
   final Color primaryColor = const Color(0xFFBF955E);
   int _currentIndex = 0; // Bottom tab index
-
 
   @override
   void initState() {
@@ -28,7 +24,6 @@ class _UltersoundQueuePageState extends State<UltersoundQueuePage> {
 
     futureCtScanQueue = TestingScanningService().getAllTestingAndScanning(
       'HF ULTRA SOUND',
-
     );
   }
 
@@ -93,8 +88,6 @@ class _UltersoundQueuePageState extends State<UltersoundQueuePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
-
       backgroundColor: Colors.white,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(100),
@@ -108,7 +101,7 @@ class _UltersoundQueuePageState extends State<UltersoundQueuePage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -124,7 +117,6 @@ class _UltersoundQueuePageState extends State<UltersoundQueuePage> {
                     onPressed: () => Navigator.pop(context),
                   ),
                   const Text(
-
                     "Ultrasound Queue",
 
                     style: TextStyle(
@@ -174,7 +166,6 @@ class _UltersoundQueuePageState extends State<UltersoundQueuePage> {
 
           final records = snapshot.data ?? [];
 
-
           // Separate pending and completed records
           List<dynamic> pendingRecords = records
               .where((r) => r['queueStatus']?.toString() == 'PENDING')
@@ -184,21 +175,19 @@ class _UltersoundQueuePageState extends State<UltersoundQueuePage> {
               .toList();
           List<List<dynamic>> tabRecords = [pendingRecords, completedRecords];
 
-
           return Column(
             children: [
               // Waiting Patients Card
               Container(
                 margin: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: primaryColor, width: 2),
 
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
@@ -218,7 +207,6 @@ class _UltersoundQueuePageState extends State<UltersoundQueuePage> {
                       color: Colors.black,
                     ),
                   ),
-
                 ),
               ),
 
@@ -292,7 +280,7 @@ class _UltersoundQueuePageState extends State<UltersoundQueuePage> {
             final result = await Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => UltersoundPage(record: record, mode: mode),
+                builder: (_) => UltrasoundPage(record: record, mode: mode),
               ),
             );
             if (result == true) {
@@ -307,10 +295,10 @@ class _UltersoundQueuePageState extends State<UltersoundQueuePage> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: primaryColor.withOpacity(0.7)),
+              border: Border.all(color: primaryColor.withValues(alpha: 0.7)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black45.withOpacity(0.35),
+                  color: Colors.black45.withValues(alpha: 0.35),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -381,10 +369,7 @@ class _UltersoundQueuePageState extends State<UltersoundQueuePage> {
                   Row(
                     children: [
                       Expanded(
-                        child: _infoText(
-                          "ID",
-                          patient['id'].toString() ?? 'N/A',
-                        ),
+                        child: _infoText("ID", patient['id'].toString()),
                       ),
                     ],
                   ),
@@ -414,7 +399,6 @@ class _UltersoundQueuePageState extends State<UltersoundQueuePage> {
           ),
         );
       },
-
     );
   }
 

@@ -13,10 +13,10 @@ class DoctorTestPage extends StatefulWidget {
   final Map<String, dynamic> consultation;
 
   const DoctorTestPage({
-    Key? key,
+    super.key,
     required this.testName,
     required this.consultation,
-  }) : super(key: key);
+  });
 
   @override
   State<DoctorTestPage> createState() => _DoctorTestPageState();
@@ -203,7 +203,7 @@ class _DoctorTestPageState extends State<DoctorTestPage> {
 
       final hospitalId = widget.consultation['hospital_Id'];
       final patientId = widget.consultation['patient_Id'];
-      final consultationId = widget.consultation['id'];
+      // final consultationId = widget.consultation['id'];
       final doctorId = prefs.getString('userId') ?? '';
 
       final data = {
@@ -238,14 +238,16 @@ class _DoctorTestPageState extends State<DoctorTestPage> {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Test saved for ${widget.testName}'),
-            backgroundColor: Colors.green.shade600,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Test saved for ${widget.testName}'),
+              backgroundColor: Colors.green.shade600,
+            ),
+          );
+          Navigator.pop(context, true);
+        }
 
-        Navigator.pop(context, true);
         // Navigator.push(
         //   context,
         //   MaterialPageRoute(builder: (_) => const DrOutPatientQueuePage()),
@@ -254,12 +256,14 @@ class _DoctorTestPageState extends State<DoctorTestPage> {
         throw Exception('Failed to save test: ${response.body}');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error saving test: $e'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving test: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     } finally {
       setState(() {
         _isLoading = false;
@@ -286,7 +290,7 @@ class _DoctorTestPageState extends State<DoctorTestPage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -382,7 +386,7 @@ class _DoctorTestPageState extends State<DoctorTestPage> {
     List<String> options,
     Map<String, dynamic>? testData,
   ) {
-    final prices = testData?['options'] ?? {};
+    // final prices = testData?['options'] ?? {};
 
     return Container(
       width: double.infinity,
@@ -404,7 +408,7 @@ class _DoctorTestPageState extends State<DoctorTestPage> {
           else
             ...options.map(
               (option) => CheckboxListTile(
-                title: Text("$option"),
+                title: Text(option),
                 value: selectedOptions.contains(option),
                 onChanged: (selected) {
                   setState(() {

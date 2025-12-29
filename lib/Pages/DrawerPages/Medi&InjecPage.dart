@@ -1,21 +1,22 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../Admin/Colors/Colors.dart';
+
 import '../../Services/Medicine&Injection_service.dart';
 
 const Color customGold = Color(0xFFBF955E);
 
-class MediAndInjecPage extends StatefulWidget {
+class MediAndInjectionPage extends StatefulWidget {
   final Map<String, dynamic> data;
 
-  const MediAndInjecPage({Key? key, required this.data}) : super(key: key);
+  const MediAndInjectionPage({super.key, required this.data});
 
   @override
-  State<MediAndInjecPage> createState() => _MediAndInjecPageState();
+  State<MediAndInjectionPage> createState() => _MediAndInjectionPageState();
 }
 
-class _MediAndInjecPageState extends State<MediAndInjecPage> {
+class _MediAndInjectionPageState extends State<MediAndInjectionPage> {
   final MedicineInjectionService _service = MedicineInjectionService();
   late Map<String, dynamic> item;
 
@@ -53,16 +54,22 @@ class _MediAndInjecPageState extends State<MediAndInjecPage> {
       });
       if (res['status'] == 'success') {
         setState(() => item['medicineStatus'] = newStatus);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Medicine marked ${newStatus ? 'Given' : 'Pending'}'),
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Medicine marked ${newStatus ? 'Given' : 'Pending'}',
+              ),
+            ),
+          );
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
     }
   }
 
@@ -75,18 +82,22 @@ class _MediAndInjecPageState extends State<MediAndInjecPage> {
       });
       if (res['status'] == 'success') {
         setState(() => item['injectionStatus'] = newStatus);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Injection marked ${newStatus ? 'Given' : 'Pending'}',
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Injection marked ${newStatus ? 'Given' : 'Pending'}',
+              ),
             ),
-          ),
-        );
+          );
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
     }
   }
 
@@ -103,14 +114,18 @@ class _MediAndInjecPageState extends State<MediAndInjecPage> {
           item['medicineStatus'] = true;
           item['injectionStatus'] = true;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Treatment marked as Completed ✅')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Treatment marked as Completed ✅')),
+          );
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
     }
   }
 
