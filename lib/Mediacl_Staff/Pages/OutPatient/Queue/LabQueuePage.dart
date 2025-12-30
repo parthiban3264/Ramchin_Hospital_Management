@@ -297,13 +297,20 @@ class _LabQueuePageState extends State<LabQueuePage> {
       itemBuilder: (context, index) {
         String patientId = records.keys.elementAt(index);
         List<dynamic> tests = records[patientId]!;
-
+        print('test $tests');
         final patient = tests.first['Patient'] ?? {};
         final gender = (patient['gender'] ?? 'other').toString();
+        final tokenNo =
+            (patient['tokenNo'] == null ||
+                patient['tokenNo'] == 0 ||
+                patient['tokenNo'] == 'N/A')
+            ? '-'
+            : patient['tokenNo'].toString();
 
         return PatientTestCard(
           patient: patient,
           tests: tests,
+          tokenNo: tokenNo,
           genderColor: _genderColor(gender),
           genderIcon: _genderIcon(gender),
           onRefresh: () {
@@ -444,6 +451,7 @@ class PatientTestCard extends StatefulWidget {
   final Map<String, dynamic> patient;
   final List<dynamic> tests;
   final Color genderColor;
+  final String tokenNo;
   final IconData genderIcon;
   final VoidCallback onRefresh;
 
@@ -454,6 +462,7 @@ class PatientTestCard extends StatefulWidget {
     required this.genderColor,
     required this.genderIcon,
     required this.onRefresh,
+    required this.tokenNo,
   }) : super(key: key);
 
   @override
@@ -515,6 +524,29 @@ class _PatientTestCardState extends State<PatientTestCard> {
             indent: 25,
             endIndent: 25,
           ),
+          Row(
+            //crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Token No: ',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey[700],
+                ),
+              ),
+              Text(
+                widget.tokenNo,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 5),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
             child: Column(
@@ -728,6 +760,26 @@ class _SugarPatientCard extends StatelessWidget {
           children: [
             /// Header
             Row(
+              children: [
+                Icon(genderIcon, color: genderColor, size: 28),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    name,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: genderColor,
+                    ),
+                  ),
+                ),
+                const Chip(
+                  label: Text("Sugar Test"),
+                  backgroundColor: Color(0xFFE8F5E9),
+                ),
+              ],
+            ),
+            Row(
               //crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -746,26 +798,6 @@ class _SugarPatientCard extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                     color: Colors.black,
                   ),
-                ),
-              ],
-            ),
-            Row(
-              children: [
-                Icon(genderIcon, color: genderColor, size: 28),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    name,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: genderColor,
-                    ),
-                  ),
-                ),
-                const Chip(
-                  label: Text("Sugar Test"),
-                  backgroundColor: Color(0xFFE8F5E9),
                 ),
               ],
             ),

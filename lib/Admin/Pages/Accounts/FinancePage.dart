@@ -902,6 +902,9 @@ class _FinancePageState extends State<FinancePage> {
     double medInjection = 0;
 
     double totalDoctorFee = 0;
+    double totalEmergencyFee = 0;
+    double totalSugarFee = 0;
+    double totalRegistrationFee = 0;
 
     Map<String, Map<String, dynamic>> doctorFeeTotals = {};
 
@@ -971,36 +974,57 @@ class _FinancePageState extends State<FinancePage> {
       //   }
       // }
 
-      final consultation = p['Consultation'];
-
-      if (consultation != null && consultation['consultationFee'] != null) {
-        final double fee = sum(consultation['consultationFee']);
-
-        if (fee <= 0) continue;
-
-        final String? doctorId = consultation['doctor_Id']?.toString();
-        final String? doctorName = getDoctorName(p);
-
-        // Skip empty doctor
-        if (doctorId == null || doctorName == null || doctorName.isEmpty) {
-          continue;
-        }
-
-        totalDoctorFee += fee;
-
-        if (!doctorFeeTotals.containsKey(doctorId)) {
-          doctorFeeTotals[doctorId] = {'name': doctorName, 'total': fee};
-        } else {
-          doctorFeeTotals[doctorId]!['total'] =
-              (doctorFeeTotals[doctorId]!['total'] as double) + fee;
-        }
-      }
-
       // REGISTRATION
       if (type == "REGISTRATIONFEE") {
         totalRegister += amount;
         if (paymentType == "MANUALPAY") totalRegisterCash += amount;
         if (paymentType == "ONLINEPAY") totalRegisterOnline += amount;
+        final consultation = p['Consultation'];
+        // registrationFee
+        if (consultation['registrationFee'] != null) {
+          final double fee = sum(consultation['registrationFee']);
+          if (fee > 0) {
+            totalRegistrationFee += fee;
+          }
+        }
+        // Sugar Test Fee
+        if (consultation['sugarTestFee'] != null) {
+          final double fee = sum(consultation['sugarTestFee']);
+          if (fee > 0) {
+            totalSugarFee += fee;
+          }
+        }
+
+        // Emergency Fee
+        if (consultation['emergencyFee'] != null) {
+          final double fee = sum(consultation['emergencyFee']);
+          if (fee > 0) {
+            totalEmergencyFee += fee;
+          }
+        }
+
+        if (consultation != null && consultation['consultationFee'] != null) {
+          final double fee = sum(consultation['consultationFee']);
+
+          if (fee <= 0) continue;
+
+          final String? doctorId = consultation['doctor_Id']?.toString();
+          final String? doctorName = getDoctorName(p);
+
+          // Skip empty doctor
+          if (doctorId == null || doctorName == null || doctorName.isEmpty) {
+            continue;
+          }
+
+          totalDoctorFee += fee;
+
+          if (!doctorFeeTotals.containsKey(doctorId)) {
+            doctorFeeTotals[doctorId] = {'name': doctorName, 'total': fee};
+          } else {
+            doctorFeeTotals[doctorId]!['total'] =
+                (doctorFeeTotals[doctorId]!['total'] as double) + fee;
+          }
+        }
       }
 
       // MEDICAL
@@ -1331,7 +1355,34 @@ class _FinancePageState extends State<FinancePage> {
           ],
         ),
       );
-      rows.add(const SizedBox(height: 12));
+      rows.add(const SizedBox(height: 10));
+
+      rows.add(
+        statCardTitleCustom(
+          title: "Registration Fee Collection",
+          amount: totalRegistrationFee,
+          color: Colors.grey.shade200,
+        ),
+      );
+      rows.add(const SizedBox(height: 6));
+      rows.add(
+        statCardTitleCustom(
+          title: "Emergency Fee Collection",
+          amount: totalEmergencyFee,
+          color: Colors.grey.shade200,
+        ),
+      );
+      rows.add(const SizedBox(height: 6));
+
+      // DOCTOR FEE
+      rows.add(
+        statCardTitleCustom(
+          title: "Sugar Fee Collection",
+          amount: totalSugarFee,
+          color: Colors.grey.shade200,
+        ),
+      );
+      rows.add(const SizedBox(height: 6));
       // TOTAL DOCTOR FEE
       rows.add(
         statCardTitleCustom(
@@ -1367,7 +1418,6 @@ class _FinancePageState extends State<FinancePage> {
             }).toList(),
           ),
         );
-
 
         rows.add(const SizedBox(height: 12));
       }

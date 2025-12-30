@@ -435,6 +435,10 @@ class _PatientDescriptionPageState extends State<PatientDescriptionPage>
     final id = consultation['patient_Id'].toString();
 
     final complaint = consultation['purpose'] ?? '_';
+    final tokenNo =
+        (consultation['tokenNo'] == null || consultation['tokenNo'] == 0)
+        ? '-'
+        : consultation['tokenNo'].toString();
     final phone = patient['phone'] ?? '_';
     final address = patient['address']?['Address'] ?? '-';
     final gender = patient['gender'] ?? '_';
@@ -601,6 +605,7 @@ class _PatientDescriptionPageState extends State<PatientDescriptionPage>
               id: id,
               phone: phone,
               complaint: complaint,
+              tokenNo: tokenNo,
               address: address,
               gender: gender,
               dob: formattedDob,
@@ -1108,6 +1113,7 @@ class _PatientDescriptionPageState extends State<PatientDescriptionPage>
     required String name,
     required String id,
     required String phone,
+    required String tokenNo,
     required String complaint,
     required String address,
     required String gender,
@@ -1181,8 +1187,31 @@ class _PatientDescriptionPageState extends State<PatientDescriptionPage>
                   ),
                 ],
               ),
+              const SizedBox(height: 8),
 
-              const SizedBox(height: 12),
+              Row(
+                //crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Token No: ',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                  Text(
+                    tokenNo,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 3),
               Divider(color: Colors.grey.shade300),
 
               /// 🔹 Always Visible Info

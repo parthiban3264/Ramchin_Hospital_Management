@@ -168,6 +168,11 @@ class _SymptomsQueuePageState extends State<SymptomsQueuePage> {
               print('item $item');
               final consultationId = item['consultation_Id'];
               final consultationData = item['Consultation'];
+              final tokenNo =
+                  (consultationData['tokenNo'] == null ||
+                      consultationData['tokenNo'] == 0)
+                  ? '-'
+                  : consultationData['tokenNo'].toString();
               final sugarData = item['Consultation']['sugerTest'] ?? false;
               print('sugarData $sugarData');
               final patient = item['Patient'] ?? <String, dynamic>{};
@@ -229,7 +234,30 @@ class _SymptomsQueuePageState extends State<SymptomsQueuePage> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 2),
+                      Row(
+                        //crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Token No: ',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                          Text(
+                            tokenNo,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 5),
 
                       // Divider
                       Align(

@@ -506,6 +506,9 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
     final bloodGroup = patient['bldGrp']?.toString() ?? 'N/A';
     final doctorName = patient['doctor']?['name'].toString() ?? 'N/A';
     final doctorId = patient['doctor']?['id']?.toString() ?? 'N/A';
+    final tokenNo = (patient['tokenNo'] == null || patient['tokenNo'] == 0)
+        ? '-'
+        : patient['tokenNo'].toString();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F4F4),
@@ -659,6 +662,7 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
                           address: address,
                           dob: dob,
                           age: age,
+                          tokenNo: tokenNo,
                           // gender: gender,
                           genderColor: _genderColor(gender),
                           genderIcon: _genderIcon(gender),
@@ -808,6 +812,7 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
     required String address,
     required String dob,
     required String age,
+    required String tokenNo,
     // required String gender,
     required Color genderColor,
     required IconData genderIcon,
@@ -881,8 +886,34 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
               ),
             ],
           ),
+
           const SizedBox(height: 6),
           Divider(color: Colors.grey.shade300),
+
+          Row(
+            //crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Token No: ',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey[700],
+                ),
+              ),
+              Text(
+                tokenNo,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 5),
+
           _infoRow("Patient ID", id),
           _infoRow("Cell No", phone),
           _infoRow("Address", address),

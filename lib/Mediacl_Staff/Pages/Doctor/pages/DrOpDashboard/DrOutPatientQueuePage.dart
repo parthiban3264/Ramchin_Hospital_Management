@@ -246,9 +246,13 @@ class _DrOutPatientQueuePageState extends State<DrOutPatientQueuePage> {
   }
 
   Widget _buildPatientCard(Map<String, dynamic> consultation) {
+    print('consultation $consultation');
     final patient = consultation['Patient'] ?? {};
     final name = patient['name'] ?? 'Unknown';
-
+    final tokenNo =
+        (consultation['tokenNo'] == null || consultation['tokenNo'] == 0)
+        ? '-'
+        : consultation['tokenNo'].toString();
     final id = consultation['patient_Id'].toString();
 
     final phone = patient['phone'] ?? '-';
@@ -363,6 +367,30 @@ class _DrOutPatientQueuePageState extends State<DrOutPatientQueuePage> {
               ),
               const SizedBox(height: 10),
               const Divider(),
+              Row(
+                //crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Token No: ',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                  Text(
+                    tokenNo,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+
               _buildInfoRow("Patient ID:", id),
               _buildInfoRow("Cell No:", phone),
               _buildInfoRow("Address:", address),
