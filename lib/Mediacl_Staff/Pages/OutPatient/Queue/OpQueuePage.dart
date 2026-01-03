@@ -768,6 +768,8 @@ class _OutpatientQueuePageState extends State<OutpatientQueuePage>
                                   sugar: sugarValue,
                                   consultationData: item,
                                   mode: 2,
+                                  history: false,
+                                  index: 0,
                                 ),
                               ),
                             );

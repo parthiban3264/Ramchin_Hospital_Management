@@ -232,16 +232,16 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
     setState(() => _isLoading = true);
     try {
       final description = _descriptionController.text.trim();
-      if (description.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please enter a description before submitting.'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-        setState(() => _isLoading = false);
-        return;
-      }
+      // if (description.isEmpty) {
+      //   ScaffoldMessenger.of(context).showSnackBar(
+      //     const SnackBar(
+      //       content: Text('Please enter a description before submitting.'),
+      //       backgroundColor: Colors.redAccent,
+      //     ),
+      //   );
+      //   setState(() => _isLoading = false);
+      //   return;
+      // }
 
       final test = widget.allTests[widget.currentIndex];
 
@@ -311,6 +311,7 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
       // final consultationId = consultationList.isNotEmpty
       //     ? consultationList[0]['id']
       //     : null;
+      print('widget ${widget.allTests}');
       final List testIds = widget.allTests.map((test) => test['id']).toList();
 
       for (final id in testIds) {
@@ -321,10 +322,12 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
           'staff_Id': Staff_Id,
         });
       }
-
+      final bool consultationTest =
+          widget.allTests[0]['Patient']['isTestOnly'] ?? false;
+      print('consultationTest $consultationTest');
       if (consultationId != null) {
         await ConsultationService().updateConsultation(consultationId, {
-          'status': 'ENDPROCESSING',
+          'status': consultationTest == false ? 'ENDPROCESSING' : "COMPLETED",
           'scanningTesting': false,
           'updatedAt': _dateTime,
         });
@@ -502,6 +505,7 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
     final title = record['title']?.toString() ?? 'N/A';
     final dob = _formatDob(patient['dob']?.toString());
     final age = _calculateAge(patient['dob']?.toString());
+    final reason = record['reason'] ?? '-';
     final gender = patient['gender']?.toString() ?? 'N/A';
     final bloodGroup = patient['bldGrp']?.toString() ?? 'N/A';
     final doctorName = patient['doctor']?['name'].toString() ?? 'N/A';
@@ -662,6 +666,7 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
                           address: address,
                           dob: dob,
                           age: age,
+
                           tokenNo: tokenNo,
                           // gender: gender,
                           genderColor: _genderColor(gender),
@@ -707,6 +712,7 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
                           _buildMedicalCard(
                             title: title,
                             doctorName: doctorName,
+                            reason: reason,
                             doctorId: doctorId,
                             selectedOptions: _selectedOptions,
                             isCompleted: isCompleted,
@@ -942,6 +948,7 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
   Widget _buildMedicalCard({
     required String title,
     required String doctorName,
+    required String reason,
     required String doctorId,
     required List<String> selectedOptions,
     required bool isCompleted,
@@ -980,6 +987,43 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
           const Divider(height: 25, color: Colors.grey),
           _infoRow("Doctor Name", doctorName),
           _infoRow("Doctor ID", doctorId),
+          const SizedBox(height: 5),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    Text(
+                      'Doctor Description ',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFBF955E),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  reason,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    height: 1.5,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ),
           const Divider(height: 30, color: Colors.grey),
           _sectionHeader("Selected Options"),
           const SizedBox(height: 10),

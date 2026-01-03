@@ -410,140 +410,135 @@ class _PatientDescriptionPageState extends State<PatientDescriptionPage>
           backgroundColor: Colors.grey.shade100,
           appBar: _buildAppBar(isButtonEnabled), // Extracted reusable AppBar
 
-          body: _currentTabIndex == 0
-              ? SingleChildScrollView(
-                  padding: const EdgeInsets.all(8),
-                  child: Column(
-                    children: [
-                      // Show only report card and actions and button for modes 1, 2
-                      if (widget.mode == 1)
-                        ReportCardWidget(
-                          record: widget.consultation,
-                          doctorName: doctorName,
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              children: [
+                // Show only report card and actions and button for modes 1, 2
+                if (widget.mode == 1)
+                  ReportCardWidget(
+                    record: widget.consultation,
+                    doctorName: doctorName,
 
-                          staffName: _labName,
+                    staffName: _labName,
 
-                          hospitalPhotoBase64: logo ?? '',
-                          optionResults: allTestsOptionResults,
-                          testTable: allTestsReportTable,
-                          mode: widget.mode,
-                          showButtons: false,
-                        ),
-                      if (widget.mode == 2)
-                        ScanReportCard(
-                          scanData: widget.consultation,
-                          hospitalLogo: logo,
-                          mode: 1,
-                        ),
+                    hospitalPhotoBase64: logo ?? '',
+                    optionResults: allTestsOptionResults,
+                    testTable: allTestsReportTable,
+                    mode: widget.mode,
+                    showButtons: false,
+                  ),
+                if (widget.mode == 2)
+                  ScanReportCard(
+                    scanData: widget.consultation,
+                    hospitalLogo: logo,
+                    mode: 1,
+                  ),
 
-                      if (widget.mode == 3) ...[
-                        // ==========================
-                        //       TEST REPORT CARD
-                        // ==========================
-                        _buildExpandableCard(
-                          title: "Test Report",
-                          icon: Icons.medical_services_rounded,
-                          expanded: showTestReport,
-                          onExpand: (v) => setState(() => showTestReport = v),
-                          child: ReportCardWidget(
-                            record: widget.consultation,
-                            doctorName: doctorName,
-                            staffName: _labName,
-                            hospitalPhotoBase64: logo ?? '',
-                            optionResults: allTestsOptionResults,
-                            testTable: allTestsReportTable,
-                            mode: widget.mode,
-                            showButtons: false,
-                          ),
-                        ),
+                if (widget.mode == 3) ...[
+                  // ==========================
+                  //       TEST REPORT CARD
+                  // ==========================
+                  _buildExpandableCard(
+                    title: "Test Report",
+                    icon: Icons.medical_services_rounded,
+                    expanded: showTestReport,
+                    onExpand: (v) => setState(() => showTestReport = v),
+                    child: ReportCardWidget(
+                      record: widget.consultation,
+                      doctorName: doctorName,
+                      staffName: _labName,
+                      hospitalPhotoBase64: logo ?? '',
+                      optionResults: allTestsOptionResults,
+                      testTable: allTestsReportTable,
+                      mode: widget.mode,
+                      showButtons: false,
+                    ),
+                  ),
 
-                        const SizedBox(height: 18),
+                  const SizedBox(height: 18),
 
-                        // ==========================
-                        //       SCAN REPORT CARD
-                        // ==========================
-                        _buildExpandableCard(
-                          title: "Scan Report",
-                          icon: Icons.document_scanner,
-                          expanded: showScanReport,
-                          onExpand: (v) => setState(() => showScanReport = v),
-                          child: ScanReportCard(
-                            scanData: widget.consultation,
-                            hospitalLogo: logo,
-                            mode: 1,
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 10),
+                  // ==========================
+                  //       SCAN REPORT CARD
+                  // ==========================
+                  _buildExpandableCard(
+                    title: "Scan Report",
+                    icon: Icons.document_scanner,
+                    expanded: showScanReport,
+                    onExpand: (v) => setState(() => showScanReport = v),
+                    child: ScanReportCard(
+                      scanData: widget.consultation,
+                      hospitalLogo: logo,
+                      mode: 1,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 10),
 
-                      Container(
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.blue.shade600,
-                              Colors.blue.shade400,
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.blue.shade200.withOpacity(0.4),
-                              blurRadius: 6,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: ElevatedButton.icon(
-                          icon: const Icon(Icons.history, color: Colors.white),
-                          label: const Text(
-                            "View Patient History",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.transparent,
-                            shadowColor: Colors.transparent,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    PatientHistoryInDoctor(patientId: id),
-                              ),
-                            );
-                          },
-                        ),
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    gradient: LinearGradient(
+                      colors: [Colors.blue.shade600, Colors.blue.shade400],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.blue.shade200.withOpacity(0.4),
+                        blurRadius: 6,
+                        offset: const Offset(0, 3),
                       ),
-
-                      const SizedBox(height: 10),
-                      _buildSectionCard(
-                        title: 'Consultation Actions',
-                        patientStatus: patientStatus,
-                        firstTest: null,
-                        context: context,
-                        consultation: consultation,
-                      ),
-
-                      const SizedBox(height: 12),
-                      _buildExitButton(isButtonEnabled),
-                      const SizedBox(height: 10),
-
-                      _buildFinishedButton(isButtonEnabled),
-                      const SizedBox(height: 30),
                     ],
                   ),
-                )
-              : EditTestScanTab(),
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.history, color: Colors.white),
+                    label: const Text(
+                      "View Patient History",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PatientHistoryInDoctor(patientId: id),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+                _buildSectionCard(
+                  title: 'Consultation Actions',
+                  patientStatus: patientStatus,
+                  firstTest: null,
+                  context: context,
+                  consultation: consultation,
+                ),
+
+                const SizedBox(height: 12),
+                _buildExitButton(isButtonEnabled),
+                const SizedBox(height: 10),
+
+                _buildFinishedButton(isButtonEnabled),
+                const SizedBox(height: 30),
+              ],
+            ),
+          ),
+          // : EditTestScanTab(),
         ),
       );
     }
@@ -552,36 +547,48 @@ class _PatientDescriptionPageState extends State<PatientDescriptionPage>
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
       appBar: _buildAppBar(isButtonEnabled),
-      body: _currentTabIndex == 0
-          ? SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (patientStatus == 'endprocessing' &&
-                      consultation['TeatingAndScanningPatient'] != null)
-                    _buildTestResultCard(
-                      (consultation['TeatingAndScanningPatient'] as List)
-                              .isNotEmpty
-                          ? consultation['TeatingAndScanningPatient'][0]
-                          : null,
-                    ),
-                  const SizedBox(height: 4),
-                  _buildPatientDetailsCard(
-                    name: name,
-                    id: id,
-                    phone: phone,
-                    complaint: complaint,
-                    tokenNo: tokenNo,
-                    address: address,
-                    gender: gender,
-                    dob: formattedDob,
-                    age: age.toString(),
-                    bloodGroup: bloodGroup,
-                    createdAt: createdAt,
+      body:
+          // _currentTabIndex == 0
+          //     ?
+          SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (patientStatus == 'endprocessing' &&
+                    consultation['TeatingAndScanningPatient'] != null)
+                  _buildTestResultCard(
+                    (consultation['TeatingAndScanningPatient'] as List)
+                            .isNotEmpty
+                        ? consultation['TeatingAndScanningPatient'][0]
+                        : null,
                   ),
+                const SizedBox(height: 4),
+                _buildPatientDetailsCard(
+                  name: name,
+                  id: id,
+                  phone: phone,
+                  complaint: complaint,
+                  tokenNo: tokenNo,
+                  address: address,
+                  gender: gender,
+                  dob: formattedDob,
+                  age: age.toString(),
+                  bloodGroup: bloodGroup,
+                  createdAt: createdAt,
+                ),
 
-                  if (_hasAnyVital(
+                if (_hasAnyVital(
+                  temperature: temperature,
+                  bloodPressure: bloodPressure,
+                  sugar: sugar,
+                  height: height,
+                  weight: weight,
+                  BMI: BMI,
+                  PK: PK,
+                  SpO2: SpO2,
+                ))
+                  _buildVitalsDetailsCards(
                     temperature: temperature,
                     bloodPressure: bloodPressure,
                     sugar: sugar,
@@ -590,85 +597,74 @@ class _PatientDescriptionPageState extends State<PatientDescriptionPage>
                     BMI: BMI,
                     PK: PK,
                     SpO2: SpO2,
-                  ))
-                    _buildVitalsDetailsCards(
-                      temperature: temperature,
-                      bloodPressure: bloodPressure,
-                      sugar: sugar,
-                      height: height,
-                      weight: weight,
-                      BMI: BMI,
-                      PK: PK,
-                      SpO2: SpO2,
-                    ),
-                  const SizedBox(height: 10),
-
-                  Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      gradient: LinearGradient(
-                        colors: [Colors.blue.shade600, Colors.blue.shade400],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.blue.shade200.withOpacity(0.4),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: ElevatedButton.icon(
-                      icon: const Icon(Icons.history, color: Colors.white),
-                      label: const Text(
-                        "View Patient History",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                PatientHistoryInDoctor(patientId: id),
-                          ),
-                        );
-                      },
-                    ),
                   ),
+                const SizedBox(height: 10),
 
-                  const SizedBox(height: 10),
-                  _buildSectionCard(
-                    title: 'Consultation Actions',
-                    patientStatus: patientStatus,
-                    firstTest: null,
-                    context: context,
-                    consultation: consultation,
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    gradient: LinearGradient(
+                      colors: [Colors.blue.shade600, Colors.blue.shade400],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.blue.shade200.withOpacity(0.4),
+                        blurRadius: 6,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
                   ),
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.history, color: Colors.white),
+                    label: const Text(
+                      "View Patient History",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PatientHistoryInDoctor(patientId: id),
+                        ),
+                      );
+                    },
+                  ),
+                ),
 
-                  const SizedBox(height: 12),
-                  _buildExitButton(isButtonEnabled),
-                  const SizedBox(height: 10),
+                const SizedBox(height: 10),
+                _buildSectionCard(
+                  title: 'Consultation Actions',
+                  patientStatus: patientStatus,
+                  firstTest: null,
+                  context: context,
+                  consultation: consultation,
+                ),
 
-                  _buildFinishedButton(isButtonEnabled),
+                const SizedBox(height: 12),
+                _buildExitButton(isButtonEnabled),
+                const SizedBox(height: 10),
 
-                  const SizedBox(height: 30),
-                ],
-              ),
-            )
-          : EditTestScanTab(),
+                _buildFinishedButton(isButtonEnabled),
+
+                const SizedBox(height: 30),
+              ],
+            ),
+          ),
+      // : EditTestScanTab(),
     );
   }
 
@@ -676,7 +672,7 @@ class _PatientDescriptionPageState extends State<PatientDescriptionPage>
   // Extract AppBar builder for reuse
   PreferredSizeWidget _buildAppBar(bool isButtonEnabled) {
     return PreferredSize(
-      preferredSize: Size.fromHeight(isAssistantDoctor ? 130 : 100),
+      preferredSize: Size.fromHeight(80),
       child: Column(
         children: [
           // ---- Existing AppBar UI ----
@@ -718,23 +714,23 @@ class _PatientDescriptionPageState extends State<PatientDescriptionPage>
           ),
 
           // ---- TABS ONLY FOR ASSISTANT DOCTOR ----
-          if (isAssistantDoctor)
-            Column(
-              children: [
-                const SizedBox(height: 8), // gap below AppBar
-                TabBar(
-                  controller: _tabController,
-                  indicatorColor: primaryColor,
-                  labelColor: Colors.black,
-                  unselectedLabelColor: Colors.grey,
-                  tabs: const [
-                    Tab(text: 'Home'),
-                    Tab(text: 'Edit'),
-                  ],
-                ),
-                const SizedBox(height: 2), // small bottom gap
-              ],
-            ),
+          // if (isAssistantDoctor)
+          //   Column(
+          //     children: [
+          //       const SizedBox(height: 8), // gap below AppBar
+          //       TabBar(
+          //         controller: _tabController,
+          //         indicatorColor: primaryColor,
+          //         labelColor: Colors.black,
+          //         unselectedLabelColor: Colors.grey,
+          //         tabs: const [
+          //           Tab(text: 'Home'),
+          //           Tab(text: 'Edit'),
+          //         ],
+          //       ),
+          //       const SizedBox(height: 2), // small bottom gap
+          //     ],
+          //   ),
         ],
       ),
     );

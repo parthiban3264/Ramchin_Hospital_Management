@@ -166,11 +166,15 @@ class _ScanPageState extends State<ScanPage>
       final id = widget.record['id'];
       // 🧾 Update Testing and Scanning record
       await TestingScanningService().updateTesting(id, {'status': 'COMPLETED'});
-
+      print('widget ${widget.record}');
       // 🧾 Update Consultation record
+      final bool consultationTest =
+          widget.record['Patient']['isTestOnly'] ?? false;
+
+      print('consultationTest $consultationTest');
       if (consultationId != null) {
         await ConsultationService().updateConsultation(consultationId, {
-          'status': 'ENDPROCESSING',
+          'status': consultationTest == false ? 'ENDPROCESSING' : "COMPLETED",
           'scanningTesting': false,
           'updatedAt': _dateTime.toString(),
         });
@@ -517,24 +521,24 @@ class _ScanPageState extends State<ScanPage>
                   ],
                 ),
 
-                // const SizedBox(height: 8),
-                //
-                // TextField(
-                //   keyboardType: TextInputType.visiblePassword,
-                //   cursorColor: primaryColor,
-                //
-                //   controller: noteControllers[optionName],
-                //   decoration: InputDecoration(
-                //     hintText: "Enter $optionName value...",
-                //     border: OutlineInputBorder(
-                //       borderRadius: BorderRadius.circular(12),
-                //     ),
-                //     focusedBorder: OutlineInputBorder(
-                //       borderSide: BorderSide(color: primaryColor, width: 1.5),
-                //       borderRadius: BorderRadius.circular(12),
-                //     ),
-                //   ),
-                // ),
+                const SizedBox(height: 8),
+
+                TextField(
+                  keyboardType: TextInputType.visiblePassword,
+                  cursorColor: primaryColor,
+
+                  controller: noteControllers[optionName],
+                  decoration: InputDecoration(
+                    hintText: "Enter $optionName value...",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: primaryColor, width: 1.5),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 20),
               ],
             );

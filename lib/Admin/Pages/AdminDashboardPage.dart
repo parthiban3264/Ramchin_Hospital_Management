@@ -9,6 +9,7 @@ import '../../Mediacl_Staff/Pages/Doctor/pages/DrOpDashboard/DrOutPatientQueuePa
 import '../../Mediacl_Staff/Pages/Medical/MedicalQueuePage.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/Page/GynPage.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/Page/scan_page.dart';
+import '../../Mediacl_Staff/Pages/OutPatient/Queue/outer_testPayment_queue.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/scan_queue.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/patient_registration/PatientRegistrationPage.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/AbdomenQueuePage.dart';
@@ -402,6 +403,18 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (_) => const FeesQueuePage(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              _buildActionItem(
+                                Icons.payments,
+                                "Test Payment",
+                                () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const FeesTestQueuePage(),
                                     ),
                                   );
                                 },

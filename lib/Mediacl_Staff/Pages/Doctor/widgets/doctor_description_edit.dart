@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../Services/testing&scanning_service.dart';
 import '../../../../Services/payment_service.dart';
@@ -26,7 +27,21 @@ class _EditTestScanTabState extends State<EditTestScanTab> {
   }
 
   Future<List<dynamic>> _loadData() async {
-    final data = await TestingScanningService().getAllEditTestingAndScanning();
+    final prefs = await SharedPreferences.getInstance();
+    final role = (prefs.getString('role') ?? '').toLowerCase();
+    final doctorId = role == 'doctor'
+        ? prefs.getString('userId') ?? ''
+        : prefs.getString('assistantDoctorId') ?? '';
+
+    if (doctorId.isEmpty) {
+      // No doctor assigned, return empty list or show message
+      return [];
+    }
+
+    final data = await TestingScanningService().getAllEditTestingAndScanning(
+      doctorId,
+    );
+
     _originalData = data;
     _filteredData = data;
     return data;

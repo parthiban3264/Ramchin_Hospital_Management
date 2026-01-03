@@ -78,11 +78,11 @@ class TestingScanningService {
     }
   }
 
-  Future<List<dynamic>> getAllEditTestingAndScanning() async {
+  Future<List<dynamic>> getAllEditTestingAndScanning(String doctorId) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      // final prefs = await SharedPreferences.getInstance();
       final hospitalId = await getHospitalId();
-      final doctorId = prefs.getString('assistantDoctorId');
+      //final doctorId = prefs.getString('assistantDoctorId');
 
       final response = await http.get(
         Uri.parse(

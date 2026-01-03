@@ -9,6 +9,7 @@ import '../../../../../Pages/NotificationsPage.dart';
 import '../../../../../Services/admin_service.dart';
 import '../../../../../Services/consultation_service.dart';
 import '../../../../../Services/socket_service.dart';
+import '../../widgets/doctor_description_edit.dart';
 import '../patient_description_page.dart';
 
 class DrOutPatientQueuePage extends StatefulWidget {
@@ -87,6 +88,12 @@ class _DrOutPatientQueuePageState extends State<DrOutPatientQueuePage> {
   }
 
   List<dynamic> _filteredConsultations() {
+    if (consultations.isEmpty) return [];
+
+    if (selectedIndex == 2) {
+      // Show edit tab (can be empty list; handled differently in build)
+      return [];
+    }
     if (selectedIndex == 0) {
       return consultations.where((c) {
         final status = (c['status'] ?? '').toString().toLowerCase();
@@ -445,63 +452,68 @@ class _DrOutPatientQueuePageState extends State<DrOutPatientQueuePage> {
           : Column(
               children: [
                 const SizedBox(height: 2),
-                Container(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 10,
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
-                  ),
-                  decoration: BoxDecoration(
-                    color: primaryColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: primaryColor),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.people_alt_rounded, color: primaryColor),
-                      const SizedBox(width: 8),
-                      Text(
-                        selectedIndex == 0
-                            ? "Pending Patients"
-                            : "Consulting Patients",
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
-                          color: primaryColor,
+                selectedIndex == 2
+                    ? SizedBox() // <-- Show edit tab here
+                    : Container(
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 10,
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          color: primaryColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: primaryColor),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.people_alt_rounded, color: primaryColor),
+                            const SizedBox(width: 8),
+                            Text(
+                              selectedIndex == 0
+                                  ? "Pending Patients"
+                                  : "Consulting Patients",
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
+                                color: primaryColor,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              "( ${_filteredConsultations().length} )",
+                              style: const TextStyle(
+                                color: Colors.black87,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        "( ${_filteredConsultations().length} )",
-                        style: const TextStyle(
-                          color: Colors.black87,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
                 Expanded(
                   child: RefreshIndicator(
                     color: primaryColor,
                     onRefresh: () => _fetchConsultations(showLoading: false),
-                    child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 5,
-                      ),
-                      itemCount: _filteredConsultations().length,
-                      itemBuilder: (context, index) {
-                        final consultation = _filteredConsultations()[index];
-                        return _buildPatientCard(
-                          Map<String, dynamic>.from(consultation),
-                        );
-                      },
-                    ),
+                    child: selectedIndex == 2
+                        ? EditTestScanTab() // <-- Show edit tab here
+                        : ListView.builder(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 5,
+                            ),
+                            itemCount: _filteredConsultations().length,
+                            itemBuilder: (context, index) {
+                              final consultation =
+                                  _filteredConsultations()[index];
+                              return _buildPatientCard(
+                                Map<String, dynamic>.from(consultation),
+                              );
+                            },
+                          ),
                   ),
                 ),
               ],
@@ -518,6 +530,7 @@ class _DrOutPatientQueuePageState extends State<DrOutPatientQueuePage> {
             icon: Icon(Icons.run_circle_outlined),
             label: 'Consulting',
           ),
+          BottomNavigationBarItem(icon: Icon(Icons.edit), label: 'Edit'),
         ],
       ),
     );

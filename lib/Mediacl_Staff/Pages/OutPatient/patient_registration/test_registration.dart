@@ -45,9 +45,9 @@ class TestRegistrationState extends State<TestRegistration> {
   bool phoneValid = true;
   bool showDoctorSection = false;
 
-  String? hospitalName;
-  String? hospitalPlace;
-  String? hospitalPhoto;
+  String hospitalName = '';
+  String hospitalPlace = '';
+  String hospitalPhoto = '';
   bool isScanOpen = false;
   bool isTestOpen = false;
   bool _isSubmitting = false;
@@ -74,6 +74,12 @@ class TestRegistrationState extends State<TestRegistration> {
     super.initState();
     _loadHospitalInfo();
     _updateTime();
+  }
+
+  void _clearLocalTestScanData() {
+    savedTests.clear();
+    savedScans.clear();
+    onUpdated?.call(); // refresh UI if needed
   }
 
   @override
@@ -103,16 +109,26 @@ class TestRegistrationState extends State<TestRegistration> {
     });
   }
 
+  bool _canSubmit() {
+    return phoneController.text.trim().isNotEmpty &&
+        fullNameController.text.trim().isNotEmpty &&
+        selectedGender != null &&
+        addressController.text.trim().isNotEmpty &&
+        (savedScans.isNotEmpty || savedTests.isNotEmpty);
+  }
+
   void _submitPatientData() async {
     try {
+      setState(() => isSubmitting = true);
+
       final prefs = await SharedPreferences.getInstance();
 
+      // ---- DOB ----
       DateTime dob =
           DateTime.tryParse(dobController.text) ?? DateTime(1990, 1, 1);
 
+      // ---- Name formatting ----
       String name = fullNameController.text.trim();
-
-      // Remove existing Mr. or Ms. (case-insensitive)
       name = name.replaceFirst(
         RegExp(r'^(MR|MS)\s*\.?\s*', caseSensitive: false),
         '',
@@ -124,6 +140,7 @@ class TestRegistrationState extends State<TestRegistration> {
         fullNameController.text = 'Ms. $name';
       }
 
+      // ---- Patient payload ----
       final patientData = {
         "name": fullNameController.text,
         "ac_name": '',
@@ -132,96 +149,98 @@ class TestRegistrationState extends State<TestRegistration> {
         "email": {"personal": '', "guardian": ''},
         "address": {"Address": addressController.text.trim()},
         "dob":
-            '${(DateTime.parse(DateFormat('yyyy-MM-dd').format(dob))).toLocal().toIso8601String()}Z',
+            '${DateTime.parse(DateFormat('yyyy-MM-dd').format(dob)).toIso8601String()}Z',
         "gender": selectedGender,
         "bldGrp": selectedBloodType,
         "currentProblem": '',
         "createdAt": _dateTime.toString(),
         "tempCreatedAt": DateTime.now().toUtc().toIso8601String(),
       };
-      final results = await patientService.createPatient(patientData);
-      if (results['status'] == 'failed' && mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(results['message'])));
+
+      // ---- Create patient ----
+      final patientResult = await patientService.createPatient(patientData);
+
+      if (patientResult['status'] == 'failed') {
+        _showSnack(patientResult['message'] ?? 'Failed to register patient');
         return;
       }
-      final patientId = await results['data']['patient']['id'];
 
+      final int patientId = patientResult['data']['patient']['id'];
+
+      // ---- Create consultation ----
       final hospitalId = await doctorService.getHospitalId();
-      final result = await consultationService.createConsultation({
+
+      final consultationResult = await consultationService.createConsultation({
         "hospital_Id": int.parse(hospitalId),
         "patient_Id": patientId,
         "isTestOnly": true,
         "doctor_Id": prefs.getString('userId'),
         "name": '',
         "purpose": '-',
-        // "emergency": isEmergency,
-        // "sugarTest": isSugarTestChecked,
-        // "sugerTestQueue": isSugarTestChecked,
         "temperature": 0,
         "createdAt": _dateTime.toString(),
       });
-      print('result $result');
 
-      // if (results['status'] == 'success' &&
-      //     results['data'] != null &&
-      //     results['data']['consultationId'] != null) {
-      //   final int consultationId = results['data']['consultationId'];
-      // }
-      // if (result['status'] == 'failed' && mounted) {
-      //   ScaffoldMessenger.of(
-      //     context,
-      //   ).showSnackBar(SnackBar(content: Text(result['message'])));
-      //   return;
-      // }
-      // _submitAllScans(
-      //   hospitalId: hospitalId,
-      //   patientId: patientId,
-      //   consultationId: consultationId,
-      // );
-      int? consultationId;
-
-      if (results['status'] == 'success') {
-        consultationId = results['data']['consultationId'];
-        print('consultationId $consultationId');
-      } else if (results['status'] == 'failed' && mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(results['message'])));
-        return;
-      }
-
-      // Extra safety check
-      if (consultationId == null) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Consultation ID not found')),
-          );
-        }
-        return;
-      }
-
-      _submitAllScans(
-        hospitalId: hospitalId,
-        patientId: patientId,
-        consultationId: consultationId,
-      );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Patient registered and created TestScan')),
+      if (consultationResult['status'] == 'failed') {
+        _showSnack(
+          consultationResult['message'] ?? 'Failed to create consultation',
         );
-        Navigator.pop(context, true);
+        return;
       }
+
+      final int consultationId = consultationResult['data']['consultationId'];
+
+      // ---- Submit scans ----
+      if (savedScans.isNotEmpty) {
+        await _submitAllScans(
+          hospitalId: hospitalId,
+          patientId: patientId,
+          consultationId: consultationId,
+        );
+      }
+
+      if (savedTests.isNotEmpty) {
+        await _submitAllTests(
+          hospitalId: hospitalId,
+          patientId: patientId,
+          consultationId: consultationId,
+        );
+      }
+      await ConsultationService().updateConsultation(consultationId, {
+        'status': 'ONGOING',
+        'scanningTesting': true,
+        'queueStatus': 'COMPLETED',
+        'updatedAt': _dateTime.toString(),
+      });
+      // ---- Success ----
+      _showSnack(' test scan created ');
+      _clearLocalTestScanData();
+
+      phoneController.clear();
+      fullNameController.clear();
+      addressController.clear();
+      dobController.clear();
+      ageController.clear();
+
+      selectedGender = null;
+      selectedBloodType = null;
+
+      setState(() {
+        isSubmitting = false;
+      });
+      Navigator.pop(context, true);
     } catch (e) {
-      if (mounted) {
-        print('Error registering patient: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error registering patient: $e')),
-        );
-      }
+      _showSnack('Something went wrong. Please try again.');
+      debugPrint('Submit patient error: $e');
+      setState(() => isSubmitting = false);
     }
+  }
+
+  void _showSnack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _submitAllScans({
@@ -230,30 +249,29 @@ class TestRegistrationState extends State<TestRegistration> {
     required int consultationId,
   }) async {
     if (savedScans.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("No scans selected!"),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      _showSnacks("No scans selected!", isError: true);
       return;
     }
 
-    setState(() => _isSubmitting = true);
+    if (!mounted) return;
+    //setState(() => _isSubmitting = true);
 
     try {
       final prefs = await SharedPreferences.getInstance();
       final doctorId = prefs.getString('userId') ?? '';
 
-      //final consultationId = widget.consultation['id'];
-
       for (var entry in savedScans.entries) {
-        final scanName = entry.key;
-        final scanData = entry.value;
+        final String scanName = entry.key;
+        final Map<String, dynamic> scanData = Map<String, dynamic>.from(
+          entry.value,
+        );
 
-        // 🔥 SKIP IF options list is empty
-        if (scanData['options'] == null || scanData['options'].isEmpty) {
-          continue; // Skip this scan
+        final Map<String, dynamic> amounts = Map<String, dynamic>.from(
+          scanData['amounts'] ?? {},
+        );
+
+        if (amounts.isEmpty) {
+          continue;
         }
 
         final payload = {
@@ -264,14 +282,14 @@ class TestRegistrationState extends State<TestRegistration> {
           "staff_Id": [],
           "title": scanName,
           "type": scanName,
-          "reason": scanData['description'],
+          "reason": scanData['description'] ?? '',
           "scheduleDate": DateTime.now().toIso8601String(),
           "status": "PENDING",
           "paymentStatus": false,
           "result": '',
           "amount": scanData['totalAmount'],
-          "selectedOptions": scanData['options'].toList(),
-          "selectedOptionAmounts": scanData['selectedOptionsAmount'],
+          "selectedOptions": amounts.keys.toList(),
+          "selectedOptionAmounts": amounts,
           "createdAt": _dateTime,
         };
 
@@ -282,36 +300,88 @@ class TestRegistrationState extends State<TestRegistration> {
         );
       }
 
-      final consultation = await ConsultationService().updateConsultation(
-        consultationId,
-        {
-          'status': 'ONGOING',
-          'scanningTesting': true,
-          // 'medicineTonic': medicineTonicInjection,
-          // 'Injection': injection,
-          'queueStatus': 'COMPLETED',
-          'updatedAt': _dateTime.toString(),
-        },
-      );
-      Navigator.pop(context, true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Scan submitted!"),
-          backgroundColor: Colors.green,
-        ),
-      );
+      // ✅ DO NOT POP HERE
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error submitting scans: $e'),
-            backgroundColor: Colors.redAccent,
-          ),
+      _showSnacks('Error submitting Test Scans', isError: true);
+      debugPrint('Submit Test Scans error: $e');
+      rethrow; // let parent handle navigation
+    } finally {}
+  }
+
+  Future<void> _submitAllTests({
+    required String hospitalId,
+    required int patientId,
+    required int consultationId,
+  }) async {
+    if (savedTests.isEmpty) {
+      _showSnacks("No scans selected!", isError: true);
+      return;
+    }
+
+    if (!mounted) return;
+    //setState(() => _isSubmitting = true);
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final doctorId = prefs.getString('userId') ?? '';
+
+      for (var entry in savedTests.entries) {
+        final String testName = entry.key;
+        final Map<String, dynamic> testData = Map<String, dynamic>.from(
+          entry.value,
+        );
+
+        final Map<String, dynamic> amounts = Map<String, dynamic>.from(
+          testData['amounts'] ?? testData['selectedOptionsAmount'] ?? {},
+        );
+
+        if (amounts.isEmpty) {
+          debugPrint('Skipping test $testName — no amounts');
+          continue;
+        }
+
+        final payload = {
+          "hospital_Id": int.parse(hospitalId),
+          "patient_Id": patientId,
+          "doctor_Id": doctorId,
+          "consultation_Id": consultationId,
+          "staff_Id": [],
+          "title": testName,
+          "type": 'Tests',
+          "reason": testData['description'] ?? '',
+          "scheduleDate": DateTime.now().toIso8601String(),
+          "status": "PENDING",
+          "paymentStatus": false,
+          "result": '',
+          "amount": testData['totalAmount'],
+          "selectedOptions": amounts.keys.toList(),
+          "selectedOptionAmounts": amounts,
+          "createdAt": _dateTime,
+        };
+
+        await http.post(
+          Uri.parse('$baseUrl/testing_and_scanning_patient/create'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(payload),
         );
       }
-    } finally {
-      setState(() => _isSubmitting = false);
-    }
+
+      // ✅ DO NOT POP HERE
+    } catch (e) {
+      _showSnacks('Error submitting Test Scans', isError: true);
+      debugPrint('Submit Test Scans error: $e');
+      rethrow; // let parent handle navigation
+    } finally {}
+  }
+
+  void _showSnacks(String message, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.redAccent : Colors.green,
+      ),
+    );
   }
 
   @override
@@ -338,9 +408,9 @@ class TestRegistrationState extends State<TestRegistration> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   buildHospitalCard(
-                    hospitalName: hospitalName!,
-                    hospitalPlace: hospitalPlace!,
-                    hospitalPhoto: hospitalPhoto!,
+                    hospitalName: hospitalName,
+                    hospitalPlace: hospitalPlace,
+                    hospitalPhoto: hospitalPhoto,
                   ),
                   const SizedBox(height: 18),
 
@@ -617,23 +687,29 @@ class TestRegistrationState extends State<TestRegistration> {
                     width: double.infinity,
                     height: 52,
                     child: ElevatedButton(
-                      onPressed: isSubmitting
+                      onPressed: isSubmitting || !_canSubmit()
                           ? null
-                          : () => _submitPatientData(),
+                          : _submitPatientData,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: customGold,
+                        backgroundColor: isSubmitting || !_canSubmit()
+                            ? Colors.grey
+                            : customGold,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                       child: isSubmitting
-                          ? const CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
+                          ? const SizedBox(
+                              height: 22,
+                              width: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             )
-                          : Text(
+                          : const Text(
                               "Register Test",
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.white,

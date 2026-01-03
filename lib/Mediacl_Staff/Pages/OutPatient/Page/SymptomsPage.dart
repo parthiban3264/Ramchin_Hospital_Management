@@ -10,6 +10,8 @@ class SymptomsPage extends StatefulWidget {
   final String sugar;
   final Map<String, dynamic> consultationData;
   final int mode;
+  final bool history;
+  final int index;
 
   const SymptomsPage({
     Key? key,
@@ -19,6 +21,8 @@ class SymptomsPage extends StatefulWidget {
     required this.sugar,
     required this.consultationData,
     required this.mode,
+    required this.history,
+    required this.index,
   }) : super(key: key);
 
   @override
@@ -47,6 +51,7 @@ class _SymptomsPageState extends State<SymptomsPage> {
   bool showSugarOptions = false;
   bool showBloodGroupOptions = false;
   bool isSubmitting = false;
+  bool hasChanges = false;
 
   final Color primaryColor = const Color(0xFFBF955E);
 
@@ -69,24 +74,10 @@ class _SymptomsPageState extends State<SymptomsPage> {
         sugarController.text.trim().isNotEmpty;
   }
 
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   weightController.addListener(_onFieldChange);
-  //   heightController.addListener(_onFieldChange);
-  //   //bpController.addListener(_onFieldChange);
-  //   pkController.addListener(_onFieldChange);
-  //   SpO2Controller.addListener(_onFieldChange);
-  //   tempController.addListener(_onFieldChange);
-  //   systolicController.addListener(_onFieldChange);
-  //   diastolicController.addListener(_onFieldChange);
-  //
-  //   // ✅ Sugar controller pre-filled if sugarData is true
-  //   if (widget.sugarData) {
-  //     sugarController.text = widget.sugar;
-  //   }
-  //   sugarController.addListener(_onFieldChange);
-  // }
+  bool get isPending =>
+      (widget.consultationData['status']?.toString().toLowerCase() ==
+      'pending');
+  late Map<String, String> initialValues;
 
   @override
   @override
@@ -94,7 +85,7 @@ class _SymptomsPageState extends State<SymptomsPage> {
     super.initState();
 
     /// 🔹 EDIT MODE → Prefill data
-    if (widget.mode == 2) {
+    if (widget.mode == 2 || widget.index == 1) {
       final data = widget.consultationData;
 
       weightController.text = _valueOrEmpty(data['weight']);
@@ -114,6 +105,16 @@ class _SymptomsPageState extends State<SymptomsPage> {
         );
       }
     }
+    initialValues = {
+      'weight': weightController.text,
+      'height': heightController.text,
+      'temp': tempController.text,
+      'spo2': SpO2Controller.text,
+      'pk': pkController.text,
+      'sugar': sugarController.text,
+      'sys': systolicController.text,
+      'dia': diastolicController.text,
+    };
 
     /// 🔹 Listeners
     weightController.addListener(_onFieldChange);
@@ -142,7 +143,19 @@ class _SymptomsPageState extends State<SymptomsPage> {
   }
 
   void _onFieldChange() {
-    setState(() {});
+    final changed =
+        initialValues['weight'] != weightController.text ||
+        initialValues['height'] != heightController.text ||
+        initialValues['temp'] != tempController.text ||
+        initialValues['spo2'] != SpO2Controller.text ||
+        initialValues['pk'] != pkController.text ||
+        initialValues['sugar'] != sugarController.text ||
+        initialValues['sys'] != systolicController.text ||
+        initialValues['dia'] != diastolicController.text;
+
+    setState(() {
+      hasChanges = changed;
+    });
   }
 
   double calculateBMI() {
@@ -396,6 +409,7 @@ class _SymptomsPageState extends State<SymptomsPage> {
                             child: TextField(
                               controller: systolicController,
                               cursorColor: primaryColor,
+                              enabled: isPending,
                               keyboardType: TextInputType.number,
                               decoration: InputDecoration(
                                 labelText: 'SYS',
@@ -438,6 +452,7 @@ class _SymptomsPageState extends State<SymptomsPage> {
                             child: TextField(
                               controller: diastolicController,
                               cursorColor: primaryColor,
+                              enabled: isPending,
                               keyboardType: TextInputType.number,
                               decoration: InputDecoration(
                                 labelText: 'DIA',
@@ -573,36 +588,6 @@ class _SymptomsPageState extends State<SymptomsPage> {
               ),
             ),
 
-            // // Blood Group Section
-            // _buildInteractiveInput(
-            //   'Select Blood Group',
-            //   bgroupController,
-            //   Icons.bloodtype,
-            //   () => setState(() {
-            //     showBloodGroupOptions = !showBloodGroupOptions;
-            //     showBPOptions = false;
-            //     showSugarOptions = false;
-            //   }),
-            // ),
-            // AnimatedSwitcher(
-            //   duration: const Duration(milliseconds: 300),
-            //   child: showBloodGroupOptions
-            //       ? Padding(
-            //           padding: const EdgeInsets.only(top: 10, bottom: 20),
-            //           child: _buildHorizontalSelector(
-            //             ['A+', 'A−', 'B+', 'B−', 'AB+', 'AB−', 'O+', 'O−'],
-            //             selectedBloodGroup,
-            //             (val) {
-            //               setState(() {
-            //                 selectedBloodGroup = val;
-            //                 bgroupController.text = val;
-            //               });
-            //             },
-            //             height: 60,
-            //           ),
-            //         )
-            //       : const SizedBox.shrink(),
-            // ),
             const SizedBox(height: 20),
 
             // Save Button
@@ -610,7 +595,15 @@ class _SymptomsPageState extends State<SymptomsPage> {
               width: double.infinity,
               child: ElevatedButton(
                 //onPressed: isSubmitting ? null : _submitPatient,
-                onPressed: (!isAnyFieldFilled || isSubmitting)
+                // onPressed: (!isPending || !isAnyFieldFilled || isSubmitting)
+                //     ? null
+                //     : _submitPatient,
+                onPressed:
+                    (!isPending ||
+                        isSubmitting ||
+                        !isAnyFieldFilled ||
+                        ((widget.index == 1 || widget.mode == 2) &&
+                            !hasChanges))
                     ? null
                     : _submitPatient,
 
@@ -631,8 +624,10 @@ class _SymptomsPageState extends State<SymptomsPage> {
                           strokeWidth: 2,
                         ),
                       )
-                    : const Text(
-                        'Save Vitals',
+                    : Text(
+                        widget.index == 1 || widget.mode == 2
+                            ? 'Update Vitals'
+                            : 'Save Vitals',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -661,6 +656,7 @@ class _SymptomsPageState extends State<SymptomsPage> {
         cursorColor: primaryColor,
         controller: controller,
         keyboardType: type,
+        enabled: isPending,
         decoration: InputDecoration(
           prefixIcon: Icon(icon, color: primaryColor),
           labelText: label,

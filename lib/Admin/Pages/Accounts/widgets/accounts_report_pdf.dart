@@ -1,7 +1,3 @@
-import 'dart:typed_data';
-import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -9,244 +5,252 @@ import 'package:printing/printing.dart';
 class AccountsReportPdf {
   static Future<void> generate({
     required List<dynamic> payments,
-    required double total,
+    required double expenses,
+    required double income,
+    required double drawingOut,
     required String hospitalName,
     required String hospitalPlace,
-    required String hospitalPhoto,
   }) async {
     final pdf = pw.Document();
-
     final font = await PdfGoogleFonts.notoSansRegular();
-    final fontBold = await PdfGoogleFonts.notoSansBold();
+    final bold = await PdfGoogleFonts.notoSansBold();
 
-    // ---------- Load Logo ----------
-    Uint8List? logo;
-    try {
-      final res = await http.get(Uri.parse(hospitalPhoto));
-      if (res.statusCode == 200) logo = res.bodyBytes;
-    } catch (_) {}
-
-    // ---------- Group + Totals ----------
-    double regTotal = 0;
-    double testTotal = 0;
-    Map<String, List<dynamic>> grouped = {};
+    /// ---------------- Totals ----------------
+    final Map<String, Map<String, double>> doctorTotals = {};
+    double registrationCash = 0, registrationOnline = 0;
+    double testScanCash = 0, testScanOnline = 0;
+    double otherIncomeCash = 0;
 
     for (final p in payments) {
-      final type = p['type'];
-      final amount = double.parse(p['amount'].toString());
+      final type = (p['type'] ?? '').toString().toUpperCase();
+      final mode = (p['paymentType'] ?? '').toString().toUpperCase();
+      final isCash = mode == 'MANUALPAY';
+      final isOnline = mode == 'ONLINEPAY';
 
-      grouped.putIfAbsent(type, () => []).add(p);
+      /// ---------- REGISTRATION + CONSULTATION ----------
+      if (type == 'REGISTRATIONFEE' && p['Consultation'] != null) {
+        final c = p['Consultation'];
 
-      if (type == 'REGISTRATIONFEE') regTotal += amount;
-      if (type == 'TESTINGFEESANDSCANNINGFEE') testTotal += amount;
+        final regFee = (c['registrationFee'] ?? 0).toDouble();
+        final consultFee = (c['consultationFee'] ?? 0).toDouble();
+
+        if (isCash) registrationCash += regFee;
+        if (isOnline) registrationOnline += regFee;
+
+        if (consultFee > 0) {
+          final doctorName = _doctorName(p);
+          doctorTotals.putIfAbsent(doctorName, () => {'cash': 0, 'online': 0});
+
+          if (isCash) {
+            doctorTotals[doctorName]!['cash'] =
+                doctorTotals[doctorName]!['cash']! + consultFee;
+          }
+
+          if (isOnline) {
+            doctorTotals[doctorName]!['online'] =
+                doctorTotals[doctorName]!['online']! + consultFee;
+          }
+        }
+      }
+
+      /// ---------- TEST & SCAN ----------
+      if (type == 'TESTINGFEESANDSCANNINGFEE') {
+        for (final e in p['TestingAndScanningPatients'] ?? []) {
+          final amt = (e['amount'] ?? 0).toDouble();
+          if (isCash) testScanCash += amt;
+          if (isOnline) testScanOnline += amt;
+        }
+      }
+
+      /// ---------- OTHER INCOME ----------
+      if (type == 'OTHERINCOME') {
+        if (isCash) otherIncomeCash += (p['amount'] ?? 0).toDouble();
+      }
     }
 
-    String typeLabel(String t) {
-      if (t == 'REGISTRATIONFEE') return 'Registration Fee';
-      if (t == 'TESTINGFEESANDSCANNINGFEE') return 'Test & Scan Fee';
-      return t;
-    }
+    /// ---------------- CALCULATIONS ----------------
+    double doctorCash = 0, doctorOnline = 0;
+    doctorTotals.values.forEach((v) {
+      doctorCash += v['cash']!;
+      doctorOnline += v['online']!;
+    });
 
-    PdfColor typeColor(String t) {
-      if (t == 'REGISTRATIONFEE') return PdfColors.blue;
-      if (t == 'TESTINGFEESANDSCANNINGFEE') return PdfColors.green;
-      return PdfColors.grey;
-    }
+    final totalCash =
+        registrationCash + doctorCash + testScanCash + otherIncomeCash;
+    final totalOnline = registrationOnline + doctorOnline + testScanOnline;
+    final balance = totalCash + income - expenses;
+    final cashInHand = balance - drawingOut;
 
+    /// ---------------- PDF PAGE (58mm) ----------------
     pdf.addPage(
-      pw.MultiPage(
-        theme: pw.ThemeData.withFont(base: font, bold: fontBold),
-        pageFormat: PdfPageFormat.a4,
-        build: (context) => [
-          // ---------- HEADER ----------
-          pw.Row(
+      pw.Page(
+        pageFormat: const PdfPageFormat(58 * PdfPageFormat.mm, double.infinity),
+        theme: pw.ThemeData.withFont(base: font, bold: bold),
+        build: (_) => pw.Padding(
+          padding: const pw.EdgeInsets.all(5),
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              if (logo != null)
-                pw.Container(
-                  width: 55,
-                  height: 55,
-                  decoration: pw.BoxDecoration(
-                    shape: pw.BoxShape.circle,
-                    image: pw.DecorationImage(
-                      image: pw.MemoryImage(logo),
-                      fit: pw.BoxFit.cover,
-                    ),
-                  ),
-                ),
-              pw.SizedBox(width: 12),
-              pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Text(
-                    hospitalName,
-                    style: pw.TextStyle(
-                      fontSize: 18,
-                      fontWeight: pw.FontWeight.bold,
-                    ),
-                  ),
-                  pw.Text(hospitalPlace, style: pw.TextStyle(fontSize: 12)),
-                ],
-              ),
-            ],
-          ),
+              _centerBold(hospitalName),
+              _center(hospitalPlace),
+              pw.Divider(),
 
-          pw.SizedBox(height: 16),
-          pw.Divider(),
+              _centerBold('Daily Report (${_today()})'),
+              pw.SizedBox(height: 4),
 
-          pw.Center(
-            child: pw.Text(
-              'ACCOUNTS REPORT',
-              style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold),
-            ),
-          ),
-
-          pw.SizedBox(height: 16),
-
-          // ---------- SUMMARY ----------
-          pw.Container(
-            padding: const pw.EdgeInsets.all(14),
-            decoration: pw.BoxDecoration(
-              color: PdfColors.blue50,
-              borderRadius: pw.BorderRadius.circular(10),
-              border: pw.Border.all(color: PdfColors.blue200),
-            ),
-            child: pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                // ---------- TITLE ----------
-                pw.Text(
-                  'SUMMARY',
-                  style: pw.TextStyle(
-                    fontSize: 14,
-                    fontWeight: pw.FontWeight.bold,
-                    color: PdfColors.blue900,
-                    letterSpacing: 1,
-                  ),
-                ),
-
-                pw.SizedBox(height: 10),
-
-                // ---------- REGISTRATION ----------
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text(
-                      'Registration Fee',
-                      style: pw.TextStyle(fontSize: 12),
-                    ),
-                    pw.Text(
-                      '₹ ${regTotal.toStringAsFixed(2)}',
-                      style: pw.TextStyle(
-                        fontSize: 12,
-                        fontWeight: pw.FontWeight.bold,
-                        color: PdfColors.blue800,
-                      ),
-                    ),
-                  ],
-                ),
-
-                pw.SizedBox(height: 6),
-
-                // ---------- TEST & SCAN ----------
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text(
-                      'Test & Scan Fee',
-                      style: pw.TextStyle(fontSize: 12),
-                    ),
-                    pw.Text(
-                      '₹ ${testTotal.toStringAsFixed(2)}',
-                      style: pw.TextStyle(
-                        fontSize: 12,
-                        fontWeight: pw.FontWeight.bold,
-                        color: PdfColors.green800,
-                      ),
-                    ),
-                  ],
-                ),
-
-                pw.SizedBox(height: 10),
-                pw.Divider(color: PdfColors.blue300),
-
-                // ---------- GRAND TOTAL ----------
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text(
-                      'GRAND TOTAL',
-                      style: pw.TextStyle(
-                        fontSize: 13,
-                        fontWeight: pw.FontWeight.bold,
-                      ),
-                    ),
-                    pw.Text(
-                      '₹ ${total.toStringAsFixed(2)}',
-                      style: pw.TextStyle(
-                        fontSize: 14,
-                        fontWeight: pw.FontWeight.bold,
-                        color: PdfColors.blue900,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          pw.SizedBox(height: 20),
-
-          // ---------- TABLES (SAFE) ----------
-          for (final entry in grouped.entries) ...[
-            pw.Container(
-              width: double.infinity,
-              padding: const pw.EdgeInsets.all(6),
-              color: typeColor(entry.key),
-              child: pw.Text(
-                typeLabel(entry.key),
+              /// ---------- HEADER ----------
+              /// ---------- HEADER ----------
+              pw.Text(
+                'Consultation Fee',
                 style: pw.TextStyle(
-                  color: PdfColors.white,
+                  fontSize: 8,
                   fontWeight: pw.FontWeight.bold,
                 ),
               ),
-            ),
+              pw.SizedBox(height: 4),
+              _tripleHeader(),
+              pw.SizedBox(height: 2),
 
-            pw.Table.fromTextArray(
-              headers: ['Date', 'Patient ID', 'Payment ID', 'Amount'],
-              headerStyle: pw.TextStyle(
-                fontWeight: pw.FontWeight.bold,
-                color: PdfColors.white,
+              /// ---------- DOCTOR FEES ----------
+              ...doctorTotals.entries.map(
+                (e) => _tripleRow(e.key, e.value['cash']!, e.value['online']!),
               ),
-              headerDecoration: pw.BoxDecoration(color: PdfColors.grey700),
-              cellStyle: const pw.TextStyle(fontSize: 11),
-              cellAlignment: pw.Alignment.centerLeft,
-              border: pw.TableBorder.all(color: PdfColors.grey300),
-              columnWidths: {
-                0: const pw.FlexColumnWidth(2),
-                1: const pw.FlexColumnWidth(1.5),
-                2: const pw.FlexColumnWidth(1.5),
-                3: const pw.FlexColumnWidth(2),
-              },
-              data: entry.value.map((p) {
-                final date = DateFormat('dd MMM yyyy').format(p['createdAt']);
-                final amount = double.parse(
-                  p['amount'].toString(),
-                ).toStringAsFixed(2);
-                return [
-                  date,
-                  p['patient_Id'] ?? '-',
-                  p['id'] ?? '-',
-                  '₹ $amount',
-                ];
-              }).toList(),
-            ),
 
-            pw.SizedBox(height: 12),
-          ],
-        ],
+              pw.Divider(),
+
+              /// ---------- REGISTRATION ----------
+              _tripleRow('Registration', registrationCash, registrationOnline),
+
+              /// ---------- TEST & SCAN ----------
+              _tripleRow('Test & Scan', testScanCash, testScanOnline),
+
+              /// ---------- OTHER INCOME ----------
+              _tripleRow('Other Income', income, 0),
+
+              pw.Divider(),
+
+              _row('Total Income (Cash)', totalCash),
+              _row('Expenses', expenses),
+              pw.Divider(),
+              _row('Balance', balance),
+              _row('Drawing Out', drawingOut),
+              pw.Divider(),
+              _rowBold('Cash in Hand', cashInHand),
+            ],
+          ),
+        ),
       ),
     );
 
     await Printing.layoutPdf(onLayout: (_) => pdf.save());
+  }
+
+  /// ---------------- UI HELPERS ----------------
+  static pw.Widget _tripleHeader() => pw.Row(
+    children: [
+      pw.Expanded(child: pw.Text('')), // Name column
+      pw.Expanded(
+        child: pw.Text(
+          'Cash',
+          textAlign: pw.TextAlign.end,
+          style: pw.TextStyle(fontSize: 6, fontWeight: pw.FontWeight.bold),
+        ),
+      ),
+      pw.Expanded(
+        child: pw.Text(
+          'Online',
+          textAlign: pw.TextAlign.end,
+          style: pw.TextStyle(fontSize: 6, fontWeight: pw.FontWeight.bold),
+        ),
+      ),
+      pw.Expanded(
+        child: pw.Text(
+          'Total',
+          textAlign: pw.TextAlign.end,
+          style: pw.TextStyle(fontSize: 6, fontWeight: pw.FontWeight.bold),
+        ),
+      ),
+    ],
+  );
+
+  static pw.Widget _tripleRow(String name, double cash, double online) {
+    final total = cash + online;
+    return pw.Row(
+      children: [
+        pw.Expanded(
+          child: pw.Text(
+            name,
+            maxLines: 1,
+            overflow: pw.TextOverflow.clip,
+            style: const pw.TextStyle(fontSize: 6),
+          ),
+        ),
+        pw.Expanded(
+          child: pw.Text(
+            cash.toInt().toString(),
+            textAlign: pw.TextAlign.end,
+            style: const pw.TextStyle(fontSize: 7),
+          ),
+        ),
+        pw.Expanded(
+          child: pw.Text(
+            online.toInt().toString(),
+            textAlign: pw.TextAlign.end,
+            style: const pw.TextStyle(fontSize: 7),
+          ),
+        ),
+        pw.Expanded(
+          child: pw.Text(
+            total.toInt().toString(),
+            textAlign: pw.TextAlign.end,
+            style: const pw.TextStyle(fontSize: 7),
+          ),
+        ),
+      ],
+    );
+  }
+
+  static pw.Widget _row(String t, double v) => pw.Row(
+    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+    children: [
+      pw.Text(t, style: const pw.TextStyle(fontSize: 7)),
+      pw.Text(v.toInt().toString(), style: const pw.TextStyle(fontSize: 7)),
+    ],
+  );
+
+  static pw.Widget _rowBold(String t, double v) => pw.Row(
+    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+    children: [
+      pw.Text(t, style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+      pw.Text(
+        v.toInt().toString(),
+        style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+      ),
+    ],
+  );
+
+  static pw.Widget _center(String t) =>
+      pw.Center(child: pw.Text(t, style: const pw.TextStyle(fontSize: 7)));
+
+  static pw.Widget _centerBold(String t) => pw.Center(
+    child: pw.Text(t, style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+  );
+
+  static String _today() =>
+      '${DateTime.now().day.toString().padLeft(2, '0')}.'
+      '${DateTime.now().month.toString().padLeft(2, '0')}.'
+      '${DateTime.now().year}';
+
+  static String _doctorName(Map p) {
+    try {
+      final admins = p['Hospital']['Admins'] as List;
+      final docId = p['Consultation']['doctor_Id'];
+      final name = admins.firstWhere((a) => a['user_Id'] == docId)['name'];
+      return name.toString().length > 25
+          ? name.toString().substring(0, 25)
+          : name.toString();
+    } catch (_) {
+      return 'Doctor';
+    }
   }
 }
