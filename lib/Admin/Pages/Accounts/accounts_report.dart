@@ -29,6 +29,9 @@ class PaymentTotals {
   double totalScan = 0;
   double totalScanCash = 0;
   double totalScanOnline = 0;
+  DateFilter? _currentFilter;
+  DateTime? _reportFromDate;
+  DateTime? _reportToDate;
 
   // ---------------- Count Fields ----------------
   int totalRegistrationFeeCount = 0;
@@ -68,6 +71,9 @@ class _AccountsReportState extends State<AccountsReport> {
   double _totalIncomes = 0;
   double _totalDrawing = 0;
   double _cashInHand = 0;
+  DateTime? _reportFromDate;
+  DateTime? _reportToDate;
+  DateFilter? _currentFilter;
 
   bool _isGeneratingPdf = false;
 
@@ -208,6 +214,11 @@ class _AccountsReportState extends State<AccountsReport> {
         to = toDate;
         break;
     }
+    // ✅ SAVE CURRENT FILTER STATE
+    // after switch(reportType)
+    _currentFilter = reportType;
+    _reportFromDate = from;
+    _reportToDate = to;
 
     // ---------------- Filter Payments ----------------
     final filtered = _allPayments.where((p) {
@@ -362,11 +373,49 @@ class _AccountsReportState extends State<AccountsReport> {
   //   }
   // }
 
+  // Future<void> _generatePdf() async {
+  //   if (_filteredPayments.isEmpty || _isGeneratingPdf) return;
+  //
+  //   try {
+  //     setState(() => _isGeneratingPdf = true);
+  //
+  //     await AccountsReportPdf.generate(
+  //       payments: _filteredPayments,
+  //       hospitalName: hospitalName ?? "Unknown Hospital",
+  //       hospitalPlace: hospitalPlace ?? "",
+  //       income: _totalIncomes,
+  //       expenses: _totalExpenses,
+  //       drawingOut: _totalDrawing,
+  //       reportDate: , // ✅ ADD THIS
+  //
+  //       // ✅ ADD THESE
+  //     );
+  //   } finally {
+  //     if (mounted) {
+  //       setState(() => _isGeneratingPdf = false);
+  //     }
+  //   }
+  // }
+
   Future<void> _generatePdf() async {
     if (_filteredPayments.isEmpty || _isGeneratingPdf) return;
 
     try {
       setState(() => _isGeneratingPdf = true);
+
+      // ✅ Decide which date to show in PDF
+      DateTime reportDate;
+
+      if (_currentFilter == DateFilter.day) {
+        reportDate = _reportFromDate!;
+      } else if (_currentFilter == DateFilter.month) {
+        reportDate = _reportFromDate!;
+      } else if (_currentFilter == DateFilter.year) {
+        reportDate = _reportFromDate!;
+      } else {
+        // periodical
+        reportDate = _reportFromDate!;
+      }
 
       await AccountsReportPdf.generate(
         payments: _filteredPayments,
@@ -375,8 +424,10 @@ class _AccountsReportState extends State<AccountsReport> {
         income: _totalIncomes,
         expenses: _totalExpenses,
         drawingOut: _totalDrawing,
-
-        // ✅ ADD THESE
+        reportDate: reportDate, // ✅ FIXED
+        // ✅ NOW VALID
+        reportFilter: _currentFilter!,
+        reportFromDate: _reportFromDate!,
       );
     } finally {
       if (mounted) {

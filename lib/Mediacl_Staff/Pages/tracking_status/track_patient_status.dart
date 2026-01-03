@@ -26,7 +26,13 @@ class _TrackingPatientStatusState extends State<TrackingPatientStatus> {
   /// ✅ CHECK TODAY DATE
   bool isToday(String dateString) {
     try {
-      final date = DateTime.parse(dateString);
+      DateTime date;
+      if (dateString.contains('AM') || dateString.contains('PM')) {
+        date = DateFormat("yyyy-MM-dd hh:mm a").parse(dateString);
+      } else {
+        date = DateTime.parse(dateString);
+      }
+
       final now = DateTime.now();
       return date.year == now.year &&
           date.month == now.month &&
@@ -87,7 +93,7 @@ class _TrackingPatientStatusState extends State<TrackingPatientStatus> {
                     onPressed: () => Navigator.pop(context),
                   ),
                   const Text(
-                    " Today Track Patient",
+                    "Track Patients",
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 22,
@@ -119,7 +125,7 @@ class _TrackingPatientStatusState extends State<TrackingPatientStatus> {
           /// 🔹 FILTER LOGIC (IMPORTANT)
           final filteredList = data.where((item) {
             final status = (item['status'] ?? '').toString().toUpperCase();
-            final createdAt = item['created_at'] ?? '';
+            final createdAt = item['createdAt'] ?? '';
             final patient = item['Patient'] ?? {};
             final name = patient['name']?.toString().toLowerCase() ?? '';
             final id = patient['id']?.toString() ?? '';

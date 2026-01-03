@@ -1,3 +1,5 @@
+import 'package:hospitrax/Admin/Pages/Accounts/widgets/report_filter_widget.dart';
+import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -10,6 +12,9 @@ class AccountsReportPdf {
     required double drawingOut,
     required String hospitalName,
     required String hospitalPlace,
+    required DateTime reportDate,
+    required DateFilter reportFilter,
+    required DateTime reportFromDate,
   }) async {
     final pdf = pw.Document();
     final font = await PdfGoogleFonts.notoSansRegular();
@@ -20,6 +25,8 @@ class AccountsReportPdf {
     double registrationCash = 0, registrationOnline = 0;
     double testScanCash = 0, testScanOnline = 0;
     double otherIncomeCash = 0;
+    double sugarCash = 0, sugarOnline = 0;
+    double emergencyCash = 0, emergencyOnline = 0;
 
     for (final p in payments) {
       final type = (p['type'] ?? '').toString().toUpperCase();
@@ -33,6 +40,8 @@ class AccountsReportPdf {
 
         final regFee = (c['registrationFee'] ?? 0).toDouble();
         final consultFee = (c['consultationFee'] ?? 0).toDouble();
+        final sugarFee = (c['sugarTestFee'] ?? 0).toDouble();
+        final emergencyFee = (c['emergencyFee'] ?? 0).toDouble();
 
         if (isCash) registrationCash += regFee;
         if (isOnline) registrationOnline += regFee;
@@ -51,6 +60,17 @@ class AccountsReportPdf {
                 doctorTotals[doctorName]!['online']! + consultFee;
           }
         }
+        // Sugar Test Fee
+        if (sugarFee > 0) {
+          if (isCash) sugarCash += sugarFee;
+          if (isOnline) sugarOnline += sugarFee;
+        }
+
+        // Emergency Fee
+        if (emergencyFee > 0) {
+          if (isCash) emergencyCash += emergencyFee;
+          if (isOnline) emergencyOnline += emergencyFee;
+        }
       }
 
       /// ---------- TEST & SCAN ----------
@@ -61,11 +81,6 @@ class AccountsReportPdf {
           if (isOnline) testScanOnline += amt;
         }
       }
-
-      /// ---------- OTHER INCOME ----------
-      if (type == 'OTHERINCOME') {
-        if (isCash) otherIncomeCash += (p['amount'] ?? 0).toDouble();
-      }
     }
 
     /// ---------------- CALCULATIONS ----------------
@@ -74,10 +89,21 @@ class AccountsReportPdf {
       doctorCash += v['cash']!;
       doctorOnline += v['online']!;
     });
-
     final totalCash =
-        registrationCash + doctorCash + testScanCash + otherIncomeCash;
-    final totalOnline = registrationOnline + doctorOnline + testScanOnline;
+        registrationCash +
+        doctorCash +
+        testScanCash +
+        sugarCash +
+        emergencyCash +
+        otherIncomeCash;
+
+    final totalOnline =
+        registrationOnline +
+        doctorOnline +
+        testScanOnline +
+        sugarOnline +
+        emergencyOnline;
+
     final balance = totalCash + income - expenses;
     final cashInHand = balance - drawingOut;
 
@@ -95,7 +121,12 @@ class AccountsReportPdf {
               _center(hospitalPlace),
               pw.Divider(),
 
-              _centerBold('Daily Report (${_today()})'),
+              //_centerBold('Daily Report (${_today()})'),
+              // _centerBold('Daily Report (${_formatDate(reportDate)})'),
+              _centerBold(
+                formatReportTitle(filter: reportFilter, from: reportFromDate),
+              ),
+
               pw.SizedBox(height: 4),
 
               /// ---------- HEADER ----------
@@ -119,7 +150,13 @@ class AccountsReportPdf {
               pw.Divider(),
 
               /// ---------- REGISTRATION ----------
-              _tripleRow('Registration', registrationCash, registrationOnline),
+              _tripleRow(
+                'Registration Fee',
+                registrationCash,
+                registrationOnline,
+              ),
+              _tripleRow('Sugar Fee', sugarCash, sugarOnline),
+              _tripleRow('Emergency Fee', emergencyCash, emergencyOnline),
 
               /// ---------- TEST & SCAN ----------
               _tripleRow('Test & Scan', testScanCash, testScanOnline),
@@ -143,6 +180,29 @@ class AccountsReportPdf {
     );
 
     await Printing.layoutPdf(onLayout: (_) => pdf.save());
+  }
+
+  // static String _formatDate(DateTime date) =>
+  //     '${date.day.toString().padLeft(2, '0')}.'
+  //     '${date.month.toString().padLeft(2, '0')}.'
+  //     '${date.year}';
+  static String formatReportTitle({
+    required DateFilter filter,
+    required DateTime from,
+  }) {
+    switch (filter) {
+      case DateFilter.day:
+        return 'Daily Report (${DateFormat('dd-MM-yyyy').format(from)})';
+
+      case DateFilter.month:
+        return 'Monthly Report (${DateFormat('MMM-yyyy').format(from)})';
+
+      case DateFilter.year:
+        return 'Yearly Report (${DateFormat('yyyy').format(from)})';
+
+      case DateFilter.periodical:
+        return 'Report (${DateFormat('dd-MM-yyyy').format(from)})';
+    }
   }
 
   /// ---------------- UI HELPERS ----------------
@@ -245,10 +305,12 @@ class AccountsReportPdf {
     try {
       final admins = p['Hospital']['Admins'] as List;
       final docId = p['Consultation']['doctor_Id'];
-      final name = admins.firstWhere((a) => a['user_Id'] == docId)['name'];
-      return name.toString().length > 25
-          ? name.toString().substring(0, 25)
-          : name.toString();
+
+      final name = admins
+          .firstWhere((a) => a['user_Id'] == docId)['name']
+          .toString();
+
+      return name.length > 15 ? '${name.substring(0, 15)}...' : name;
     } catch (_) {
       return 'Doctor';
     }
