@@ -211,6 +211,7 @@ class FeesTestPaymentPageState extends State<FeesTestPaymentPage> {
                             final pdf = await buildPdf(
                               cellController: cellController,
                               dobController: dobController,
+                              addressController: addressController,
                               fee: widget.fee,
                               hospitalName: hospitalName!,
                               hospitalPlace: hospitalPlace!,
@@ -459,6 +460,9 @@ class FeesTestPaymentPageState extends State<FeesTestPaymentPage> {
     final BMI = consultation['BMI'].toString() ?? '_';
     final PK = consultation['PK'].toString() ?? '_';
     final SpO2 = consultation['SPO2'].toString() ?? '_';
+    final bool isTestOnly = consultation['isTestOnly'] ?? false;
+    final referredDoctorName =
+        consultation['referredByDoctorName'].toString() ?? '-';
 
     final num? registrationFee = consultation?['registrationFee'];
     final num? consultationFee =
@@ -673,6 +677,7 @@ class FeesTestPaymentPageState extends State<FeesTestPaymentPage> {
                   _infoRow("DOB ", dobController.text),
                   _infoRow("AGE ", calculateAge(dobController.text)),
                   _infoRow("Address ", addressController.text),
+                  _infoRow("Referred Doctor ", referredDoctorName),
                   const Divider(thickness: 1.2, height: 30),
 
                   // 💳 Fee Details
@@ -955,6 +960,7 @@ class FeesTestPaymentPageState extends State<FeesTestPaymentPage> {
                                         final pdf = await buildPdf(
                                           cellController: cellController,
                                           dobController: dobController,
+                                          addressController: addressController,
                                           fee: widget.fee,
                                           hospitalName: hospitalName!,
                                           hospitalPlace: hospitalPlace!,
@@ -1068,6 +1074,7 @@ class FeesTestPaymentPageState extends State<FeesTestPaymentPage> {
                                     ),
                                     patientName: nameController.text,
                                     patientId: idController.text,
+                                    fee: widget.fee,
                                     tokenNo: tokenNo,
                                     age: calculateAge(dobController.text),
                                     address: addressController.text,

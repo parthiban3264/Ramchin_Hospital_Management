@@ -4,6 +4,7 @@ import 'package:lottie/lottie.dart';
 import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/payment_service.dart';
 import '../Page/PaymentPage.dart';
+import '../Page/outer_testPayment_page.dart';
 
 class FeesTestQueuePage extends StatefulWidget {
   const FeesTestQueuePage({super.key});
@@ -553,7 +554,7 @@ class _FeesTestQueuePageState extends State<FeesTestQueuePage> {
                                 final result = await Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) => FeesPaymentPage(
+                                    builder: (_) => FeesTestPaymentPage(
                                       fee: item,
                                       patient: patient,
                                       index: _currentIndex,

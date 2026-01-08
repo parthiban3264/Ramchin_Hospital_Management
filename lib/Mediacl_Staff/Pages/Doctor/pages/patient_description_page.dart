@@ -6,6 +6,7 @@ import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/admin_service.dart';
 import '../../../../Services/consultation_service.dart';
 import '../../../../Services/socket_service.dart';
+import '../../../../lib/lib/admin/services/service/billing.dart';
 import '../../OutPatient/Report/ReportCard.dart';
 import '../../OutPatient/Report/ScanReportPage.dart';
 import '../widgets/doctor_description_edit.dart';
@@ -486,7 +487,7 @@ class _PatientDescriptionPageState extends State<PatientDescriptionPage>
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.blue.shade200.withOpacity(0.4),
+                        color: Colors.blue.shade200.withValues(alpha: 0.4),
                         blurRadius: 6,
                         offset: const Offset(0, 3),
                       ),
@@ -611,7 +612,7 @@ class _PatientDescriptionPageState extends State<PatientDescriptionPage>
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.blue.shade200.withOpacity(0.4),
+                        color: Colors.blue.shade200.withValues(alpha: 0.4),
                         blurRadius: 6,
                         offset: const Offset(0, 3),
                       ),
@@ -1510,18 +1511,18 @@ class _PatientDescriptionPageState extends State<PatientDescriptionPage>
                         ),
                       ),
 
-                      // const SizedBox(width: 15),
-                      // Expanded(
-                      //   child: _buildActionButton(
-                      //     context,
-                      //     title: 'Prescription',
-                      //     icon: Icons.receipt_long_rounded,
-                      //     color: primaryColor,
-                      //     route: DoctorsPrescriptionPage(
-                      //       consultation: consultation,
-                      //     ),
-                      //   ),
-                      // ),
+                      const SizedBox(width: 15),
+                      Expanded(
+                        child: _buildActionButton(
+                          context,
+                          title: 'Prescription',
+                          icon: Icons.receipt_long_rounded,
+                          color: primaryColor,
+                          route: DoctorsPrescriptionPage(
+                            consultation: consultation,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ],

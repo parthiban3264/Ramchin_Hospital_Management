@@ -37,8 +37,8 @@ Future<pw.Document> buildPdf({
   required TextEditingController nameController,
   required TextEditingController cellController,
   required TextEditingController dobController,
+  required TextEditingController addressController,
 }) async {
-  print(fee);
   final consultation = fee['Consultation'];
   final temperature = consultation['temperature'].toString();
   final bloodPressure = consultation['bp'] ?? '_';
@@ -49,6 +49,9 @@ Future<pw.Document> buildPdf({
   final PK = consultation['PK'].toString() ?? '_';
   final SpO2 = consultation['SPO2'].toString() ?? '_';
   final tokenNo = fee['Consultation']?['tokenNo'];
+  final bool isTestOnly = consultation['isTestOnly'] ?? false;
+  final referredDoctorName =
+      consultation['referredByDoctorName'].toString() ?? '-';
 
   final tokenText =
       (tokenNo == null ||
@@ -388,6 +391,29 @@ Future<pw.Document> buildPdf({
                 ),
                 pw.TableRow(
                   children: [
+                    pw.Text("Address : ", style: pw.TextStyle(fontSize: 9)),
+                    pw.Text(
+                      addressController.text,
+                      style: pw.TextStyle(fontSize: 9),
+                    ),
+                  ],
+                ),
+                if (isTestOnly == true) ...[
+                  pw.TableRow(
+                    children: [
+                      pw.Text(
+                        "Referred Dr : ",
+                        style: pw.TextStyle(fontSize: 9),
+                      ),
+                      pw.Text(
+                        referredDoctorName ?? '-',
+                        style: pw.TextStyle(fontSize: 9),
+                      ),
+                    ],
+                  ),
+                ],
+                pw.TableRow(
+                  children: [
                     pw.Text("Date :", style: pw.TextStyle(fontSize: 9)),
                     pw.Text(
                       FeesPaymentPageState.getFormattedDate(
@@ -688,7 +714,7 @@ List<pw.TableRow> buildFeeRows({
     pw.TableRow(
       children: [
         pw.Padding(
-          padding: const pw.EdgeInsets.only(top: 6, bottom: 10, left: 8),
+          padding: const pw.EdgeInsets.only(top: 6, bottom: 2, left: 8),
           child: pw.Text(
             "Bill Details",
             style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold),

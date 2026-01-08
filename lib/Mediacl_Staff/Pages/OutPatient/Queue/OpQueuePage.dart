@@ -1302,7 +1302,7 @@ class _OutpatientQueuePageState extends State<OutpatientQueuePage>
                     indicatorColor: accentColor,
                     tabs: const [
                       Tab(text: "Current"),
-                      Tab(text: "Before"),
+                      Tab(text: "Previous"),
                     ],
                   ),
                 ),

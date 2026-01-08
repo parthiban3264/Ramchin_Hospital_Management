@@ -163,13 +163,19 @@ ${hospital['name'] ?? 'Hospital'}
     required String phoneNumber,
     required String patientName,
     required String tokenNo,
+    required Map<String, dynamic> fee,
     required String patientId,
     required String age,
     required String address,
     required List<Map<String, dynamic>> tests,
   }) async {
+    final consultation = fee['Consultation'] ?? {};
     final hospital = await HospitalStorage.getHospitalData();
     final date = DateFormat('dd-MM-yyyy').format(DateTime.now());
+
+    final bool isTestOnly = consultation['isTestOnly'] ?? false;
+    final String referredDoctorName =
+        consultation['referredByDoctorName']?.toString() ?? '-';
 
     final List<String> testLines = [];
     num total = 0;
@@ -179,12 +185,10 @@ ${hospital['name'] ?? 'Hospital'}
       final num testAmount = t['amount'] ?? 0;
       final dynamic selectedOption = t['selectedOptionAmounts'];
 
-      // 🔹 Test title
       testLines.add('*$title*');
 
       bool hasOptions = false;
 
-      // 🔹 Option map
       if (selectedOption is Map) {
         selectedOption.forEach((key, value) {
           final num amt = num.tryParse(value.toString()) ?? 0;
@@ -194,9 +198,7 @@ ${hospital['name'] ?? 'Hospital'}
             testLines.add('  ${key.padRight(22)} ₹$amt');
           }
         });
-      }
-      // 🔹 Option list
-      else if (selectedOption is List) {
+      } else if (selectedOption is List) {
         for (final o in selectedOption) {
           if (o is Map) {
             final String name = o['name']?.toString() ?? '';
@@ -210,16 +212,15 @@ ${hospital['name'] ?? 'Hospital'}
         }
       }
 
-      // 🔹 No options fallback
       if (!hasOptions && testAmount > 0) {
         total += testAmount;
         testLines.add('  ${"Amount".padRight(22)} ₹$testAmount');
       }
 
-      testLines.add(''); // space between tests
+      testLines.add('');
     }
 
-    final billText =
+    String billText =
         '''
 🧾 *INVOICE / HOSPITAL BILL*
 
@@ -235,8 +236,20 @@ Name    : $patientName
 PID     : $patientId
 Age     : $age
 Address : $address
-
 ━━━━━━━━━━━━━━━━━━━━━━
+''';
+
+    // ✅ Show only when isTestOnly == true
+    if (isTestOnly) {
+      billText +=
+          '''
+Referred Dr : $referredDoctorName
+━━━━━━━━━━━━━━━━━━━━━━
+''';
+    }
+
+    billText +=
+        '''
 🧪 *TESTING & SCANNING*
 ━━━━━━━━━━━━━━━━━━━━━━
 Test / Option              Amount

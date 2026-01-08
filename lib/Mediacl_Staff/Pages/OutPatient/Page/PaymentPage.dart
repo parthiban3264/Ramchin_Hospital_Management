@@ -47,6 +47,7 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
   late TextEditingController dobController;
   late TextEditingController feeController;
   late TextEditingController idController;
+  late TextEditingController referredDoctorController;
 
   @override
   void initState() {
@@ -63,6 +64,12 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
     );
     addressController = TextEditingController(
       text: extractString(widget.patient['address'], 'Address'),
+    );
+    referredDoctorController = TextEditingController(
+      text: extractString(
+        widget.fee['Consultation']['referredByDoctorName'],
+        '',
+      ),
     );
     dobController = TextEditingController(
       text: formatDob(extractString(widget.patient['dob'])),
@@ -211,6 +218,7 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                             final pdf = await buildPdf(
                               cellController: cellController,
                               dobController: dobController,
+                              addressController: addressController,
                               fee: widget.fee,
                               hospitalName: hospitalName!,
                               hospitalPlace: hospitalPlace!,
@@ -459,6 +467,9 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
     final BMI = consultation['BMI'].toString() ?? '_';
     final PK = consultation['PK'].toString() ?? '_';
     final SpO2 = consultation['SPO2'].toString() ?? '_';
+    // final bool isTestOnly = consultation['isTestOnly'] ?? false;
+    // final referredDoctorName =
+    //     consultation['referredByDoctorName'].toString() ?? '-';
 
     final num? registrationFee = consultation?['registrationFee'];
     final num? consultationFee =
@@ -673,6 +684,7 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                   _infoRow("DOB ", dobController.text),
                   _infoRow("AGE ", calculateAge(dobController.text)),
                   _infoRow("Address ", addressController.text),
+
                   const Divider(thickness: 1.2, height: 30),
 
                   // 💳 Fee Details
@@ -955,6 +967,7 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                                         final pdf = await buildPdf(
                                           cellController: cellController,
                                           dobController: dobController,
+                                          addressController: addressController,
                                           fee: widget.fee,
                                           hospitalName: hospitalName!,
                                           hospitalPlace: hospitalPlace!,
@@ -1069,6 +1082,7 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                                     patientName: nameController.text,
                                     patientId: idController.text,
                                     tokenNo: tokenNo,
+                                    fee: widget.fee,
                                     age: calculateAge(dobController.text),
                                     address: addressController.text,
                                     tests: List<Map<String, dynamic>>.from(
