@@ -13,7 +13,7 @@ class FeesQueuePage extends StatefulWidget {
 }
 
 class _FeesQueuePageState extends State<FeesQueuePage> {
-  late Future<List<dynamic>> _feesFuture;
+  //late Future<List<dynamic>> _feesFuture;
 
   List<dynamic> _allFees = []; // All payment data
   List<dynamic> _queueFees = []; // Pending fees
@@ -21,12 +21,19 @@ class _FeesQueuePageState extends State<FeesQueuePage> {
   List<dynamic> _cancelledFees = [];
   String cancelledFilter = 'Today'; // Today | Before
   String queueFilter = 'Today'; // Today | Before
+  String historyFilter = 'Today';
+  bool _isLoadingMore = false;
+  int _page = 1;
+  final int _limit = 50;
+  bool _hasMore = true;
+
+  final ScrollController _scrollController = ScrollController();
 
   int _currentIndex = 0; // 0 = Queue, 1 = History
 
   // History search/filter
   TextEditingController searchController = TextEditingController();
-  String historyFilter = 'Today'; // Default to Today
+  //String historyFilter = 'Today'; // Default to Today
 
   final DateFormat dateFormat = DateFormat(
     'yyyy-MM-dd hh:mm a',
@@ -35,84 +42,179 @@ class _FeesQueuePageState extends State<FeesQueuePage> {
   @override
   void initState() {
     super.initState();
-    _loadFees();
-  }
+    _loadFees(isFirstLoad: true);
 
-  void _loadFees() {
-    _feesFuture = PaymentService().getAllPendingFees().then((list) {
-      // Normalize status
-      List<dynamic> normalized = list.map((e) {
-        e["status"] = e["status"].toString().toLowerCase();
-        return e;
-      }).toList();
-
-      _allFees = normalized;
-
-      // Separate queue and paid
-      _queueFees = _allFees.where((e) => e["status"] == "pending").toList();
-      _cancelledFees = _allFees
-          .where((e) => e["status"] == "cancelled")
-          .toList();
-
-      _applyCancelledFilter();
-      _applyQueueFilter();
-
-      _applyHistoryFilter(); // Updates _historyFees
-
-      return _currentIndex == 0 ? _queueFees : _historyFees;
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >=
+              _scrollController.position.maxScrollExtent - 200 &&
+          !_isLoadingMore &&
+          _hasMore) {
+        _loadFees();
+      }
     });
-    setState(() {});
   }
+
+  // void _loadFees() {
+  //   _feesFuture = PaymentService().getAllPendingFees().then((list) {
+  //     // Normalize status
+  //     List<dynamic> normalized = list.map((e) {
+  //       e["status"] = e["status"].toString().toLowerCase();
+  //       return e;
+  //     }).toList();
+  //
+  //     _allFees = normalized;
+  //
+  //     // Separate queue and paid
+  //     _queueFees = _allFees.where((e) => e["status"] == "pending").toList();
+  //     _cancelledFees = _allFees
+  //         .where((e) => e["status"] == "cancelled")
+  //         .toList();
+  //
+  //     _applyCancelledFilter();
+  //     _applyQueueFilter();
+  //
+  //     _applyHistoryFilter(); // Updates _historyFees
+  //
+  //     return _currentIndex == 0 ? _queueFees : _historyFees;
+  //   });
+  //   setState(() {});
+  // }
+
+  Future<void> _loadFees({bool isFirstLoad = false}) async {
+    if (_isLoadingMore || !_hasMore) return;
+
+    if (isFirstLoad) {
+      _page = 1;
+      _hasMore = true;
+      _allFees.clear();
+      _queueFees.clear();
+      _historyFees.clear();
+      _cancelledFees.clear();
+    }
+
+    setState(() => _isLoadingMore = true);
+
+    final list = await PaymentService().getAllPendingLimitedFees(
+      page: _page,
+      limit: _limit,
+    );
+
+    if (list.length < _limit) {
+      _hasMore = false;
+    }
+
+    final normalized = list.map((e) {
+      e['status'] = e['status'].toString().toLowerCase();
+      return e;
+    }).toList();
+
+    _allFees.addAll(normalized);
+
+    _queueFees = _allFees.where((e) => e['status'] == 'pending').toList();
+    _cancelledFees = _allFees.where((e) => e['status'] == 'cancelled').toList();
+
+    _applyQueueFilter();
+    _applyHistoryFilter();
+    _applyCancelledFilter();
+
+    _page++;
+    setState(() => _isLoadingMore = false);
+  }
+
+  // void _applyHistoryFilter() {
+  //   List<dynamic> filtered = _allFees
+  //       .where((e) => e["status"] == "paid")
+  //       .toList();
+  //   final now = DateTime.now();
+  //
+  //   // Apply Today / Month / Overall filters
+  //   if (historyFilter == 'Today') {
+  //     filtered = filtered.where((e) {
+  //       try {
+  //         final date = dateFormat.parse(e['updatedAt']);
+  //         return date.year == now.year &&
+  //             date.month == now.month &&
+  //             date.day == now.day;
+  //       } catch (_) {
+  //         return false;
+  //       }
+  //     }).toList();
+  //   } else if (historyFilter == 'Month') {
+  //     filtered = filtered.where((e) {
+  //       try {
+  //         final date = dateFormat.parse(e['updatedAt']);
+  //         return date.year == now.year && date.month == now.month;
+  //       } catch (_) {
+  //         return false;
+  //       }
+  //     }).toList();
+  //   } // Overall = no filter
+  //
+  //   // Apply search filter
+  //   final search = searchController.text.toLowerCase();
+  //   if (search.isNotEmpty) {
+  //     filtered = filtered.where((e) {
+  //       final patient = e['Patient'] ?? {};
+  //       final name = (patient['name'] ?? '').toString().toLowerCase();
+  //       final userId = (patient['id'] ?? '').toString().toLowerCase();
+  //       return name.contains(search) || userId.contains(search);
+  //     }).toList();
+  //   }
+  //
+  //   // Sort latest first
+  //   filtered.sort((a, b) {
+  //     try {
+  //       final dateA = dateFormat.parse(a['updatedAt']);
+  //       final dateB = dateFormat.parse(b['updatedAt']);
+  //       return dateB.compareTo(dateA);
+  //     } catch (_) {
+  //       return 0;
+  //     }
+  //   });
+  //
+  //   _historyFees = filtered;
+  // }
 
   void _applyHistoryFilter() {
     List<dynamic> filtered = _allFees
         .where((e) => e["status"] == "paid")
         .toList();
-    final now = DateTime.now();
 
-    // Apply Today / Month / Overall filters
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final weekStart = todayStart.subtract(const Duration(days: 7));
+
     if (historyFilter == 'Today') {
       filtered = filtered.where((e) {
-        try {
-          final date = dateFormat.parse(e['updatedAt']);
-          return date.year == now.year &&
-              date.month == now.month &&
-              date.day == now.day;
-        } catch (_) {
-          return false;
-        }
+        final date = parseAnyDate(e['updatedAt']);
+        if (date == null) return false;
+        return date.isAfter(todayStart);
       }).toList();
-    } else if (historyFilter == 'Month') {
+    } else if (historyFilter == 'Previous') {
       filtered = filtered.where((e) {
-        try {
-          final date = dateFormat.parse(e['updatedAt']);
-          return date.year == now.year && date.month == now.month;
-        } catch (_) {
-          return false;
-        }
+        final date = parseAnyDate(e['updatedAt']);
+        if (date == null) return false;
+        return date.isAfter(weekStart) && date.isBefore(todayStart);
       }).toList();
-    } // Overall = no filter
+    }
 
-    // Apply search filter
+    // Search
     final search = searchController.text.toLowerCase();
     if (search.isNotEmpty) {
       filtered = filtered.where((e) {
         final patient = e['Patient'] ?? {};
         final name = (patient['name'] ?? '').toString().toLowerCase();
-        final userId = (patient['id'] ?? '').toString().toLowerCase();
-        return name.contains(search) || userId.contains(search);
+        final id = (patient['id'] ?? '').toString().toLowerCase();
+        return name.contains(search) || id.contains(search);
       }).toList();
     }
 
-    // Sort latest first
+    // Latest first
     filtered.sort((a, b) {
-      try {
-        final dateA = dateFormat.parse(a['updatedAt']);
-        final dateB = dateFormat.parse(b['updatedAt']);
-        return dateB.compareTo(dateA);
-      } catch (_) {
-        return 0;
-      }
+      final aDate = parseAnyDate(a['updatedAt']);
+      final bDate = parseAnyDate(b['updatedAt']);
+      if (aDate == null || bDate == null) return 0;
+      return bDate.compareTo(aDate);
     });
 
     _historyFees = filtered;
@@ -204,35 +306,35 @@ class _FeesQueuePageState extends State<FeesQueuePage> {
     print("✅ Cancelled fees count: ${_cancelledFees.length}");
   }
 
+  String formatDob(String? dob) {
+    if (dob == null || dob.isEmpty) return 'N/A';
+    try {
+      final date = DateTime.parse(dob);
+      return DateFormat('dd-MM-yyyy').format(date);
+    } catch (_) {
+      return dob;
+    }
+  }
+
+  String calculateAge(String? dob) {
+    if (dob == null || dob.isEmpty) return 'N/A';
+    try {
+      final date = DateTime.parse(dob);
+      final now = DateTime.now();
+      int age = now.year - date.year;
+      if (now.month < date.month ||
+          (now.month == date.month && now.day < date.day)) {
+        age--;
+      }
+      return "$age ";
+    } catch (_) {
+      return 'N/A';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeColor = const Color(0xFFBF955E);
-
-    String formatDob(String? dob) {
-      if (dob == null || dob.isEmpty) return 'N/A';
-      try {
-        final date = DateTime.parse(dob);
-        return DateFormat('dd-MM-yyyy').format(date);
-      } catch (_) {
-        return dob;
-      }
-    }
-
-    String calculateAge(String? dob) {
-      if (dob == null || dob.isEmpty) return 'N/A';
-      try {
-        final date = DateTime.parse(dob);
-        final now = DateTime.now();
-        int age = now.year - date.year;
-        if (now.month < date.month ||
-            (now.month == date.month && now.day < date.day)) {
-          age--;
-        }
-        return "$age ";
-      } catch (_) {
-        return 'N/A';
-      }
-    }
 
     return Scaffold(
       appBar: PreferredSize(
@@ -247,7 +349,7 @@ class _FeesQueuePageState extends State<FeesQueuePage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -325,10 +427,45 @@ class _FeesQueuePageState extends State<FeesQueuePage> {
               padding: const EdgeInsets.all(8.0),
               child: Column(
                 children: [
+                  // Row(
+                  //   mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  //   children: [
+                  //     FilterButton(
+                  //       label: 'Today',
+                  //       selected: historyFilter == 'Today',
+                  //       onTap: () {
+                  //         setState(() {
+                  //           historyFilter = 'Today';
+                  //           _applyHistoryFilter();
+                  //         });
+                  //       },
+                  //     ),
+                  //     FilterButton(
+                  //       label: 'Month',
+                  //       selected: historyFilter == 'Month',
+                  //       onTap: () {
+                  //         setState(() {
+                  //           historyFilter = 'Month';
+                  //           _applyHistoryFilter();
+                  //         });
+                  //       },
+                  //     ),
+                  //     FilterButton(
+                  //       label: 'Overall',
+                  //       selected: historyFilter == 'Overall',
+                  //       onTap: () {
+                  //         setState(() {
+                  //           historyFilter = 'Overall';
+                  //           _applyHistoryFilter();
+                  //         });
+                  //       },
+                  //     ),
+                  //   ],
+                  // ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      FilterButton(
+                      _TopTab(
                         label: 'Today',
                         selected: historyFilter == 'Today',
                         onTap: () {
@@ -338,28 +475,19 @@ class _FeesQueuePageState extends State<FeesQueuePage> {
                           });
                         },
                       ),
-                      FilterButton(
-                        label: 'Month',
-                        selected: historyFilter == 'Month',
+                      _TopTab(
+                        label: 'Previous',
+                        selected: historyFilter == 'Previous',
                         onTap: () {
                           setState(() {
-                            historyFilter = 'Month';
-                            _applyHistoryFilter();
-                          });
-                        },
-                      ),
-                      FilterButton(
-                        label: 'Overall',
-                        selected: historyFilter == 'Overall',
-                        onTap: () {
-                          setState(() {
-                            historyFilter = 'Overall';
+                            historyFilter = 'Previous';
                             _applyHistoryFilter();
                           });
                         },
                       ),
                     ],
                   ),
+
                   const SizedBox(height: 4),
                   Row(
                     children: [
@@ -430,7 +558,7 @@ class _FeesQueuePageState extends State<FeesQueuePage> {
                     },
                   ),
                   _TopTab(
-                    label: 'Before',
+                    label: 'Previous',
                     selected: cancelledFilter == 'Before',
                     onTap: () {
                       setState(() {
@@ -443,256 +571,313 @@ class _FeesQueuePageState extends State<FeesQueuePage> {
               ),
             ),
 
+          // Expanded(
+          //   child: FutureBuilder<List<dynamic>>(
+          //     future: _feesFuture,
+          //     builder: (context, snapshot) {
+          //       if (snapshot.connectionState == ConnectionState.waiting) {
+          //         return const Center(child: CircularProgressIndicator());
+          //       } else if (snapshot.hasError) {
+          //         return Center(
+          //           child: SizedBox(
+          //             width: double.infinity,
+          //             height: double.infinity,
+          //             child: Lottie.asset(
+          //               'assets/Lottie/error404.json',
+          //               fit: BoxFit.contain,
+          //               repeat: true,
+          //             ),
+          //           ),
+          //         );
+          //       } else if (_currentIndex == 1 && _historyFees.isEmpty) {
+          //         return const Center(
+          //           child: Text(
+          //             '📜 No Payment History Available!',
+          //             style: TextStyle(
+          //               fontSize: 18,
+          //               fontWeight: FontWeight.w600,
+          //             ),
+          //           ),
+          //         );
+          //       } else if (_currentIndex == 0 && _queueFees.isEmpty) {
+          //         return const Center(
+          //           child: Text(
+          //             '🎉 No Pending Fees!',
+          //             style: TextStyle(
+          //               fontSize: 18,
+          //               fontWeight: FontWeight.w600,
+          //             ),
+          //           ),
+          //         );
+          //       } else {
+          //         //final data = _currentIndex == 0 ? _queueFees : _historyFees;
+          //         final data = _currentIndex == 0
+          //             ? _queueFees
+          //             : _currentIndex == 1
+          //             ? _historyFees
+          //             : _cancelledFees;
+          //         if (data.isEmpty) {
+          //           return Center(
+          //             child: Text(
+          //               _currentIndex == 2
+          //                   ? '❌ No Cancelled Payments!'
+          //                   : 'No Data Available',
+          //               style: const TextStyle(
+          //                 fontSize: 18,
+          //                 fontWeight: FontWeight.w600,
+          //               ),
+          //             ),
+          //           );
+          //         }
+          //
+          //         return ListView.builder(
+          //           controller: _scrollController,
+          //           itemCount: data.length + (_hasMore ? 1 : 0),
+          //           itemBuilder: (context, index) {
+          //             if (index == data.length) {
+          //               return const Padding(
+          //                 padding: EdgeInsets.all(16),
+          //                 child: Center(child: CircularProgressIndicator()),
+          //               );
+          //             }
+          //             final item = data[index];
+          //             final patient = item['Patient'] ?? {};
+          //
+          //             return GestureDetector(
+          //               onTap: _currentIndex == 2
+          //                   ? null // ❌ Disable tap for Cancelled
+          //                   : () async {
+          //                       // if (_currentIndex == 1) return;
+          //
+          //                       final result = await Navigator.push(
+          //                         context,
+          //                         MaterialPageRoute(
+          //                           builder: (_) => FeesPaymentPage(
+          //                             fee: item,
+          //                             patient: patient,
+          //                             index: _currentIndex,
+          //                           ),
+          //                         ),
+          //                       );
+          //
+          //                       if (result == true) {
+          //                         _loadFees();
+          //                       }
+          //                     },
+          //               child: Card(
+          //                 color: Colors.white,
+          //                 margin: const EdgeInsets.symmetric(
+          //                   horizontal: 12,
+          //                   vertical: 8,
+          //                 ),
+          //                 shape: RoundedRectangleBorder(
+          //                   borderRadius: BorderRadius.circular(12),
+          //                 ),
+          //                 elevation: 8,
+          //                 shadowColor: themeColor.withValues(alpha: 0.5),
+          //                 child: Padding(
+          //                   padding: const EdgeInsets.all(16),
+          //                   child: Column(
+          //                     crossAxisAlignment: CrossAxisAlignment.stretch,
+          //                     children: [
+          //                       Center(
+          //                         child: Padding(
+          //                           padding: const EdgeInsets.symmetric(
+          //                             vertical: 2.0,
+          //                             horizontal: 16.0,
+          //                           ),
+          //                           child: Column(
+          //                             mainAxisSize: MainAxisSize
+          //                                 .min, // so column takes minimal vertical space
+          //                             crossAxisAlignment: CrossAxisAlignment
+          //                                 .center, // left-align text inside
+          //                             children: [
+          //                               Text(
+          //                                 item['reason'] ?? 'Unknown Fee',
+          //                                 style: const TextStyle(
+          //                                   fontWeight: FontWeight.bold,
+          //                                   fontSize: 20,
+          //                                   color: Colors.black87,
+          //                                 ),
+          //                               ),
+          //                               const SizedBox(height: 8),
+          //                               Row(
+          //                                 mainAxisSize: MainAxisSize
+          //                                     .min, // row takes minimal horizontal space
+          //                                 children: [
+          //                                   Text(
+          //                                     'Token No: ',
+          //                                     style: TextStyle(
+          //                                       fontSize: 16,
+          //                                       fontWeight: FontWeight.w500,
+          //                                       color: Colors.grey[700],
+          //                                     ),
+          //                                   ),
+          //                                   Text(
+          //                                     getString(
+          //                                       item['Consultation']['tokenNo'] ??
+          //                                           '-',
+          //                                     ),
+          //                                     style: const TextStyle(
+          //                                       fontSize: 18,
+          //                                       fontWeight: FontWeight.bold,
+          //                                       color: Colors.black,
+          //                                     ),
+          //                                   ),
+          //                                 ],
+          //                               ),
+          //                             ],
+          //                           ),
+          //                         ),
+          //                       ),
+          //
+          //                       //const SizedBox(height: 8),
+          //                       const Divider(thickness: 1),
+          //
+          //                       const SizedBox(height: 8),
+          //                       Row(
+          //                         mainAxisAlignment:
+          //                             MainAxisAlignment.spaceBetween,
+          //                         children: [
+          //                           Text(
+          //                             'Patient: ${getString(patient['name'])}',
+          //                             style: const TextStyle(fontSize: 16),
+          //                           ),
+          //                           Text(
+          //                             'AGE: ${calculateAge(getString(patient['dob']))}',
+          //                             style: TextStyle(
+          //                               fontSize: 16,
+          //                               color: Colors.grey.shade600,
+          //                             ),
+          //                           ),
+          //                         ],
+          //                       ),
+          //                       const SizedBox(height: 6),
+          //                       Row(
+          //                         mainAxisAlignment:
+          //                             MainAxisAlignment.spaceBetween,
+          //                         children: [
+          //                           Text(
+          //                             'ID: ${getString(patient['id'])}',
+          //                             style: TextStyle(
+          //                               fontSize: 14,
+          //                               color: Colors.grey.shade700,
+          //                             ),
+          //                           ),
+          //                           Text(
+          //                             'DOB: ${formatDob(getString(patient['dob']))}',
+          //                             style: TextStyle(
+          //                               fontSize: 14,
+          //                               color: Colors.grey.shade600,
+          //                             ),
+          //                           ),
+          //                         ],
+          //                       ),
+          //                       const SizedBox(height: 6),
+          //                       Text(
+          //                         'Address: ${getString(patient['address']?['Address'])}',
+          //                         style: const TextStyle(fontSize: 14),
+          //                       ),
+          //                       const SizedBox(height: 8),
+          //                       const Divider(thickness: 1),
+          //                       const SizedBox(height: 8),
+          //
+          //                       Center(
+          //                         child: Text(
+          //                           'Amount: ₹ ${item['amount']?.toStringAsFixed(0) ?? '-'}',
+          //                           style: const TextStyle(
+          //                             fontSize: 16,
+          //                             fontWeight: FontWeight.bold,
+          //                             color: Color(0xFFBF955E),
+          //                           ),
+          //                         ),
+          //                       ),
+          //
+          //                       const SizedBox(height: 6),
+          //
+          //                       if (_currentIndex == 1) ...[
+          //                         Row(
+          //                           children: [
+          //                             Center(
+          //                               child: Text(
+          //                                 '${getFormattedDate(item['updatedAt'])}',
+          //                                 style: TextStyle(
+          //                                   fontSize: 12,
+          //                                   color: Colors.grey.shade800,
+          //                                 ),
+          //                               ),
+          //                             ),
+          //                             Spacer(),
+          //                             Text(
+          //                               'Paid',
+          //                               style: TextStyle(color: Colors.black),
+          //                             ),
+          //                             SizedBox(width: 5),
+          //                             Icon(
+          //                               Icons.check_circle,
+          //                               color: Colors.green,
+          //                             ),
+          //                           ],
+          //                         ),
+          //                       ],
+          //                     ],
+          //                   ),
+          //                 ),
+          //               ),
+          //             );
+          //           },
+          //         );
+          //       }
+          //     },
+          //   ),
+          // ),
           Expanded(
-            child: FutureBuilder<List<dynamic>>(
-              future: _feesFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
+            child: Builder(
+              builder: (context) {
+                // Initial loading
+                if (_allFees.isEmpty && _isLoadingMore) {
                   return const Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
+                }
+
+                final data = _currentIndex == 0
+                    ? _queueFees
+                    : _currentIndex == 1
+                    ? _historyFees
+                    : _cancelledFees;
+
+                if (data.isEmpty) {
                   return Center(
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: double.infinity,
-                      child: Lottie.asset(
-                        'assets/Lottie/error404.json',
-                        fit: BoxFit.contain,
-                        repeat: true,
-                      ),
-                    ),
-                  );
-                } else if (_currentIndex == 1 && _historyFees.isEmpty) {
-                  return const Center(
                     child: Text(
-                      '📜 No Payment History Available!',
-                      style: TextStyle(
+                      _currentIndex == 0
+                          ? '🎉 No Pending Fees!'
+                          : _currentIndex == 1
+                          ? '📜 No Payment History Available!'
+                          : '❌ No Cancelled Payments!',
+                      style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                  );
-                } else if (_currentIndex == 0 && _queueFees.isEmpty) {
-                  return const Center(
-                    child: Text(
-                      '🎉 No Pending Fees!',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  );
-                } else {
-                  //final data = _currentIndex == 0 ? _queueFees : _historyFees;
-                  final data = _currentIndex == 0
-                      ? _queueFees
-                      : _currentIndex == 1
-                      ? _historyFees
-                      : _cancelledFees;
-                  if (data.isEmpty) {
-                    return Center(
-                      child: Text(
-                        _currentIndex == 2
-                            ? '❌ No Cancelled Payments!'
-                            : 'No Data Available',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    );
-                  }
-
-                  return ListView.builder(
-                    itemCount: data.length,
-                    itemBuilder: (context, index) {
-                      final item = data[index];
-                      final patient = item['Patient'] ?? {};
-
-                      return GestureDetector(
-                        onTap: _currentIndex == 2
-                            ? null // ❌ Disable tap for Cancelled
-                            : () async {
-                                // if (_currentIndex == 1) return;
-
-                                final result = await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => FeesPaymentPage(
-                                      fee: item,
-                                      patient: patient,
-                                      index: _currentIndex,
-                                    ),
-                                  ),
-                                );
-
-                                if (result == true) {
-                                  _loadFees();
-                                }
-                              },
-                        child: Card(
-                          color: Colors.white,
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 8,
-                          shadowColor: themeColor.withValues(alpha: 0.5),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Center(
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 2.0,
-                                      horizontal: 16.0,
-                                    ),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize
-                                          .min, // so column takes minimal vertical space
-                                      crossAxisAlignment: CrossAxisAlignment
-                                          .center, // left-align text inside
-                                      children: [
-                                        Text(
-                                          item['reason'] ?? 'Unknown Fee',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 20,
-                                            color: Colors.black87,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Row(
-                                          mainAxisSize: MainAxisSize
-                                              .min, // row takes minimal horizontal space
-                                          children: [
-                                            Text(
-                                              'Token No: ',
-                                              style: TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.w500,
-                                                color: Colors.grey[700],
-                                              ),
-                                            ),
-                                            Text(
-                                              getString(
-                                                item['Consultation']['tokenNo'] ??
-                                                    '-',
-                                              ),
-                                              style: const TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.black,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-
-                                //const SizedBox(height: 8),
-                                const Divider(thickness: 1),
-
-                                const SizedBox(height: 8),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Patient: ${getString(patient['name'])}',
-                                      style: const TextStyle(fontSize: 16),
-                                    ),
-                                    Text(
-                                      'AGE: ${calculateAge(getString(patient['dob']))}',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 6),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'ID: ${getString(patient['id'])}',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.grey.shade700,
-                                      ),
-                                    ),
-                                    Text(
-                                      'DOB: ${formatDob(getString(patient['dob']))}',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  'Address: ${getString(patient['address']?['Address'])}',
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                                const SizedBox(height: 8),
-                                const Divider(thickness: 1),
-                                const SizedBox(height: 8),
-
-                                Center(
-                                  child: Text(
-                                    'Amount: ₹ ${item['amount']?.toStringAsFixed(0) ?? '-'}',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFFBF955E),
-                                    ),
-                                  ),
-                                ),
-
-                                const SizedBox(height: 6),
-
-                                if (_currentIndex == 1) ...[
-                                  Row(
-                                    children: [
-                                      Center(
-                                        child: Text(
-                                          '${getFormattedDate(item['updatedAt'])}',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey.shade800,
-                                          ),
-                                        ),
-                                      ),
-                                      Spacer(),
-                                      Text(
-                                        'Paid',
-                                        style: TextStyle(color: Colors.black),
-                                      ),
-                                      SizedBox(width: 5),
-                                      Icon(
-                                        Icons.check_circle,
-                                        color: Colors.green,
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
                   );
                 }
+
+                return ListView.builder(
+                  controller: _scrollController,
+                  itemCount: data.length + (_hasMore ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    if (index == data.length) {
+                      return const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+
+                    final item = data[index];
+                    final patient = item['Patient'] ?? {};
+
+                    return _buildFeeCard(item, patient);
+                  },
+                );
               },
             ),
           ),
@@ -721,13 +906,13 @@ class _FeesQueuePageState extends State<FeesQueuePage> {
         onTap: (index) {
           setState(() {
             _currentIndex = index;
-            _feesFuture = Future.value(
-              index == 0
-                  ? _queueFees
-                  : index == 1
-                  ? _historyFees
-                  : _cancelledFees,
-            );
+            // _feesFuture = Future.value(
+            //   index == 0
+            //       ? _queueFees
+            //       : index == 1
+            //       ? _historyFees
+            //       : _cancelledFees,
+            // );
           });
         },
         items: const [
@@ -735,6 +920,168 @@ class _FeesQueuePageState extends State<FeesQueuePage> {
           BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
           BottomNavigationBarItem(icon: Icon(Icons.cancel), label: "Cancelled"),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFeeCard(dynamic item, dynamic patient) {
+    final themeColor = const Color(0xFFBF955E);
+
+    return GestureDetector(
+      onTap: _currentIndex == 2
+          ? null // ❌ Disable tap for Cancelled
+          : () async {
+              // if (_currentIndex == 1) return;
+
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => FeesPaymentPage(
+                    fee: item,
+                    patient: patient,
+                    index: _currentIndex,
+                  ),
+                ),
+              );
+
+              if (result == true) {
+                _loadFees();
+              }
+            },
+      child: Card(
+        color: Colors.white,
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 8,
+        shadowColor: themeColor.withValues(alpha: 0.5),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 2.0,
+                    horizontal: 16.0,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize
+                        .min, // so column takes minimal vertical space
+                    crossAxisAlignment:
+                        CrossAxisAlignment.center, // left-align text inside
+                    children: [
+                      Text(
+                        item['reason'] ?? 'Unknown Fee',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisSize: MainAxisSize
+                            .min, // row takes minimal horizontal space
+                        children: [
+                          Text(
+                            'Token No: ',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                          Text(
+                            getString(item['Consultation']['tokenNo'] ?? '-'),
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              //const SizedBox(height: 8),
+              const Divider(thickness: 1),
+
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Patient: ${getString(patient['name'])}',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  Text(
+                    'AGE: ${calculateAge(getString(patient['dob']))}',
+                    style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'ID: ${getString(patient['id'])}',
+                    style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
+                  ),
+                  Text(
+                    'DOB: ${formatDob(getString(patient['dob']))}',
+                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Address: ${getString(patient['address']?['Address'])}',
+                style: const TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 8),
+              const Divider(thickness: 1),
+              const SizedBox(height: 8),
+
+              Center(
+                child: Text(
+                  'Amount: ₹ ${item['amount']?.toStringAsFixed(0) ?? '-'}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFBF955E),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 6),
+
+              if (_currentIndex == 1) ...[
+                Row(
+                  children: [
+                    Center(
+                      child: Text(
+                        '${getFormattedDate(item['updatedAt'])}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade800,
+                        ),
+                      ),
+                    ),
+                    Spacer(),
+                    Text('Paid', style: TextStyle(color: Colors.black)),
+                    SizedBox(width: 5),
+                    Icon(Icons.check_circle, color: Colors.green),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }

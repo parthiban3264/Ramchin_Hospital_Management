@@ -168,8 +168,11 @@ Widget buildInput(
   String? errorText,
   TextInputType keyboardType = TextInputType.text,
   void Function(String)? onChanged,
+  void Function(String)? onFieldSubmitted,
   List<TextInputFormatter>? inputFormatters,
   Widget? suffix,
+  FocusNode? focusNode,
+  TextInputAction textInputAction = TextInputAction.next,
 }) {
   return SizedBox(
     width: 320,
@@ -183,9 +186,12 @@ Widget buildInput(
         const SizedBox(height: 6),
         TextField(
           controller: controller,
+          focusNode: focusNode,
           maxLines: maxLines,
           keyboardType: keyboardType,
+          textInputAction: textInputAction,
           onChanged: onChanged,
+          onSubmitted: onFieldSubmitted,
           inputFormatters: inputFormatters,
           cursorColor: customGold,
           style: const TextStyle(color: Colors.black),

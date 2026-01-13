@@ -162,11 +162,9 @@ class AccountsReportPdf {
               _tripleRow('Test & Scan', testScanCash, testScanOnline),
 
               /// ---------- OTHER INCOME ----------
-              _tripleRow('Other Income', income, 0),
-
               pw.Divider(),
-
               _row('Total Income (Cash)', totalCash),
+              _row('Other Income', income),
               _row('Expenses', expenses),
               pw.Divider(),
               _row('Balance', balance),
@@ -293,7 +291,10 @@ class AccountsReportPdf {
       pw.Center(child: pw.Text(t, style: const pw.TextStyle(fontSize: 7)));
 
   static pw.Widget _centerBold(String t) => pw.Center(
-    child: pw.Text(t, style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+    child: pw.Text(
+      t,
+      style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
+    ),
   );
 
   static String _today() =>

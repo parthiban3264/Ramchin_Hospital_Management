@@ -57,7 +57,6 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
     dobCtrl.addListener(_refresh);
     reasonCtrl.addListener(_refresh);
     addressCtrl.addListener(_refresh);
-
   }
 
   void _refresh() {
@@ -104,24 +103,29 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
   }
 
   Future<void> shareToWhatsApp(String phone, String message) async {
-    final url =
-        "https://wa.me/91$phone?text=${Uri.encodeComponent(message)}";
+    final url = "https://wa.me/91$phone?text=${Uri.encodeComponent(message)}";
 
     if (await canLaunchUrl(Uri.parse(url))) {
       await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("WhatsApp not available")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("WhatsApp not available")));
     }
   }
 
   Future<void> loadInitialData() async {
     final prefs = await SharedPreferences.getInstance();
     final hospitalId = prefs.getString('hospitalId');
-    final d = await http.get(Uri.parse("$baseUrl/admissions/$hospitalId/staff/doctors"));
-    final n = await http.get(Uri.parse("$baseUrl/admissions/$hospitalId/staff/nurses"));
-    final w = await http.get(Uri.parse("$baseUrl/wards/$hospitalId/available-beds"));
+    final d = await http.get(
+      Uri.parse("$baseUrl/admissions/$hospitalId/staff/doctors"),
+    );
+    final n = await http.get(
+      Uri.parse("$baseUrl/admissions/$hospitalId/staff/nurses"),
+    );
+    final w = await http.get(
+      Uri.parse("$baseUrl/wards/$hospitalId/available-beds"),
+    );
 
     setState(() {
       doctors = jsonDecode(d.body);
@@ -141,7 +145,7 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
       hospitalPlace = place ?? "Unknown Place";
       hospitalPhoto =
           photo ??
-              "https://as1.ftcdn.net/v2/jpg/02/50/38/52/1000_F_250385294_tdzxdr2Yzm5Z3J41fBYbgz4PaVc2kQmT.jpg";
+          "https://as1.ftcdn.net/v2/jpg/02/50/38/52/1000_F_250385294_tdzxdr2Yzm5Z3J41fBYbgz4PaVc2kQmT.jpg";
     });
   }
 
@@ -149,7 +153,9 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
     final prefs = await SharedPreferences.getInstance();
     final hospitalId = prefs.getString('hospitalId');
     final res = await http.get(
-      Uri.parse("$baseUrl/admissions/patients/by-phone/${phoneCtrl.text}/$hospitalId"),
+      Uri.parse(
+        "$baseUrl/admissions/patients/by-phone/${phoneCtrl.text}/$hospitalId",
+      ),
     );
 
     if (res.statusCode == 200) {
@@ -183,7 +189,7 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
     if (pickedDate != null) {
       setState(() {
         dobCtrl.text =
-        "${pickedDate.year.toString().padLeft(4, '0')}-"
+            "${pickedDate.year.toString().padLeft(4, '0')}-"
             "${pickedDate.month.toString().padLeft(2, '0')}-"
             "${pickedDate.day.toString().padLeft(2, '0')}";
       });
@@ -217,7 +223,7 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
           "name": admitByNameCtrl.text,
           "phone": admitByPhoneCtrl.text,
           "relation": admitByRelationCtrl.text,
-        }
+        },
     };
 
     final res = await http.post(
@@ -234,9 +240,9 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
         showSuccess = true;
       });
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Admission failed")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Admission failed")));
     }
   }
 
@@ -247,14 +253,16 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
       return const Center(child: Text("No admission data"));
     }
 
-    final patientPhone = (p["patient"]?["phone"]["mobile"] is List &&
-        p["patient"]["phone"]["mobile"].isNotEmpty)
+    final patientPhone =
+        (p["patient"]?["phone"]["mobile"] is List &&
+            p["patient"]["phone"]["mobile"].isNotEmpty)
         ? p["patient"]["phone"]["mobile"][0]
         : "";
 
     final admissionId = p["id"]?.toString() ?? "N/A";
 
-    final message = '''
+    final message =
+        '''
 🏥 $hospitalName
 
 Patient admitted successfully.
@@ -291,8 +299,9 @@ Reason: ${p["reason"] ?? ""}
           const SizedBox(height: 20),
 
           Card(
-            shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -305,9 +314,7 @@ Reason: ${p["reason"] ?? ""}
                   successRow("Ward", p["bed"]?["ward"]?["name"] ?? "N/A"),
                   successRow(
                     "Bed",
-                    p["bed"] != null
-                        ? "Bed ${p["bed"]["bedNo"] ?? ""}"
-                        : "N/A",
+                    p["bed"] != null ? "Bed ${p["bed"]["bedNo"] ?? ""}" : "N/A",
                   ),
                   successRow("Reason", p["reason"] ?? ""),
                 ],
@@ -325,9 +332,7 @@ Reason: ${p["reason"] ?? ""}
               child: ElevatedButton.icon(
                 icon: const Icon(Icons.share, color: Colors.white),
                 label: const Text("Share on WhatsApp"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                ),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
                 onPressed: () => shareToWhatsApp(patientPhone, message),
               ),
             ),
@@ -341,10 +346,7 @@ Reason: ${p["reason"] ?? ""}
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: royal),
               onPressed: resetForm,
-              child: const Text(
-                "Close",
-                style: TextStyle(color: Colors.white),
-              ),
+              child: const Text("Close", style: TextStyle(color: Colors.white)),
             ),
           ),
         ],
@@ -359,8 +361,10 @@ Reason: ${p["reason"] ?? ""}
         children: [
           SizedBox(
             width: 90,
-            child: Text(label,
-                style: const TextStyle(fontWeight: FontWeight.bold)),
+            child: Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
           Expanded(child: Text(value)),
         ],
@@ -382,10 +386,7 @@ Reason: ${p["reason"] ?? ""}
     }
   }
 
-  Widget labeledField({
-    required String label,
-    required Widget field,
-  }) {
+  Widget labeledField({required String label, required Widget field}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -395,10 +396,7 @@ Reason: ${p["reason"] ?? ""}
             width: 110,
             child: Text(
               label,
-              style: const TextStyle(
-                color: royal,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(color: royal, fontWeight: FontWeight.bold),
             ),
           ),
           const SizedBox(width: 10),
@@ -455,10 +453,16 @@ Reason: ${p["reason"] ?? ""}
                           FilteringTextInputFormatter.digitsOnly,
                           LengthLimitingTextInputFormatter(10),
                         ],
-                        buildCounter: (_, {required int currentLength, required bool isFocused, int? maxLength}) => null,
+                        buildCounter:
+                            (
+                              _, {
+                              required int currentLength,
+                              required bool isFocused,
+                              int? maxLength,
+                            }) => null,
                         decoration: _inputDecoration("Enter phone number"),
                         validator: (v) =>
-                        v!.length != 10 ? "Enter 10 digit number" : null,
+                            v!.length != 10 ? "Enter 10 digit number" : null,
                       ),
                     ),
 
@@ -479,13 +483,20 @@ Reason: ${p["reason"] ?? ""}
                           hint: "Select patient",
                           value: selectedPatientId,
                           items: patientsFound
-                              .map<DropdownMenuItem<int>>((p) => DropdownMenuItem(
-                            value: p["id"],
-                            child: Text(p["name"], style: const TextStyle(color: royal)),
-                          ))
+                              .map<DropdownMenuItem<int>>(
+                                (p) => DropdownMenuItem(
+                                  value: p["id"],
+                                  child: Text(
+                                    p["name"],
+                                    style: const TextStyle(color: royal),
+                                  ),
+                                ),
+                              )
                               .toList(),
                           onChanged: (v) {
-                            final patient = patientsFound.firstWhere((p) => p["id"] == v);
+                            final patient = patientsFound.firstWhere(
+                              (p) => p["id"] == v,
+                            );
 
                             setState(() {
                               selectedPatientId = v;
@@ -500,7 +511,8 @@ Reason: ${p["reason"] ?? ""}
                               gender = patient["gender"];
 
                               // ✅ ADDRESS AUTO-FILL
-                              addressCtrl.text = patient["address"]["Address"] ?? "";
+                              addressCtrl.text =
+                                  patient["address"]["Address"] ?? "";
                             });
                           },
                           validator: (v) => v == null ? "Select patient" : null,
@@ -518,7 +530,8 @@ Reason: ${p["reason"] ?? ""}
                                 cursorColor: royal,
                                 style: const TextStyle(color: royal),
                                 decoration: _inputDecoration("Patient name"),
-                                validator: (v) => v!.isEmpty ? "Required" : null,
+                                validator: (v) =>
+                                    v!.isEmpty ? "Required" : null,
                               ),
                             ),
 
@@ -529,14 +542,20 @@ Reason: ${p["reason"] ?? ""}
                                 readOnly: true,
                                 cursorColor: royal,
                                 style: const TextStyle(color: royal),
-                                decoration: _inputDecoration("Select date of birth").copyWith(
-                                  suffixIcon: const Icon(Icons.calendar_today, color: royal),
-                                ),
+                                decoration:
+                                    _inputDecoration(
+                                      "Select date of birth",
+                                    ).copyWith(
+                                      suffixIcon: const Icon(
+                                        Icons.calendar_today,
+                                        color: royal,
+                                      ),
+                                    ),
                                 onTap: _pickDob,
-                                validator: (v) => v!.isEmpty ? "Required" : null,
+                                validator: (v) =>
+                                    v!.isEmpty ? "Required" : null,
                               ),
                             ),
-
 
                             labeledField(
                               label: "Gender",
@@ -544,9 +563,18 @@ Reason: ${p["reason"] ?? ""}
                                 hint: "Select gender",
                                 value: gender,
                                 items: const [
-                                  DropdownMenuItem(value: "Male", child: Text("Male")),
-                                  DropdownMenuItem(value: "Female", child: Text("Female")),
-                                  DropdownMenuItem(value: "Others", child: Text("Others")),
+                                  DropdownMenuItem(
+                                    value: "Male",
+                                    child: Text("Male"),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: "Female",
+                                    child: Text("Female"),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: "Others",
+                                    child: Text("Others"),
+                                  ),
                                 ],
                                 onChanged: (v) => setState(() => gender = v),
                                 validator: (v) => v == null ? "Required" : null,
@@ -559,11 +587,13 @@ Reason: ${p["reason"] ?? ""}
                                 maxLines: 2,
                                 cursorColor: royal,
                                 style: const TextStyle(color: royal),
-                                decoration: _inputDecoration("House / Street / Area"),
-                                validator: (v) => v!.isEmpty ? "Required" : null,
+                                decoration: _inputDecoration(
+                                  "House / Street / Area",
+                                ),
+                                validator: (v) =>
+                                    v!.isEmpty ? "Required" : null,
                               ),
                             ),
-
                           ],
                         ),
                       ],
@@ -580,10 +610,13 @@ Reason: ${p["reason"] ?? ""}
                         items: doctors
                             .map<DropdownMenuItem<int>>(
                               (d) => DropdownMenuItem(
-                            value: d["id"],
-                            child: Text(d["name"], style: const TextStyle(color: royal)),
-                          ),
-                        )
+                                value: d["id"],
+                                child: Text(
+                                  d["name"],
+                                  style: const TextStyle(color: royal),
+                                ),
+                              ),
+                            )
                             .toList(),
                         onChanged: (v) => setState(() => doctorId = v),
                         validator: (v) => v == null ? "Required" : null,
@@ -599,10 +632,13 @@ Reason: ${p["reason"] ?? ""}
                         items: nurses
                             .map<DropdownMenuItem<int>>(
                               (n) => DropdownMenuItem(
-                            value: n["id"],
-                            child: Text(n["name"], style: const TextStyle(color: royal)),
-                          ),
-                        )
+                                value: n["id"],
+                                child: Text(
+                                  n["name"],
+                                  style: const TextStyle(color: royal),
+                                ),
+                              ),
+                            )
                             .toList(),
                         onChanged: (v) => setState(() => nurseId = v),
                         validator: (v) => v == null ? "Required" : null,
@@ -618,15 +654,20 @@ Reason: ${p["reason"] ?? ""}
                         items: wards
                             .map<DropdownMenuItem<int>>(
                               (w) => DropdownMenuItem(
-                            value: w["id"],
-                            child: Text(w["name"], style: const TextStyle(color: royal)),
-                          ),
-                        )
+                                value: w["id"],
+                                child: Text(
+                                  w["name"],
+                                  style: const TextStyle(color: royal),
+                                ),
+                              ),
+                            )
                             .toList(),
                         onChanged: (v) {
                           setState(() {
                             wardId = v;
-                            beds = wards.firstWhere((w) => w["id"] == v)["beds"];
+                            beds = wards.firstWhere(
+                              (w) => w["id"] == v,
+                            )["beds"];
                           });
                         },
                         validator: (v) => v == null ? "Required" : null,
@@ -642,10 +683,13 @@ Reason: ${p["reason"] ?? ""}
                         items: beds
                             .map<DropdownMenuItem<int>>(
                               (b) => DropdownMenuItem(
-                            value: b["id"],
-                            child: Text("Bed ${b["bedNo"]}", style: const TextStyle(color: royal)),
-                          ),
-                        )
+                                value: b["id"],
+                                child: Text(
+                                  "Bed ${b["bedNo"]}",
+                                  style: const TextStyle(color: royal),
+                                ),
+                              ),
+                            )
                             .toList(),
                         onChanged: (v) => setState(() => bedId = v),
                         validator: (v) => v == null ? "Required" : null,
@@ -705,7 +749,9 @@ Reason: ${p["reason"] ?? ""}
                         controller: admitByRelationCtrl,
                         cursorColor: royal,
                         style: TextStyle(color: royal),
-                        decoration: _inputDecoration("Father / Mother / Husband"),
+                        decoration: _inputDecoration(
+                          "Father / Mother / Husband",
+                        ),
                       ),
                     ),
 
@@ -727,12 +773,16 @@ Reason: ${p["reason"] ?? ""}
                             ? null
                             : submitAdmission,
                         child: loading
-                            ? const CircularProgressIndicator(color: Colors.white)
+                            ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
                             : const Text(
-                          "Admit Patient",
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
+                                "Admit Patient",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                       ),
                     ),
                   ],
@@ -784,16 +834,13 @@ Reason: ${p["reason"] ?? ""}
     T? value,
   }) {
     return DropdownButtonFormField<T>(
-      initialValue: value,
+      value: value,
       items: items,
       onChanged: onChanged,
       validator: validator,
       dropdownColor: Colors.white,
       iconEnabledColor: royal,
-      style: const TextStyle(
-        color: royal,
-        fontWeight: FontWeight.w500,
-      ),
+      style: const TextStyle(color: royal, fontWeight: FontWeight.w500),
       decoration: _inputDecoration(hint),
     );
   }
@@ -804,15 +851,17 @@ Reason: ${p["reason"] ?? ""}
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: royal,
-        title: const Text("Admit Patient", style: TextStyle(color: Colors.white)),
+        title: const Text(
+          "Admit Patient",
+          style: TextStyle(color: Colors.white),
+        ),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: showSuccess
-          ? buildSuccessView()
-          : buildAdmissionForm(),
+      body: showSuccess ? buildSuccessView() : buildAdmissionForm(),
     );
   }
 }
+
 Widget buildHospitalCard({
   required String hospitalName,
   required String hospitalPlace,

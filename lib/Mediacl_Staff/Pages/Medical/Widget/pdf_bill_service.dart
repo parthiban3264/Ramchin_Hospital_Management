@@ -14,8 +14,8 @@ class PdfBillService {
     required double totalAmount,
     required Map<String, dynamic> allConsultation,
     required List<dynamic> medicines,
-    required List<dynamic> tonics,
-    required List<dynamic> injections,
+    // required List<dynamic> tonics,
+    // required List<dynamic> injections,
   }) async {
     final hospital = allConsultation['Hospital'] ?? {};
     final patient = allConsultation['Patient'] ?? {};
@@ -136,10 +136,7 @@ class PdfBillService {
                   6: const pw.FlexColumnWidth(0.9),
                   7: const pw.FlexColumnWidth(1.1),
                 },
-                children: [
-                  _tableHeader(),
-                  ..._rows(medicines, tonics, injections),
-                ],
+                children: [_tableHeader(), ..._rows(medicines)],
               ),
 
               pw.SizedBox(height: 20),
@@ -210,7 +207,7 @@ class PdfBillService {
     );
   }
 
-  static List<pw.TableRow> _rows(List medicines, List tonics, List injections) {
+  static List<pw.TableRow> _rows(List medicines) {
     int i = 1;
     final rows = <pw.TableRow>[];
 
@@ -238,46 +235,46 @@ class PdfBillService {
     }
 
     /// TONICS
-    for (var t in tonics) {
-      if (t['selected'] == true) {
-        final dose = t['Doase'].toString().split('.')[0];
-        rows.add(
-          pw.TableRow(
-            children: [
-              _cell('${i++}'),
-              _cell('${t['Tonic']?['tonicName']} (Tonic)'),
-              _cell(doseValue(t['morning'] == true, '$dose ml')),
-              _cell(doseValue(t['afternoon'] == true, '$dose ml')),
-              _cell(doseValue(t['night'] == true, '$dose ml')),
-              _cell('After'),
-              _cell('${t['days'] ?? '-'}'),
-              _cell('₹${t['total'] ?? 0}'),
-            ],
-          ),
-        );
-      }
-    }
+    // for (var t in tonics) {
+    //   if (t['selected'] == true) {
+    //     final dose = t['Doase'].toString().split('.')[0];
+    //     rows.add(
+    //       pw.TableRow(
+    //         children: [
+    //           _cell('${i++}'),
+    //           _cell('${t['Tonic']?['tonicName']} (Tonic)'),
+    //           _cell(doseValue(t['morning'] == true, '$dose ml')),
+    //           _cell(doseValue(t['afternoon'] == true, '$dose ml')),
+    //           _cell(doseValue(t['night'] == true, '$dose ml')),
+    //           _cell('After'),
+    //           _cell('${t['days'] ?? '-'}'),
+    //           _cell('₹${t['total'] ?? 0}'),
+    //         ],
+    //       ),
+    //     );
+    //   }
+    // }
 
     /// INJECTIONS
-    for (var inj in injections) {
-      if (inj['selected'] == true) {
-        final dose = '${inj['Doase']}';
-        rows.add(
-          pw.TableRow(
-            children: [
-              _cell('${i++}'),
-              _cell('${inj['Injection']?['injectionName']} (Inj)'),
-              _cell(doseValue(inj['morning'] == true, dose)),
-              _cell(doseValue(inj['afternoon'] == true, dose)),
-              _cell(doseValue(inj['night'] == true, dose)),
-              _cell('After'),
-              _cell('${inj['days'] ?? '-'}'),
-              _cell('₹${inj['total'] ?? 0}'),
-            ],
-          ),
-        );
-      }
-    }
+    // for (var inj in injections) {
+    //   if (inj['selected'] == true) {
+    //     final dose = '${inj['Doase']}';
+    //     rows.add(
+    //       pw.TableRow(
+    //         children: [
+    //           _cell('${i++}'),
+    //           _cell('${inj['Injection']?['injectionName']} (Inj)'),
+    //           _cell(doseValue(inj['morning'] == true, dose)),
+    //           _cell(doseValue(inj['afternoon'] == true, dose)),
+    //           _cell(doseValue(inj['night'] == true, dose)),
+    //           _cell('After'),
+    //           _cell('${inj['days'] ?? '-'}'),
+    //           _cell('₹${inj['total'] ?? 0}'),
+    //         ],
+    //       ),
+    //     );
+    //   }
+    // }
 
     return rows;
   }

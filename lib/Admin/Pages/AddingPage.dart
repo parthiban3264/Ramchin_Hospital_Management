@@ -7,6 +7,8 @@ import '../../Mediacl_Staff/Pages/a_new_medical/a_new_medical/medicines/add_medi
 import '../../Mediacl_Staff/Pages/a_new_medical/a_new_medical/reorder/reorder_list.dart';
 import '../../Mediacl_Staff/Pages/a_new_medical/a_new_medical/stock/stock_management.dart';
 import '../../Mediacl_Staff/Pages/a_new_medical/a_new_medical/supplier/supplier.dart';
+import '../../Mediacl_Staff/Pages/inpatient/add_rooms.dart';
+import '../../Mediacl_Staff/Pages/inpatient/assign_change_detail.dart';
 import 'AddingPage/ActiveStaff.dart';
 import 'AddingPage/AddingScanData.dart';
 import 'AddingPage/AddingTestData.dart';
@@ -174,6 +176,30 @@ class _AdminAddingPageState extends State<AdminAddingPage> {
                       );
                     },
                   ),
+                  _buildActionItem(Icons.add_business, "Manage Rooms", () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const WardsPage()),
+                    );
+                  }),
+                  _buildActionItem(
+                    Icons.add_business,
+                    "Change bed & staff",
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AdmittedPatientsPage(),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildActionItem(Icons.add_business, "Manage Rooms", () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const WardsPage()),
+                    );
+                  }),
                 ]),
               ),
 

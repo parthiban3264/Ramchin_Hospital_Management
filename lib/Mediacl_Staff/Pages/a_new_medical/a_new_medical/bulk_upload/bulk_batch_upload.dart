@@ -2,11 +2,10 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
+import 'package:hospitrax/Admin/Pages/AdminEditProfilePage.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../../../utils/utils.dart';
-import '../reorder/supplier_reorderlist.dart';
 
 class BulkBatchUpload extends StatefulWidget {
   final List<Map<String, dynamic>> batches;
@@ -214,12 +213,12 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
       padding: const EdgeInsets.all(16),
       height: 95,
       decoration: BoxDecoration(
-        color: royal,
+        color: primaryColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: royal, width: 1.5),
+        border: Border.all(color: primaryColor, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: royal.withValues(alpha: 0.15),
+            color: primaryColor.withValues(alpha: 0.15),
             blurRadius: 6,
             offset: const Offset(0, 3),
           ),
@@ -242,7 +241,7 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
                     color: Colors.white, // 👈 soft teal background
                     child: const Icon(
                       Icons.home_work_rounded,
-                      color: royal,
+                      color: primaryColor,
                       size: 35,
                     ),
                   ),
@@ -301,7 +300,7 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
           message,
           style: const TextStyle(color: Colors.white, fontSize: 16),
         ),
-        backgroundColor: royal,
+        backgroundColor: primaryColor,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         elevation: 4,
@@ -382,7 +381,7 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
         child: Column(
           children: [
             TextField(
-              cursorColor: royal,
+              cursorColor: primaryColor,
               controller: controller,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
@@ -399,7 +398,7 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
                 if (!snapshot.hasData) return const SizedBox();
                 return Text(
                   snapshot.data!,
-                  style: TextStyle(fontSize: 11, color: royal),
+                  style: TextStyle(fontSize: 11, color: primaryColor),
                   overflow: TextOverflow.ellipsis,
                 );
               },
@@ -451,13 +450,13 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
               return Theme(
                 data: Theme.of(context).copyWith(
                   colorScheme: ColorScheme.light(
-                    primary: royal, // header background
+                    primary: primaryColor, // header background
                     onPrimary: Colors.white, // header text color
                     onSurface: Colors.black, // body text color
                   ),
                   textButtonTheme: TextButtonThemeData(
                     style: TextButton.styleFrom(
-                      foregroundColor: royal, // button text color
+                      foregroundColor: primaryColor, // button text color
                     ),
                   ),
                 ),
@@ -491,7 +490,7 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
       width: 90,
       child: TextField(
         controller: c,
-        cursorColor: royal,
+        cursorColor: primaryColor,
         keyboardType: TextInputType.number,
         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         decoration: const InputDecoration(
@@ -508,7 +507,7 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
       width: 90,
       child: TextField(
         controller: c,
-        cursorColor: royal,
+        cursorColor: primaryColor,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         inputFormatters: [
           FilteringTextInputFormatter.allow(
@@ -534,7 +533,7 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
             children: [
               TextField(
                 controller: controller,
-                cursorColor: royal,
+                cursorColor: primaryColor,
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
@@ -601,7 +600,7 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
         width: 120,
         child: TextField(
           controller: controller,
-          cursorColor: royal,
+          cursorColor: primaryColor,
           decoration: InputDecoration(
             isDense: true,
             border: InputBorder.none,
@@ -675,7 +674,7 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
       padding: const EdgeInsets.all(12),
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: royal,
+          backgroundColor: primaryColor,
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
         ),
         onPressed: isSubmitEnabled
@@ -693,7 +692,9 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
                         child: const Text("Cancel"),
                       ),
                       ElevatedButton(
-                        style: ElevatedButton.styleFrom(backgroundColor: royal),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryColor,
+                        ),
                         onPressed: () => Navigator.pop(context, true),
                         child: const Text("Confirm"),
                       ),
@@ -727,7 +728,7 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: royal,
+        backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         elevation: 2,
         title: const Text(
@@ -773,7 +774,7 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
                             Colors.white,
                           ),
                           headingTextStyle: const TextStyle(
-                            color: royal,
+                            color: primaryColor,
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
                           ),
@@ -823,7 +824,7 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
                                 width: 90,
                                 child: TextField(
                                   controller: c,
-                                  cursorColor: royal,
+                                  cursorColor: primaryColor,
                                   decoration: const InputDecoration(
                                     isDense: true,
                                     border: InputBorder.none,

@@ -29,6 +29,12 @@ import '../../Mediacl_Staff/Pages/OutPatient/Queue/PetScanQueuePage.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/SymptomsQueuePage.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/UltersoundQueuePage.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/X-RayQueuePage.dart';
+import '../../Mediacl_Staff/Pages/inpatient/add_admission_charges_page.dart';
+import '../../Mediacl_Staff/Pages/inpatient/add_rooms.dart';
+import '../../Mediacl_Staff/Pages/inpatient/admit_patient.dart';
+import '../../Mediacl_Staff/Pages/inpatient/assign_change_detail.dart';
+import '../../Mediacl_Staff/Pages/inpatient/available_room.dart';
+import '../../Mediacl_Staff/Pages/inpatient/room_patient_details.dart';
 import '../../Mediacl_Staff/Pages/tracking_status/track_patient_status.dart';
 import '../../Services/admin_service.dart';
 import 'Accounts/AccountsDrawerPage.dart';
@@ -36,6 +42,7 @@ import 'Accounts/ExpensePage.dart';
 import 'Accounts/FinancePage.dart';
 import 'Accounts/IncomeExpensePage.dart';
 import 'Accounts/accounts_report.dart';
+import 'Accounts/patient_list_reportpage.dart';
 
 class AdminOpDashboardPage extends StatefulWidget {
   const AdminOpDashboardPage({super.key});
@@ -366,7 +373,7 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 25),
 
                   Card(
                     shape: RoundedRectangleBorder(
@@ -422,13 +429,92 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                               // ),
                             ],
                           ),
-                          const SizedBox(height: 25),
+                          //const SizedBox(height: 16),
                         ],
                       ),
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  _buildSection(
+                    'INPATIENT DESK',
+                    _responsiveGrid([
+                      _buildActionItem(
+                        Icons.medical_services_outlined,
+                        "Admit Patient",
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const AdmitPatientPage(),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildActionItem(
+                        Icons.money,
+                        "AddAdmissionChargesPage",
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const AddAdmissionChargesPage(),
+                            ),
+                          );
+                        },
+                      ),
 
-                  const SizedBox(height: 25),
+                      // _buildActionItem(Icons.add_business, "Manage Rooms", () {
+                      //   Navigator.push(
+                      //     context,
+                      //     MaterialPageRoute(builder: (_) => const WardsPage()),
+                      //   );
+                      // }),
+                      _buildActionItem(
+                        Icons.event_available,
+                        "Available Rooms",
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const AvailableRoomsPage(),
+                            ),
+                          );
+                        },
+                      ),
+
+                      // _buildActionItem(
+                      //   Icons.add_business,
+                      //   "Change bed & staff",
+                      //   () {
+                      //     Navigator.push(
+                      //       context,
+                      //       MaterialPageRoute(
+                      //         builder: (_) => const AdmittedPatientsPage(),
+                      //       ),
+                      //     );
+                      //   },
+                      // ),
+                      _buildActionItem(Icons.currency_rupee, "Add Charges", () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AddAdmissionChargesPage(),
+                          ),
+                        );
+                      }),
+
+                      _buildActionItem(Icons.roofing, "Room Details", () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const WardsAndBedsPage(),
+                          ),
+                        );
+                      }),
+                    ]),
+                  ),
+
+                  const SizedBox(height: 15),
                   Card(
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(22),
@@ -512,70 +598,19 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                   );
                                 },
                               ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(22),
-                    ),
-                    color: Colors.white.withValues(alpha: 0.95),
-                    elevation: 8,
-                    shadowColor: Colors.black26,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 30,
-                        horizontal: 20,
-                      ),
-                      child: Column(
-                        children: [
-                          Center(
-                            child: Text(
-                              'INPATIENT DESK',
-                              style: TextStyle(
-                                color: Color(0xFF886638),
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
+                              _buildActionItem(
+                                Icons.library_books_sharp,
+                                "List Report",
+                                () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const PatientListReportPage(),
+                                    ),
+                                  );
+                                },
                               ),
-                            ),
-                          ),
-                          const SizedBox(height: 25),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              _buildActionItem(Icons.person, "IN PATIENT", () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        const DrInPatientQueuePage(),
-                                  ),
-                                );
-                              }),
-                              // _buildActionItem(Icons.healing, "Expense", () {
-                              //   Navigator.push(
-                              //     context,
-                              //     MaterialPageRoute(
-                              //       builder: (_) => const AccountExpensePage(),
-                              //     ),
-                              //   );
-                              // }),
-                              // _buildActionItem(
-                              //   Icons.drive_folder_upload_rounded,
-                              //   "Drawing",
-                              //       () {
-                              //     Navigator.push(
-                              //       context,
-                              //       MaterialPageRoute(
-                              //         builder: (_) => const AccountDrawerPage(),
-                              //       ),
-                              //     );
-                              //   },
-                              // ),
                             ],
                           ),
                         ],
@@ -583,6 +618,70 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                     ),
                   ),
                   const SizedBox(height: 16),
+                  // Card(
+                  //   shape: RoundedRectangleBorder(
+                  //     borderRadius: BorderRadius.circular(22),
+                  //   ),
+                  //   color: Colors.white.withValues(alpha: 0.95),
+                  //   elevation: 8,
+                  //   shadowColor: Colors.black26,
+                  //   child: Padding(
+                  //     padding: const EdgeInsets.symmetric(
+                  //       vertical: 30,
+                  //       horizontal: 20,
+                  //     ),
+                  //     child: Column(
+                  //       children: [
+                  //         Center(
+                  //           child: Text(
+                  //             'INPATIENT DESK',
+                  //             style: TextStyle(
+                  //               color: Color(0xFF886638),
+                  //               fontSize: 20,
+                  //               fontWeight: FontWeight.bold,
+                  //             ),
+                  //           ),
+                  //         ),
+                  //         const SizedBox(height: 25),
+                  //         Row(
+                  //           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  //           children: [
+                  //             _buildActionItem(Icons.person, "IN PATIENT", () {
+                  //               Navigator.push(
+                  //                 context,
+                  //                 MaterialPageRoute(
+                  //                   builder: (_) =>
+                  //                       const DrInPatientQueuePage(),
+                  //                 ),
+                  //               );
+                  //             }),
+                  //             // _buildActionItem(Icons.healing, "Expense", () {
+                  //             //   Navigator.push(
+                  //             //     context,
+                  //             //     MaterialPageRoute(
+                  //             //       builder: (_) => const AccountExpensePage(),
+                  //             //     ),
+                  //             //   );
+                  //             // }),
+                  //             // _buildActionItem(
+                  //             //   Icons.drive_folder_upload_rounded,
+                  //             //   "Drawing",
+                  //             //       () {
+                  //             //     Navigator.push(
+                  //             //       context,
+                  //             //       MaterialPageRoute(
+                  //             //         builder: (_) => const AccountDrawerPage(),
+                  //             //       ),
+                  //             //     );
+                  //             //   },
+                  //             // ),
+                  //           ],
+                  //         ),
+                  //       ],
+                  //     ),
+                  //   ),
+                  // ),
+                  //const SizedBox(height: 16),
                   Card(
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(22),
@@ -1285,31 +1384,152 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
     );
   }
 
+  // Widget _buildActionItem(IconData icon, String label, VoidCallback onTap) {
+  //   return GestureDetector(
+  //     onTap: onTap,
+  //     child: Column(
+  //       children: [
+  //         Container(
+  //           height: 70,
+  //           width: 80,
+  //           decoration: BoxDecoration(
+  //             borderRadius: BorderRadius.circular(22),
+  //
+  //             // ★ FULL COLOR GRADIENT BACKGROUND
+  //             gradient: LinearGradient(
+  //               colors: [
+  //                 const Color(0xFFFCECCF), // soft gold top
+  //                 const Color(0xFFF6D8A8), // deeper gold bottom
+  //               ],
+  //               begin: Alignment.topLeft,
+  //               end: Alignment.bottomRight,
+  //             ),
+  //
+  //             // ★ Clean gold border
+  //             border: Border.all(color: const Color(0xFFBF955E), width: 1.4),
+  //
+  //             // ★ Smooth depth shadow
+  //             boxShadow: [
+  //               BoxShadow(
+  //                 color: Colors.brown.withValues(alpha: 0.15),
+  //                 blurRadius: 10,
+  //                 offset: const Offset(0, 5),
+  //               ),
+  //             ],
+  //           ),
+  //
+  //           child: Center(
+  //             child: Icon(
+  //               icon,
+  //               color: const Color(0xFF8B6C3A), // deep gold icon color
+  //               size: 34,
+  //             ),
+  //           ),
+  //         ),
+  //
+  //         const SizedBox(height: 10),
+  //
+  //         Text(
+  //           label,
+  //           textAlign: TextAlign.center,
+  //           style: TextStyle(
+  //             fontSize: 14,
+  //             fontWeight: FontWeight.w700,
+  //             color: Colors.brown.shade800,
+  //             letterSpacing: 0.3,
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
+  Widget _responsiveGrid(List<Widget> children) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+
+        int columns = width >= 1200
+            ? 7
+            : width >= 900
+            ? 6
+            : width >= 700
+            ? 5
+            : width >= 500
+            ? 4
+            : 3;
+
+        const spacing = 24.0;
+
+        final itemWidth = (width - (spacing * (columns - 1))) / columns;
+
+        return SizedBox(
+          width: double.infinity,
+
+          child: Wrap(
+            alignment: WrapAlignment.center,
+            runAlignment: WrapAlignment.center,
+            spacing: spacing,
+            runSpacing: spacing,
+            children: children
+                .map(
+                  (child) => SizedBox(
+                    width: itemWidth,
+                    child: Center(child: child),
+                  ),
+                )
+                .toList(),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSection(String title, Widget content) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
+
+      child: Card(
+        elevation: 0.5,
+        color: Colors.white.withValues(alpha: 0.95),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
+          child: Column(
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF886638),
+                ),
+              ),
+              const SizedBox(height: 24),
+              content,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildActionItem(IconData icon, String label, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
             height: 70,
             width: 80,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(22),
-
-              // ★ FULL COLOR GRADIENT BACKGROUND
-              gradient: LinearGradient(
-                colors: [
-                  const Color(0xFFFCECCF), // soft gold top
-                  const Color(0xFFF6D8A8), // deeper gold bottom
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFCECCF), Color(0xFFF6D8A8)],
               ),
-
-              // ★ Clean gold border
+              borderRadius: BorderRadius.circular(22),
               border: Border.all(color: const Color(0xFFBF955E), width: 1.4),
-
-              // ★ Smooth depth shadow
               boxShadow: [
                 BoxShadow(
                   color: Colors.brown.withValues(alpha: 0.15),
@@ -1318,18 +1538,9 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                 ),
               ],
             ),
-
-            child: Center(
-              child: Icon(
-                icon,
-                color: const Color(0xFF8B6C3A), // deep gold icon color
-                size: 34,
-              ),
-            ),
+            child: Icon(icon, size: 34, color: const Color(0xFF8B6C3A)),
           ),
-
           const SizedBox(height: 10),
-
           Text(
             label,
             textAlign: TextAlign.center,
@@ -1337,7 +1548,6 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
               fontSize: 14,
               fontWeight: FontWeight.w700,
               color: Colors.brown.shade800,
-              letterSpacing: 0.3,
             ),
           ),
         ],

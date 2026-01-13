@@ -8,7 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../../Admin/Pages/AdminEditProfilePage.dart';
+// import '../../../../Admin/Pages/AdminEditProfilePage.dart';
 import '../../../../Services/Doctor/doctor_service.dart';
 import '../../../../Services/consultation_service.dart';
 import '../../../../Services/patient_service.dart';
@@ -52,12 +52,17 @@ class TestRegistrationState extends State<TestRegistration> {
   String hospitalPhoto = '';
   bool isScanOpen = false;
   bool isTestOpen = false;
-  bool _isSubmitting = false;
+  // bool _isSubmitting = false;
 
   //bool scanningTesting = false;
   final Color primaryColor = const Color(0xFFBF955E);
 
   String? _dateTime;
+  final FocusNode phoneFocus = FocusNode();
+  final FocusNode nameFocus = FocusNode();
+  final FocusNode dobFocus = FocusNode();
+  final FocusNode addressFocus = FocusNode();
+  final FocusNode referralFocus = FocusNode();
 
   static Map<String, Map<String, dynamic>> savedTests = {};
   static Map<String, Map<String, dynamic>> savedScans = {};
@@ -78,6 +83,13 @@ class TestRegistrationState extends State<TestRegistration> {
     _updateTime();
   }
 
+  void focusPhone() {
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FocusScope.of(context).requestFocus(phoneFocus);
+    });
+  }
+
   void _clearLocalTestScanData() {
     savedTests.clear();
     savedScans.clear();
@@ -86,6 +98,11 @@ class TestRegistrationState extends State<TestRegistration> {
 
   @override
   void dispose() {
+    phoneFocus.dispose();
+    nameFocus.dispose();
+    dobFocus.dispose();
+    addressFocus.dispose();
+    referralFocus.dispose();
     super.dispose();
   }
 
@@ -446,7 +463,12 @@ class TestRegistrationState extends State<TestRegistration> {
                             "Cell No *",
                             phoneController,
                             hint: "+911234567890",
+                            focusNode: phoneFocus,
+                            textInputAction: TextInputAction.next,
                             keyboardType: TextInputType.phone,
+                            onFieldSubmitted: (_) {
+                              FocusScope.of(context).requestFocus(nameFocus);
+                            },
                             errorText: formValidatedErrorText(
                               formValidated: formValidated,
                               valid: phoneValid,
@@ -464,6 +486,11 @@ class TestRegistrationState extends State<TestRegistration> {
                           child: buildInput(
                             "Name *",
                             fullNameController,
+                            focusNode: nameFocus,
+                            textInputAction: TextInputAction.next,
+                            onFieldSubmitted: (_) {
+                              FocusScope.of(context).requestFocus(dobFocus);
+                            },
                             hint: "Enter full name",
                             inputFormatters: [UpperCaseTextFormatter()],
                           ),
@@ -475,6 +502,10 @@ class TestRegistrationState extends State<TestRegistration> {
                           child: AgeDobField(
                             dobController: dobController,
                             ageController: ageController,
+                            focusNode: dobFocus,
+                            onSubmitted: () {
+                              FocusScope.of(context).requestFocus(addressFocus);
+                            },
                           ),
                         ),
 
@@ -655,7 +686,14 @@ class TestRegistrationState extends State<TestRegistration> {
                           child: buildInput(
                             "Address *",
                             addressController,
+                            focusNode: addressFocus,
+                            textInputAction: TextInputAction.next,
                             maxLines: 3,
+                            onFieldSubmitted: (_) {
+                              FocusScope.of(
+                                context,
+                              ).requestFocus(referralFocus);
+                            },
                             inputFormatters: [UpperCaseTextFormatter()],
                           ),
                         ),
@@ -665,6 +703,11 @@ class TestRegistrationState extends State<TestRegistration> {
                             "Doctor Referral ",
                             referredByDoctorNameController,
                             maxLines: 1,
+                            focusNode: referralFocus,
+                            textInputAction: TextInputAction.done,
+                            onFieldSubmitted: (_) {
+                              FocusScope.of(context).unfocus();
+                            },
                             inputFormatters: [UpperCaseTextFormatter()],
                           ),
                         ),

@@ -18,13 +18,14 @@ class _MedicalQueuePageState extends State<MedicalQueuePage>
   final Color primaryColor = const Color(0xFFBF955E);
 
   late Future<List<dynamic>> consultationsFuture;
-
-  List<dynamic> consultationsCache = []; // data stored for UI
+  List<dynamic> consultationsCache = [];
   bool firstLoad = true;
 
   Timer? refreshTimer;
   late TabController topTabController;
   late TabController bottomTabController;
+
+  int bottomTabIndex = 0; // Track selected bottom tab
 
   @override
   void initState() {
@@ -35,30 +36,6 @@ class _MedicalQueuePageState extends State<MedicalQueuePage>
     _startAutoRefresh();
   }
 
-  /// 🔄 Load data into cache
-  Future<List<dynamic>> _loadData() async {
-    final data = await ConsultationService.getAllConsultationByMedical(0);
-    consultationsCache = data;
-    return data;
-  }
-
-  /// 🔄 Auto refresh every 5 seconds silently
-  void _startAutoRefresh() {
-    refreshTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
-      try {
-        final freshData = await ConsultationService.getAllConsultationByMedical(
-          0,
-        );
-
-        if (mounted) {
-          setState(() {
-            consultationsCache = freshData; // refresh UI without loader
-          });
-        }
-      } catch (_) {}
-    });
-  }
-
   @override
   void dispose() {
     refreshTimer?.cancel();
@@ -67,75 +44,41 @@ class _MedicalQueuePageState extends State<MedicalQueuePage>
     super.dispose();
   }
 
+  Future<List<dynamic>> _loadData() async {
+    final data = await ConsultationService.getAllConsultationByMedical(0);
+    consultationsCache = data;
+    print('consultationsCache $consultationsCache');
+    return data;
+  }
+
+  void _startAutoRefresh() {
+    refreshTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
+      try {
+        final freshData = await ConsultationService.getAllConsultationByMedical(
+          0,
+        );
+        if (mounted) {
+          setState(() {
+            consultationsCache = freshData;
+          });
+        }
+      } catch (_) {}
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(100),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [primaryColor, const Color(0xFFD9B57A)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(20),
-              bottomRight: Radius.circular(20),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  const Text(
-                    "Medical Queue",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.notifications,
-                      color: Colors.white,
-                      size: 26,
-                    ),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const NotificationPage(),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
+        child: _buildAppBar(),
       ),
 
+      // ── BODY ──
       body: Column(
         children: [
-          // 🔝 OUTER TOP TABS
+          // TOP TABS → Today / Previous
           Material(
             color: Colors.white,
             elevation: 1,
@@ -151,79 +94,354 @@ class _MedicalQueuePageState extends State<MedicalQueuePage>
             ),
           ),
 
-          // 🔻 CONTENT
+          // CONTENT AREA → patient list filtered by bottom tab
           Expanded(
             child: TabBarView(
               controller: topTabController,
               children: [
-                // TODAY
-                firstLoad
-                    ? FutureBuilder<List<dynamic>>(
-                        future: consultationsFuture,
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const Center(
-                              child: CircularProgressIndicator(
-                                color: Color(0xFFBF955E),
-                              ),
-                            );
-                          }
-
-                          if (snapshot.hasError) {
-                            return Center(
-                              child: Text(
-                                'Error: ${snapshot.error}',
-                                style: const TextStyle(
-                                  color: Colors.red,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            );
-                          }
-
-                          firstLoad = false;
-                          return _buildList(snapshot.data ?? []);
-                        },
-                      )
-                    : _buildList(consultationsCache),
-
-                // PREVIOUS (same UI for now)
-                _buildList(consultationsCache),
+                _patientListView(isToday: true),
+                _patientListView(isToday: false),
               ],
             ),
           ),
         ],
       ),
 
-      /// FIRST TIME → use FutureBuilder (loader visible once)
-      /// LATER → use cached list (instant, no loader)
-      // body: firstLoad
-      //     ? FutureBuilder<List<dynamic>>(
-      //         future: consultationsFuture,
-      //         builder: (context, snapshot) {
-      //           if (snapshot.connectionState == ConnectionState.waiting) {
-      //             return const Center(
-      //               child: CircularProgressIndicator(color: Color(0xFFBF955E)),
-      //             );
-      //           }
-      //
-      //           if (snapshot.hasError) {
-      //             return Center(
-      //               child: Text(
-      //                 'Error: ${snapshot.error}',
-      //                 style: const TextStyle(color: Colors.red, fontSize: 16),
-      //               ),
-      //             );
-      //           }
-      //
-      //           firstLoad = false; // disable loader forever
-      //
-      //           return _buildList(snapshot.data ?? []);
-      //         },
-      //       )
-      //     : _buildList(consultationsCache), // no loader, live refresh
+      // ── BOTTOM TABS (Queue / Paid / History) FIXED ──
+      bottomNavigationBar: Material(
+        color: Colors.white,
+        elevation: 10,
+        child: TabBar(
+          controller: bottomTabController,
+          labelColor: primaryColor,
+          unselectedLabelColor: Colors.grey,
+          indicatorColor: primaryColor,
+          onTap: (index) {
+            setState(() => bottomTabIndex = index);
+          },
+          tabs: const [
+            Tab(text: "Queue"),
+            Tab(text: "Paid"),
+            Tab(text: "History"),
+          ],
+        ),
+      ),
     );
+  }
+
+  /// ── Patient List filtered by bottom tab ──
+  // Widget _patientListView({required bool isToday}) {
+  //   List<dynamic> filteredList = consultationsCache;
+  //
+  //   if (bottomTabIndex == 1) {
+  //     // Paid
+  //     filteredList = consultationsCache.where((c) {
+  //       final meds = c['MedicinePatient'] ?? [];
+  //       final tonics = c['TonicPatient'] ?? [];
+  //       final injections = c['InjectionPatient'] ?? [];
+  //       return meds.any((m) => m['paymentStatus'] == true) ||
+  //           tonics.any((t) => t['paymentStatus'] == true) ||
+  //           injections.any((i) => i['paymentStatus'] == true);
+  //     }).toList();
+  //   } else if (bottomTabIndex == 2) {
+  //     // History
+  //     filteredList = consultationsCache
+  //         .where((c) => c['status'] == 'COMPLETED')
+  //         .toList();
+  //   }
+  //
+  //   if (firstLoad) {
+  //     return FutureBuilder<List<dynamic>>(
+  //       future: consultationsFuture,
+  //       builder: (context, snapshot) {
+  //         if (snapshot.connectionState == ConnectionState.waiting) {
+  //           return const Center(
+  //             child: CircularProgressIndicator(color: Color(0xFFBF955E)),
+  //           );
+  //         }
+  //         if (snapshot.hasError) {
+  //           return Center(
+  //             child: Text(
+  //               'Error: ${snapshot.error}',
+  //               style: const TextStyle(color: Colors.red, fontSize: 16),
+  //             ),
+  //           );
+  //         }
+  //         firstLoad = false;
+  //         return _buildList(snapshot.data ?? []);
+  //       },
+  //     );
+  //   }
+  //
+  //   if (filteredList.isEmpty) {
+  //     return Center(
+  //       child: Text(
+  //         bottomTabIndex == 0
+  //             ? 'No patients in queue.'
+  //             : bottomTabIndex == 1
+  //             ? 'No Paid Records'
+  //             : 'No History Records',
+  //         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+  //       ),
+  //     );
+  //   }
+  //
+  //   return _buildList(filteredList);
+  // }
+
+  Widget _patientListView({required bool isToday}) {
+    DateTime now = DateTime.now();
+
+    List<dynamic> dateFilteredList = consultationsCache.where((c) {
+      final dateString = c['updatedAt'] ?? c['createdAt']; // adjust field
+      if (dateString == null) return false;
+
+      // Parse date manually (format: "2025-12-16 09:45 PM")
+      DateTime? consultationDate;
+      try {
+        final parts = dateString.split(' '); // ["2025-12-16", "09:45", "PM"]
+        if (parts.length < 3) return false;
+
+        final datePart = parts[0]; // "2025-12-16"
+        final timePart = parts[1]; // "09:45"
+        final ampm = parts[2]; // "PM"
+
+        final timeParts = timePart.split(':');
+        int hour = int.parse(timeParts[0]);
+        final int minute = int.parse(timeParts[1]);
+
+        if (ampm.toUpperCase() == 'PM' && hour != 12) hour += 12;
+        if (ampm.toUpperCase() == 'AM' && hour == 12) hour = 0;
+
+        final dateParts = datePart.split('-');
+        consultationDate = DateTime(
+          int.parse(dateParts[0]),
+          int.parse(dateParts[1]),
+          int.parse(dateParts[2]),
+          hour,
+          minute,
+        );
+      } catch (e) {
+        return false;
+      }
+
+      if (isToday) {
+        return consultationDate.year == now.year &&
+            consultationDate.month == now.month &&
+            consultationDate.day == now.day;
+      } else {
+        // Previous: before today
+        final todayStart = DateTime(now.year, now.month, now.day);
+        return consultationDate.isBefore(todayStart);
+      }
+    }).toList();
+
+    // Filter by bottom tab
+    List<dynamic> filteredList = dateFilteredList;
+    if (bottomTabIndex == 1) {
+      filteredList = dateFilteredList.where((c) {
+        final meds = c['MedicinePatient'] ?? [];
+        final tonics = c['TonicPatient'] ?? [];
+        final injections = c['InjectionPatient'] ?? [];
+        return meds.any((m) => m['paymentStatus'] == true) ||
+            tonics.any((t) => t['paymentStatus'] == true) ||
+            injections.any((i) => i['paymentStatus'] == true);
+      }).toList();
+    } else if (bottomTabIndex == 2) {
+      filteredList = dateFilteredList
+          .where((c) => c['status'] == 'COMPLETED')
+          .toList();
+    }
+
+    // Loader for first load
+    if (firstLoad) {
+      return FutureBuilder<List<dynamic>>(
+        future: consultationsFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(color: Color(0xFFBF955E)),
+            );
+          }
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                'Error: ${snapshot.error}',
+                style: const TextStyle(color: Colors.red, fontSize: 16),
+              ),
+            );
+          }
+          firstLoad = false;
+          return _buildList(snapshot.data ?? []);
+        },
+      );
+    }
+
+    if (filteredList.isEmpty) {
+      return Center(
+        child: Text(
+          bottomTabIndex == 0
+              ? 'No patients in queue.'
+              : bottomTabIndex == 1
+              ? 'No Paid Records'
+              : 'No History Records',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        ),
+      );
+    }
+
+    return _buildList(filteredList);
+  }
+
+  Widget _buildAppBar() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [primaryColor, const Color(0xFFD9B57A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(20),
+          bottomRight: Radius.circular(20),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
+              const Text(
+                "Medical Queue",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.3,
+                ),
+              ),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(
+                  Icons.notifications,
+                  color: Colors.white,
+                  size: 26,
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const NotificationPage()),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomTabs({required bool isToday}) {
+    return Column(
+      children: [
+        // 🔻 BOTTOM TABS
+        Material(
+          color: Colors.white,
+          elevation: 1,
+          child: TabBar(
+            controller: bottomTabController,
+            labelColor: primaryColor,
+            unselectedLabelColor: Colors.grey,
+            indicatorColor: primaryColor,
+            tabs: const [
+              Tab(text: "Queue"),
+              Tab(text: "Paid"),
+              Tab(text: "History"),
+            ],
+          ),
+        ),
+
+        // 🔻 CONTENT
+        Expanded(
+          child: TabBarView(
+            controller: bottomTabController,
+            children: [
+              _queueView(isToday),
+              _paidView(isToday),
+              _historyView(isToday),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _queueView(bool isToday) {
+    return firstLoad
+        ? FutureBuilder<List<dynamic>>(
+            future: consultationsFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: CircularProgressIndicator(color: Color(0xFFBF955E)),
+                );
+              }
+
+              if (snapshot.hasError) {
+                return Center(
+                  child: Text(
+                    'Error: ${snapshot.error}',
+                    style: const TextStyle(color: Colors.red, fontSize: 16),
+                  ),
+                );
+              }
+
+              firstLoad = false;
+              return _buildList(snapshot.data ?? []);
+            },
+          )
+        : _buildList(consultationsCache);
+  }
+
+  Widget _paidView(bool isToday) {
+    final paidList = consultationsCache.where((c) {
+      final meds = c['MedicinePatient'] ?? [];
+      final tonics = c['TonicPatient'] ?? [];
+      final injections = c['InjectionPatient'] ?? [];
+
+      return meds.any((m) => m['paymentStatus'] == true) ||
+          tonics.any((t) => t['paymentStatus'] == true) ||
+          injections.any((i) => i['paymentStatus'] == true);
+    }).toList();
+
+    if (paidList.isEmpty) {
+      return const Center(child: Text("No Paid Records"));
+    }
+
+    return _buildList(paidList);
+  }
+
+  Widget _historyView(bool isToday) {
+    final historyList = consultationsCache
+        .where((c) => c['status'] == 'COMPLETED')
+        .toList();
+
+    if (historyList.isEmpty) {
+      return const Center(child: Text("No History Records"));
+    }
+
+    return _buildList(historyList);
   }
 
   /// 🔹 UI LIST (unchanged)
