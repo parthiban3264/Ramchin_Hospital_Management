@@ -679,7 +679,7 @@ class _FeesQueuePageState extends State<FeesQueuePage> {
                                             ),
                                             Text(
                                               getString(
-                                                item['Consultation']['tokenNo'] ??
+                                                item['Consultation']?['tokenNo'] ??
                                                     '-',
                                               ),
                                               style: const TextStyle(

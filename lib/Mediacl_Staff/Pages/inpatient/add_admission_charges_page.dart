@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import '../../../../../../utils/utils.dart';
+import '../../../../../../../utils/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 
@@ -41,6 +41,7 @@ class _AddAdmissionChargesPageState extends State<AddAdmissionChargesPage> {
     _loadData();
     fetchCharges();
   }
+
   Future<void> _loadHospitalInfo() async {
     final prefs = await SharedPreferences.getInstance();
     final name = prefs.getString('hospitalName');
@@ -52,7 +53,7 @@ class _AddAdmissionChargesPageState extends State<AddAdmissionChargesPage> {
       hospitalPlace = place ?? "Unknown Place";
       hospitalPhoto =
           photo ??
-              "https://as1.ftcdn.net/v2/jpg/02/50/38/52/1000_F_250385294_tdzxdr2Yzm5Z3J41fBYbgz4PaVc2kQmT.jpg";
+          "https://as1.ftcdn.net/v2/jpg/02/50/38/52/1000_F_250385294_tdzxdr2Yzm5Z3J41fBYbgz4PaVc2kQmT.jpg";
     });
   }
 
@@ -79,11 +80,14 @@ class _AddAdmissionChargesPageState extends State<AddAdmissionChargesPage> {
   Future<void> fetchAdmittedAdmissions() async {
     final prefs = await SharedPreferences.getInstance();
     final hospitalId = prefs.getString('hospitalId');
-    final res = await http.get(Uri.parse('$baseUrl/admissions/$hospitalId/admitted'));
+    final res = await http.get(
+      Uri.parse('$baseUrl/admissions/$hospitalId/admitted'),
+    );
 
     if (res.statusCode == 200) {
-      admittedAdmissions =
-      List<Map<String, dynamic>>.from(jsonDecode(res.body));
+      admittedAdmissions = List<Map<String, dynamic>>.from(
+        jsonDecode(res.body),
+      );
       setState(() {});
     }
   }
@@ -102,13 +106,17 @@ class _AddAdmissionChargesPageState extends State<AddAdmissionChargesPage> {
       final List<dynamic> data = jsonDecode(res.body);
 
       setState(() {
-        charges = data.map((adm) => {
-          "admissionId": adm["admissionId"],
-          "patientName": adm["patientName"],
-          "wardName": adm["wardName"],
-          "bedNo": adm["bedNo"],
-          "charges": List<Map<String, dynamic>>.from(adm["charges"]),
-        }).toList();
+        charges = data
+            .map(
+              (adm) => {
+                "admissionId": adm["admissionId"],
+                "patientName": adm["patientName"],
+                "wardName": adm["wardName"],
+                "bedNo": adm["bedNo"],
+                "charges": List<Map<String, dynamic>>.from(adm["charges"]),
+              },
+            )
+            .toList();
       });
     }
   }
@@ -162,8 +170,7 @@ class _AddAdmissionChargesPageState extends State<AddAdmissionChargesPage> {
 
   // ================= DELETE =================
   Future<void> deleteCharge(int id) async {
-    final res =
-    await http.delete(Uri.parse('$baseUrl/charges/$id'));
+    final res = await http.delete(Uri.parse('$baseUrl/charges/$id'));
 
     if (res.statusCode == 200) {
       charges.removeWhere((e) => e["id"] == id);
@@ -175,7 +182,7 @@ class _AddAdmissionChargesPageState extends State<AddAdmissionChargesPage> {
   // ================= UI =================
   Widget buildDropdown() {
     return DropdownButtonFormField<int>(
-      initialValue: _selectedAdmissionId,
+      value: _selectedAdmissionId,
       decoration: inputDecoration("Select Admission"),
       style: const TextStyle(color: royal),
       items: admittedAdmissions.map((a) {
@@ -216,14 +223,15 @@ class _AddAdmissionChargesPageState extends State<AddAdmissionChargesPage> {
                 cursorColor: royal,
                 decoration: inputDecoration("Charge Description"),
                 style: const TextStyle(color: royal),
-                validator: (v) =>
-                v!.isEmpty ? "Enter description" : null,
+                validator: (v) => v!.isEmpty ? "Enter description" : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _amountCtrl,
                 cursorColor: royal,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 decoration: inputDecoration("Amount"),
                 style: const TextStyle(color: royal),
                 inputFormatters: [
@@ -246,21 +254,19 @@ class _AddAdmissionChargesPageState extends State<AddAdmissionChargesPage> {
                         backgroundColor: royal,
                         foregroundColor: Colors.white,
                       ),
-                      onPressed:
-                      _isLoading ? null : submitCharge,
+                      onPressed: _isLoading ? null : submitCharge,
                       child: _isLoading
-                          ? const CircularProgressIndicator(
-                        color: Colors.white,
-                      )
-                          : Text(_editingChargeId == null
-                          ? "Add Charge"
-                          : "Update Charge"),
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : Text(
+                              _editingChargeId == null
+                                  ? "Add Charge"
+                                  : "Update Charge",
+                            ),
                     ),
                   ),
                   TextButton(
                     onPressed: _resetForm,
-                    child: const Text("Cancel",
-                        style: TextStyle(color: royal)),
+                    child: const Text("Cancel", style: TextStyle(color: royal)),
                   ),
                 ],
               ),
@@ -275,7 +281,7 @@ class _AddAdmissionChargesPageState extends State<AddAdmissionChargesPage> {
     return Column(
       children: charges.map((admission) {
         final List<Map<String, dynamic>> admissionCharges =
-        List<Map<String, dynamic>>.from(admission['charges']);
+            List<Map<String, dynamic>>.from(admission['charges']);
 
         return Card(
           margin: const EdgeInsets.symmetric(vertical: 6),
@@ -297,7 +303,9 @@ class _AddAdmissionChargesPageState extends State<AddAdmissionChargesPage> {
                 subtitle: Text(
                   "₹${c['amount']}",
                   style: const TextStyle(
-                      color: royal, fontWeight: FontWeight.bold),
+                    color: royal,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -350,42 +358,43 @@ class _AddAdmissionChargesPageState extends State<AddAdmissionChargesPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: royal,
-        title: const Text("Admission Charges",
-            style: TextStyle(color: Colors.white)),
+        title: const Text(
+          "Admission Charges",
+          style: TextStyle(color: Colors.white),
+        ),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: _isFetching
-          ? const Center(
-        child: CircularProgressIndicator(color: royal),
-      )
+          ? const Center(child: CircularProgressIndicator(color: royal))
           : SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            buildHospitalCard(
-              hospitalName: hospitalName,
-              hospitalPlace: hospitalPlace,
-              hospitalPhoto: hospitalPhoto,
-            ),
-            const SizedBox(height: 18),
-            if (!_showForm)
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: royal,
-                  foregroundColor: Colors.white,
-                ),
-                onPressed: () => setState(() => _showForm = true),
-                child: const Text("Add Charge"),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  buildHospitalCard(
+                    hospitalName: hospitalName,
+                    hospitalPlace: hospitalPlace,
+                    hospitalPhoto: hospitalPhoto,
+                  ),
+                  const SizedBox(height: 18),
+                  if (!_showForm)
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: royal,
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: () => setState(() => _showForm = true),
+                      child: const Text("Add Charge"),
+                    ),
+                  if (_showForm) buildForm(),
+                  const SizedBox(height: 16),
+                  buildCharges(),
+                ],
               ),
-            if (_showForm) buildForm(),
-            const SizedBox(height: 16),
-            buildCharges(),
-          ],
-        ),
-      ),
+            ),
     );
   }
 }
+
 Widget buildHospitalCard({
   required String hospitalName,
   required String hospitalPlace,

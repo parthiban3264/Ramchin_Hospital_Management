@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import '../../../../../../utils/utils.dart';
+import '../../../../../../../utils/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const Color royal = Color(0xFFBF955E);
@@ -30,7 +30,6 @@ class _AvailableRoomsPageState extends State<AvailableRoomsPage> {
     fetchAvailableBeds();
   }
 
-
   Future<void> _loadHospitalInfo() async {
     final prefs = await SharedPreferences.getInstance();
     final name = prefs.getString('hospitalName');
@@ -42,7 +41,7 @@ class _AvailableRoomsPageState extends State<AvailableRoomsPage> {
       hospitalPlace = place ?? "Unknown Place";
       hospitalPhoto =
           photo ??
-              "https://as1.ftcdn.net/v2/jpg/02/50/38/52/1000_F_250385294_tdzxdr2Yzm5Z3J41fBYbgz4PaVc2kQmT.jpg";
+          "https://as1.ftcdn.net/v2/jpg/02/50/38/52/1000_F_250385294_tdzxdr2Yzm5Z3J41fBYbgz4PaVc2kQmT.jpg";
     });
   }
 
@@ -93,58 +92,59 @@ class _AvailableRoomsPageState extends State<AvailableRoomsPage> {
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: royal))
           : Column(
-        children: [
-          buildHospitalCard(
-            hospitalName: hospitalName,
-            hospitalPlace: hospitalPlace,
-            hospitalPhoto: hospitalPhoto,
-          ),
-          const SizedBox(height: 18),
-          /// SEARCH BAR
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              onChanged: _filterWards,
-              cursorColor: royal,
-              style: TextStyle(color: royal),
-              decoration: InputDecoration(
-                hintText: "Search by ward name or type",
-                hintStyle: TextStyle(color: royal),
-                prefixIcon: const Icon(Icons.search, color: royal),
-                filled: true,
-                fillColor: royal.withValues(alpha: 0.05),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: royal),
+              children: [
+                buildHospitalCard(
+                  hospitalName: hospitalName,
+                  hospitalPlace: hospitalPlace,
+                  hospitalPhoto: hospitalPhoto,
                 ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: royal, width: 2),
-                ),
-              ),
-            ),
-          ),
+                const SizedBox(height: 18),
 
-          /// WARD LIST
-          Expanded(
-            child: filteredWards.isEmpty
-                ? const Center(
-              child: Text(
-                "No rooms available",
-                style: TextStyle(color: royal, fontSize: 16),
-              ),
-            )
-                : ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: filteredWards.length,
-              itemBuilder: (context, index) {
-                final ward = filteredWards[index];
-                return _wardCard(ward);
-              },
+                /// SEARCH BAR
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: TextField(
+                    onChanged: _filterWards,
+                    cursorColor: royal,
+                    style: TextStyle(color: royal),
+                    decoration: InputDecoration(
+                      hintText: "Search by ward name or type",
+                      hintStyle: TextStyle(color: royal),
+                      prefixIcon: const Icon(Icons.search, color: royal),
+                      filled: true,
+                      fillColor: royal.withValues(alpha: 0.05),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: royal),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: royal, width: 2),
+                      ),
+                    ),
+                  ),
+                ),
+
+                /// WARD LIST
+                Expanded(
+                  child: filteredWards.isEmpty
+                      ? const Center(
+                          child: Text(
+                            "No rooms available",
+                            style: TextStyle(color: royal, fontSize: 16),
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemCount: filteredWards.length,
+                          itemBuilder: (context, index) {
+                            final ward = filteredWards[index];
+                            return _wardCard(ward);
+                          },
+                        ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -174,10 +174,7 @@ class _AvailableRoomsPageState extends State<AvailableRoomsPage> {
               ),
             ),
             const SizedBox(height: 4),
-            Text(
-              "Type: ${ward["type"]}",
-              style: const TextStyle(color: royal),
-            ),
+            Text("Type: ${ward["type"]}", style: const TextStyle(color: royal)),
 
             const SizedBox(height: 12),
 
@@ -189,10 +186,15 @@ class _AvailableRoomsPageState extends State<AvailableRoomsPage> {
                 final isAvailable = bed["status"] == "AVAILABLE";
 
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: isAvailable ? Colors.green : Colors.red),
+                    border: Border.all(
+                      color: isAvailable ? Colors.green : Colors.red,
+                    ),
                     color: (isAvailable
                         ? Colors.green.withOpacity(0.1)
                         : Colors.red.withOpacity(0.1)),
@@ -200,7 +202,9 @@ class _AvailableRoomsPageState extends State<AvailableRoomsPage> {
                   child: Text(
                     "Bed ${bed["bedNo"]}",
                     style: TextStyle(
-                      color: isAvailable ? Colors.green.shade800 : Colors.red.shade800,
+                      color: isAvailable
+                          ? Colors.green.shade800
+                          : Colors.red.shade800,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -213,6 +217,7 @@ class _AvailableRoomsPageState extends State<AvailableRoomsPage> {
     );
   }
 }
+
 Widget buildHospitalCard({
   required String hospitalName,
   required String hospitalPlace,

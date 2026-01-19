@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import '../../../../../../utils/utils.dart';
+import 'package:intl/intl.dart';
+import '../../../../../../../utils/utils.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -51,6 +52,14 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
 
     phoneCtrl.addListener(_onPhoneChanged);
     patientIdCtrl.addListener(_onPatientIdChanged);
+    _updateTime();
+  }
+
+  String? _dateTime;
+  void _updateTime() {
+    setState(() {
+      _dateTime = DateFormat('yyyy-MM-dd hh:mm a').format(DateTime.now());
+    });
   }
 
   void _onPhoneChanged() {
@@ -96,11 +105,12 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
 
     setState(() => loading = false);
 
-    if (res.statusCode == 200 ||res.statusCode == 201 ) {
+    if (res.statusCode == 200 || res.statusCode == 201) {
       final patient = jsonDecode(res.body);
       if (patient != null) {
         String mobilePhone = patient["phone"]?["mobile"] ?? "";
-        if (mobilePhone.startsWith("+91")) mobilePhone = mobilePhone.substring(3).trim();
+        if (mobilePhone.startsWith("+91"))
+          mobilePhone = mobilePhone.substring(3).trim();
 
         setState(() {
           selectedPatientId = patient["id"];
@@ -132,7 +142,8 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
       if (data.isNotEmpty) {
         final patient = data[0]; // auto-select first match
         String mobilePhone = patient["phone"]?["mobile"] ?? "";
-        if (mobilePhone.startsWith("+91")) mobilePhone = mobilePhone.substring(3).trim();
+        if (mobilePhone.startsWith("+91"))
+          mobilePhone = mobilePhone.substring(3).trim();
 
         setState(() {
           selectedPatientId = patient["id"];
@@ -150,9 +161,9 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
   }
 
   void _clearPatientSelection() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Patient not found")),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text("Patient not found")));
     setState(() {
       selectedPatientId = null;
       selectedPatient = null;
@@ -203,15 +214,14 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
   }
 
   Future<void> shareToWhatsApp(String phone, String message) async {
-    final url =
-        "https://wa.me/91$phone?text=${Uri.encodeComponent(message)}";
+    final url = "https://wa.me/91$phone?text=${Uri.encodeComponent(message)}";
 
     if (await canLaunchUrl(Uri.parse(url))) {
       await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("WhatsApp not available")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("WhatsApp not available")));
     }
   }
 
@@ -236,7 +246,7 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
       hospitalPlace = place ?? "Unknown Place";
       hospitalPhoto =
           photo ??
-              "https://as1.ftcdn.net/v2/jpg/02/50/38/52/1000_F_250385294_tdzxdr2Yzm5Z3J41fBYbgz4PaVc2kQmT.jpg";
+          "https://as1.ftcdn.net/v2/jpg/02/50/38/52/1000_F_250385294_tdzxdr2Yzm5Z3J41fBYbgz4PaVc2kQmT.jpg";
     });
   }
 
@@ -244,7 +254,9 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
     final prefs = await SharedPreferences.getInstance();
     final hospitalId = prefs.getString('hospitalId');
     final res = await http.get(
-      Uri.parse("$baseUrl/admissions/patients/by-phone/${phoneCtrl.text}/$hospitalId"),
+      Uri.parse(
+        "$baseUrl/admissions/patients/by-phone/${phoneCtrl.text}/$hospitalId",
+      ),
     );
 
     if (res.statusCode == 200) {
@@ -263,14 +275,15 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
     setState(() => loading = true);
 
     final payload = {
-        "patientId": selectedPatientId,
+      "patientId": selectedPatientId,
       "bedId": bedId,
       if (admitByNameCtrl.text.isNotEmpty)
         "admitBy": {
           "name": admitByNameCtrl.text,
           "phone": admitByPhoneCtrl.text,
           "relation": admitByRelationCtrl.text,
-        }
+        },
+      "createdAt": _dateTime.toString(),
     };
 
     final res = await http.post(
@@ -307,7 +320,8 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
     final patientPhone = p["patient"]?["phone"]?["mobile"] ?? "";
     final admissionId = p["id"]?.toString() ?? "N/A";
 
-    final message = '''
+    final message =
+        '''
 🏥 $hospitalName
 
 Patient admitted successfully.
@@ -342,8 +356,9 @@ Bed: ${p["bed"]?["bedNo"] ?? ""}
           const SizedBox(height: 20),
 
           Card(
-            shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -354,9 +369,7 @@ Bed: ${p["bed"]?["bedNo"] ?? ""}
                   successRow("Ward", p["bed"]?["ward"]?["name"] ?? "N/A"),
                   successRow(
                     "Bed",
-                    p["bed"] != null
-                        ? "Bed ${p["bed"]["bedNo"] ?? ""}"
-                        : "N/A",
+                    p["bed"] != null ? "Bed ${p["bed"]["bedNo"] ?? ""}" : "N/A",
                   ),
                 ],
               ),
@@ -373,9 +386,7 @@ Bed: ${p["bed"]?["bedNo"] ?? ""}
               child: ElevatedButton.icon(
                 icon: const Icon(Icons.share, color: Colors.white),
                 label: const Text("Share on WhatsApp"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                ),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
                 onPressed: () => shareToWhatsApp(patientPhone, message),
               ),
             ),
@@ -389,10 +400,7 @@ Bed: ${p["bed"]?["bedNo"] ?? ""}
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: royal),
               onPressed: resetForm,
-              child: const Text(
-                "Close",
-                style: TextStyle(color: Colors.white),
-              ),
+              child: const Text("Close", style: TextStyle(color: Colors.white)),
             ),
           ),
         ],
@@ -407,8 +415,10 @@ Bed: ${p["bed"]?["bedNo"] ?? ""}
         children: [
           SizedBox(
             width: 90,
-            child: Text(label,
-                style: const TextStyle(fontWeight: FontWeight.bold)),
+            child: Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
           Expanded(child: Text(value)),
         ],
@@ -426,8 +436,9 @@ Bed: ${p["bed"]?["bedNo"] ?? ""}
     final key = "${ward['id']}";
     final beds = List.from(ward['beds'] ?? []);
 
-    final availableBeds =
-    beds.where((b) => b['status'] == 'AVAILABLE').toList();
+    final availableBeds = beds
+        .where((b) => b['status'] == 'AVAILABLE')
+        .toList();
 
     final selectedBedIds = selectedBeds[key] ?? {};
     final isExpanded = expandedWards.contains(index);
@@ -456,9 +467,7 @@ Bed: ${p["bed"]?["bedNo"] ?? ""}
               style: const TextStyle(color: royal),
             ),
             trailing: Icon(
-              isExpanded
-                  ? Icons.keyboard_arrow_up
-                  : Icons.keyboard_arrow_down,
+              isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
               color: royal,
             ),
             onTap: () {
@@ -475,10 +484,7 @@ Bed: ${p["bed"]?["bedNo"] ?? ""}
           /// BED CHIPS
           if (isExpanded)
             Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 8,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -509,18 +515,18 @@ Bed: ${p["bed"]?["bedNo"] ?? ""}
                     checkmarkColor: Colors.white,
                     onSelected: isAvailable
                         ? (_) {
-                      setState(() {
-                        /// SINGLE selection (admission case)
-                        selectedBeds.clear();
-                        selectedBeds[key] = {bed['id']};
+                            setState(() {
+                              /// SINGLE selection (admission case)
+                              selectedBeds.clear();
+                              selectedBeds[key] = {bed['id']};
 
-                        selectedWard = ward;
-                        selectedBed = bed;
-                        wardId = ward['id'];
-                        bedId = bed['id'];
-                        bedLocked = true;
-                      });
-                    }
+                              selectedWard = ward;
+                              selectedBed = bed;
+                              wardId = ward['id'];
+                              bedId = bed['id'];
+                              bedLocked = true;
+                            });
+                          }
                         : null,
                   );
                 }).toList(),
@@ -542,17 +548,12 @@ Bed: ${p["bed"]?["bedNo"] ?? ""}
         ),
         const SizedBox(height: 16),
 
-        ...wards.asMap().entries.map(
-              (e) => _buildWardCard(e.key, e.value),
-        ),
+        ...wards.asMap().entries.map((e) => _buildWardCard(e.key, e.value)),
       ],
     );
   }
 
-  Widget labeledField({
-    required String label,
-    required Widget field,
-  }) {
+  Widget labeledField({required String label, required Widget field}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -562,10 +563,7 @@ Bed: ${p["bed"]?["bedNo"] ?? ""}
             width: 110,
             child: Text(
               label,
-              style: const TextStyle(
-                color: royal,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(color: royal, fontWeight: FontWeight.bold),
             ),
           ),
           const SizedBox(width: 10),
@@ -617,7 +615,9 @@ Bed: ${p["bed"]?["bedNo"] ?? ""}
                         cursorColor: royal,
                         style: const TextStyle(color: royal),
                         keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
                         decoration: _inputDecoration("Enter Patient ID"),
                       ),
                     ),
@@ -645,23 +645,33 @@ Bed: ${p["bed"]?["bedNo"] ?? ""}
                           hint: "Select patient",
                           value: selectedPatientId,
                           items: patientsFound
-                              .map<DropdownMenuItem<int>>((p) => DropdownMenuItem(
-                            value: p["id"],
-                            child: Text(p["name"], style: const TextStyle(color: royal)),
-                          ))
+                              .map<DropdownMenuItem<int>>(
+                                (p) => DropdownMenuItem(
+                                  value: p["id"],
+                                  child: Text(
+                                    p["name"],
+                                    style: const TextStyle(color: royal),
+                                  ),
+                                ),
+                              )
                               .toList(),
-                            onChanged: (v) {
-                              final patient = patientsFound.firstWhere((p) => p["id"] == v);
-                              String mobilePhone = patient["phone"]?["mobile"] ?? "";
-                              if (mobilePhone.startsWith("+91")) mobilePhone = mobilePhone.substring(3).trim();
+                          onChanged: (v) {
+                            final patient = patientsFound.firstWhere(
+                              (p) => p["id"] == v,
+                            );
+                            String mobilePhone =
+                                patient["phone"]?["mobile"] ?? "";
+                            if (mobilePhone.startsWith("+91"))
+                              mobilePhone = mobilePhone.substring(3).trim();
 
-                              setState(() {
-                                selectedPatientId = v;
-                                selectedPatient = patient;
-                                phoneCtrl.text = mobilePhone; // correctly set phone
-                                patientIdCtrl.text = patient["id"].toString();
-                              });
-                            },
+                            setState(() {
+                              selectedPatientId = v;
+                              selectedPatient = patient;
+                              phoneCtrl.text =
+                                  mobilePhone; // correctly set phone
+                              patientIdCtrl.text = patient["id"].toString();
+                            });
+                          },
                           validator: (v) => v == null ? "Select patient" : null,
                         ),
                       ),
@@ -704,7 +714,6 @@ Bed: ${p["bed"]?["bedNo"] ?? ""}
                       ),
                     ],
 
-
                     const Divider(height: 30),
 
                     const Center(
@@ -742,7 +751,9 @@ Bed: ${p["bed"]?["bedNo"] ?? ""}
                         controller: admitByRelationCtrl,
                         cursorColor: royal,
                         style: TextStyle(color: royal),
-                        decoration: _inputDecoration("Father / Mother / Husband"),
+                        decoration: _inputDecoration(
+                          "Father / Mother / Husband",
+                        ),
                       ),
                     ),
 
@@ -763,12 +774,16 @@ Bed: ${p["bed"]?["bedNo"] ?? ""}
                             ? null
                             : submitAdmission,
                         child: loading
-                            ? const CircularProgressIndicator(color: Colors.white)
+                            ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
                             : const Text(
-                          "Admit Patient",
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
+                                "Admit Patient",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                       ),
                     ),
                   ],
@@ -807,16 +822,13 @@ Bed: ${p["bed"]?["bedNo"] ?? ""}
     T? value,
   }) {
     return DropdownButtonFormField<T>(
-      initialValue: value,
+      value: value,
       items: items,
       onChanged: onChanged,
       validator: validator,
       dropdownColor: Colors.white,
       iconEnabledColor: royal,
-      style: const TextStyle(
-        color: royal,
-        fontWeight: FontWeight.w500,
-      ),
+      style: const TextStyle(color: royal, fontWeight: FontWeight.w500),
       decoration: _inputDecoration(hint),
     );
   }
@@ -827,7 +839,10 @@ Bed: ${p["bed"]?["bedNo"] ?? ""}
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: royal,
-        title: const Text("Admit Patient", style: TextStyle(color: Colors.white)),
+        title: const Text(
+          "Admit Patient",
+          style: TextStyle(color: Colors.white),
+        ),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: showSuccess

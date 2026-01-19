@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Pages/payment_modal.dart';
+import '../../../../Services/charge_Service.dart';
 import '../../../../Services/consultation_service.dart';
 import '../../../../Services/payment_service.dart';
 import '../../../../Services/socket_service.dart';
@@ -69,8 +70,7 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
     );
     referredDoctorController = TextEditingController(
       text: extractString(
-        widget.fee['Consultation']['referredByDoctorName'],
-        '',
+        widget.fee['Consultation']?['referredByDoctorName'] ?? '',
       ),
     );
     dobController = TextEditingController(
@@ -290,14 +290,28 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
     // ✅ Payment succeeded → update backend
     setState(() => _isProcessing = true);
     final staffId = prefs.getString('userId');
+
+    bool isDischarged = false;
+
+    if (widget.fee['type'] == 'ADMISSIONFEE') {
+      isDischarged = widget.fee['Admission']?['status'] == 'DISCHARGED';
+    }
+
     final response = await PaymentService().updatePayment(paymentId, {
-      'status': 'PAID',
+      'status': isDischarged ? 'PAID' : 'PARTIALLY_PAID',
       // 'transactionId': paymentResult['transactionId'],
       "staff_Id": staffId.toString(),
       "paymentType": paymentMode,
       "updatedAt": _dateTime.toString(),
     });
-
+    if (widget.fee['type'] == 'ADMISSIONFEE') {
+      final admissionId = widget.fee['Admission']['id'];
+      print('admissionId: $admissionId');
+      await ChargeService().updateChargesByAdmission(
+        admissionId: admissionId,
+        status: 'PAID',
+      );
+    }
     // final Id = widget.patient['Consultation']?[0]?['id'];
     final consultationId = widget.fee['consultation_Id'];
 
@@ -487,6 +501,7 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
 
   @override
   Widget build(BuildContext context) {
+    print('widget.: ${widget.fee}');
     final List tests = widget.fee["TestingAndScanningPatients"] ?? [];
     final consultation = widget.fee['Consultation'] ?? {};
     // final temperature = consultation['temperature'] ?? '';
@@ -502,8 +517,11 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
     //     consultation['referredByDoctorName'].toString() ?? '-';
 
     final num? registrationFee = consultation?['registrationFee'];
-    final num? consultationFee =
-        consultation?['consultationFee'] + registrationFee;
+    // final num? consultationFee =
+    //     consultation?['consultationFee'] + registrationFee ?? '0';
+    final num consultationFee =
+        (consultation?['consultationFee'] ?? 0) + (registrationFee ?? 0);
+
     final num? emergencyFee = consultation?['emergencyFee'];
     final num? sugarTestFee = consultation?['sugarTestFee'];
     final tokenNo =
@@ -518,19 +536,25 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
 
     final Color themeColor = const Color(0xFFBF955E);
     const Color background = Color(0xFFF8F8F8);
-    bool hasSubAmounts(dynamic selectedOption) {
-      if (selectedOption is Map) {
-        return selectedOption.values.any((v) => v != null && v != 0);
-      }
+    // bool hasSubAmounts(dynamic selectedOption) {
+    //   if (selectedOption is Map) {
+    //     return selectedOption.values.any((v) => v != null && v != 0);
+    //   }
+    //
+    //   if (selectedOption is List) {
+    //     return selectedOption.any(
+    //       (e) => e is Map && e['amount'] != null && e['amount'] != 0,
+    //     );
+    //   }
+    //
+    //   return false;
+    // }
+    final admission = widget.fee['Admission'];
+    final bed = admission?['bed'];
+    final ward = bed?['ward'];
 
-      if (selectedOption is List) {
-        return selectedOption.any(
-          (e) => e is Map && e['amount'] != null && e['amount'] != 0,
-        );
-      }
-
-      return false;
-    }
+    final String? roomName = ward?['name'];
+    final num roomRent = num.tryParse(ward?['rent']?.toString() ?? '0') ?? 0;
 
     List<MapEntry<String, num>> parseSelectedOption(dynamic selectedOption) {
       if (selectedOption is Map) {
@@ -937,6 +961,51 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                     //   "₹ ${feeController.text}",
                     // ),
                   ],
+                  if (widget.fee['type'] == 'ADMISSIONFEE') ...[
+                    // 🔹 Header only
+                    feeHeader("Admission Fee"),
+                    if (widget.fee['received_Amount'] != null &&
+                        widget.fee['received_Amount'] != 0) ...[
+                      const SizedBox(height: 5),
+                      feeHeaderWithAmount(
+                        "Received Amount",
+                        widget.fee['received_Amount'],
+                      ),
+                    ],
+
+                    // 🔹 Room
+                    if (ward?['name'] != null)
+                      feeRowWithRemove(
+                        title: "Room ${ward['name']}",
+                        amount:
+                            num.tryParse(ward?['rent']?.toString() ?? '0') ?? 0,
+                        removable: false,
+                      ),
+
+                    // 🔹 Charges
+                    // for (final charge in admission?['charges'] ?? [])
+                    //   feeRowWithRemove(
+                    //     title: charge['description'] ?? 'Charge',
+                    //     amount:
+                    //         num.tryParse(charge['amount']?.toString() ?? '0') ??
+                    //         0,
+                    //     removable: false,
+                    //   ),
+                    // 🔹 Charges (only PENDING)
+                    for (final charge in admission?['charges'] ?? [])
+                      if ((charge['status'] ?? '').toString().toUpperCase() ==
+                          'PENDING')
+                        feeRowWithRemove(
+                          title: charge['description'] ?? 'Charge',
+                          amount:
+                              num.tryParse(
+                                charge['amount']?.toString() ?? '0',
+                              ) ??
+                              0,
+                          removable: false,
+                        ),
+                  ],
+
                   if (tests.isNotEmpty) ...[
                     const SizedBox(height: 10),
                     Text(
@@ -1124,7 +1193,7 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                       Align(
                         alignment: Alignment.centerRight,
                         child: Text(
-                          "Total : ₹ ${calculateTotal(widget.fee['amount'])}",
+                          "Total : ₹ ${calculateTotal(widget.fee['amount']) - (widget.fee['received_Amount'] ?? 0)}",
                           style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
@@ -1509,6 +1578,39 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
     );
   }
 
+  Widget feeHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Text(
+        title,
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+
+  Widget feeHeaderWithAmount(String title, num? amount) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          Text(
+            "₹ ${amount?.toStringAsFixed(0) ?? '0'}",
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _billRowWithRemove({
     required String label,
     required String value,
@@ -1852,10 +1954,14 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
   //   return tax.toStringAsFixed(0);
   // }
 
-  static String calculateTotal(dynamic amount) {
-    if (amount == null) return "0.00";
-    double total = (amount * 1.00);
-    return total.toStringAsFixed(0);
+  // static String calculateTotal(dynamic amount) {
+  //   if (amount == null) return "0.00";
+  //   double total = (amount * 1.00);
+  //   return total.toStringAsFixed(0);
+  // }
+  static double calculateTotal(dynamic amount) {
+    if (amount == null) return 0.0;
+    return (amount as num).toDouble();
   }
 
   static String extractString(dynamic value, [String? key]) {
