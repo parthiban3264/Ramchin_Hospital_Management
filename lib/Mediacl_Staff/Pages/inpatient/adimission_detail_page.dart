@@ -15,36 +15,15 @@ class AdmissionDetailPage extends StatefulWidget {
 }
 
 class _AdmissionDetailPageState extends State<AdmissionDetailPage> {
-  int? doctorId;
-  int? nurseId;
   int? bedId;
-
-  bool changeDoctor = false;
-  bool changeNurse = false;
   bool changeBed = false;
-
-  List doctors = [];
-  List nurses = [];
   List beds = [];
 
   @override
   void initState() {
     super.initState();
-    loadStaff();
     loadBeds();
   }
-
-  Future<void> loadStaff() async {
-    final prefs = await SharedPreferences.getInstance();
-    final hospitalId = prefs.getString('hospitalId');
-    final d = await http.get(Uri.parse("$baseUrl/admissions/$hospitalId/staff/doctors"));
-    final n = await http.get(Uri.parse("$baseUrl/admissions/$hospitalId/staff/nurses"));
-    setState(() {
-      doctors = jsonDecode(d.body);
-      nurses = jsonDecode(n.body);
-    });
-  }
-
   Future<void> loadBeds() async {
     final prefs = await SharedPreferences.getInstance();
     final hospitalId = prefs.getString('hospitalId');
@@ -86,7 +65,7 @@ class _AdmissionDetailPageState extends State<AdmissionDetailPage> {
   }
 
   Future<void> saveChanges() async {
-    if (!changeDoctor && !changeNurse && !changeBed) return;
+    if (!changeBed) return;
     final prefs = await SharedPreferences.getInstance();
     final hospitalId = prefs.getString('hospitalId');
     try {
@@ -95,10 +74,6 @@ class _AdmissionDetailPageState extends State<AdmissionDetailPage> {
             "$baseUrl/admissions/${widget.admission['id']}/$hospitalId/change-assignment"),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          if (changeDoctor && doctorId != null &&
-              doctorId != widget.admission['doctorId']) 'doctorId': doctorId,
-          if (changeNurse && nurseId != null &&
-              nurseId != widget.admission['nurseId']) 'nurseId': nurseId,
           if (changeBed && bedId != null &&
               bedId != widget.admission['bedId']) 'newBedId': bedId,
         }),
@@ -143,22 +118,8 @@ class _AdmissionDetailPageState extends State<AdmissionDetailPage> {
     final a = widget.admission;
     final p = a['patient'];
 
-    doctorId ??= a['doctorId'];
-    nurseId ??= a['nurseId'];
-
     final admitTime =
     DateTime.parse(a['admitTime']).toLocal().toString().substring(0, 16);
-
-    final doctorName =
-    a['doctor'] != null ? a['doctor']['name'] : "Not Assigned";
-
-    final nurseName = nurses.isNotEmpty
-        ? (nurses.firstWhere(
-          (n) => n['id'] == a['nurseId'],
-      orElse: () => null,
-    )?['name'] ?? "Not Assigned")
-        : "Loading...";
-
 
     final bedText =
         "Bed ${a['bed']['bedNo']} • ${a['bed']['ward']['name']}";
@@ -198,36 +159,6 @@ class _AdmissionDetailPageState extends State<AdmissionDetailPage> {
 
             const SizedBox(height: 16),
 
-            /// 👨‍⚕️ DOCTOR
-            _editableCard(
-              title: "Doctor",
-              value: doctorName,
-              changing: changeDoctor,
-              onTap: () => setState(() => changeDoctor = !changeDoctor),
-              child: _dropdown(
-                hint: "Select Doctor",
-                items: doctors,
-                value: doctorId,
-                onChanged: (v) => setState(() => doctorId = v),
-              ),
-            ),
-
-            /// 👩‍⚕️ NURSE
-            _editableCard(
-              title: "Nurse",
-              value: nurseName,
-              changing: changeNurse,
-              onTap: () => setState(() => changeNurse = !changeNurse),
-              child: _dropdown(
-                hint: "Select Nurse",
-                items: nurses,
-                value: nurseId,
-                onChanged: (v) => setState(() => nurseId = v),
-              ),
-            ),
-
-            /// 🛏 BED
-            /// 🛏 BED
             if (beds.isNotEmpty)
               _editableCard(
                 title: "Bed",
@@ -287,8 +218,6 @@ class _AdmissionDetailPageState extends State<AdmissionDetailPage> {
       ),
     );
   }
-
-  /// ================= UI HELPERS =================
 
   Widget _infoCard({required String title, required List<Widget> children}) {
     return Card(

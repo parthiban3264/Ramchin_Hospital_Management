@@ -63,7 +63,7 @@ class _WardsPageState extends State<WardsPage> {
       hospitalPlace = place ?? "Unknown Place";
       hospitalPhoto =
           photo ??
-          "https://as1.ftcdn.net/v2/jpg/02/50/38/52/1000_F_250385294_tdzxdr2Yzm5Z3J41fBYbgz4PaVc2kQmT.jpg";
+              "https://as1.ftcdn.net/v2/jpg/02/50/38/52/1000_F_250385294_tdzxdr2Yzm5Z3J41fBYbgz4PaVc2kQmT.jpg";
     });
   }
 
@@ -116,9 +116,7 @@ class _WardsPageState extends State<WardsPage> {
       );
     } else {
       response = await http.patch(
-        Uri.parse(
-          "$baseUrl/wards/${_editingWard!['id']}/fullUpdate/$hospitalId",
-        ),
+        Uri.parse("$baseUrl/wards/${_editingWard!['id']}/fullUpdate/$hospitalId"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "name": wardNameController.text.trim(),
@@ -206,17 +204,13 @@ class _WardsPageState extends State<WardsPage> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 errorBorder: OutlineInputBorder(
-                  borderSide: const BorderSide(
-                    color: Colors.redAccent,
-                    width: 1.5,
-                  ),
+                  borderSide:
+                  const BorderSide(color: Colors.redAccent, width: 1.5),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 focusedErrorBorder: OutlineInputBorder(
-                  borderSide: const BorderSide(
-                    color: Colors.redAccent,
-                    width: 2,
-                  ),
+                  borderSide:
+                  const BorderSide(color: Colors.redAccent, width: 2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 filled: true,
@@ -231,7 +225,7 @@ class _WardsPageState extends State<WardsPage> {
           Expanded(
             child: Expanded(
               child: DropdownButtonFormField<String>(
-                value: bedStatusValues[index],
+                initialValue: bedStatusValues[index],
                 dropdownColor: Colors.white,
                 style: const TextStyle(color: royal),
                 iconEnabledColor: royal,
@@ -258,15 +252,9 @@ class _WardsPageState extends State<WardsPage> {
                     : (v) => setState(() => bedStatusValues[index] = v!),
 
                 items: const [
-                  DropdownMenuItem(
-                    value: "AVAILABLE",
-                    child: Text("AVAILABLE"),
-                  ),
+                  DropdownMenuItem(value: "AVAILABLE", child: Text("AVAILABLE")),
                   DropdownMenuItem(value: "OCCUPIED", child: Text("OCCUPIED")),
-                  DropdownMenuItem(
-                    value: "MAINTENANCE",
-                    child: Text("MAINTENANCE"),
-                  ),
+                  DropdownMenuItem(value: "MAINTENANCE", child: Text("MAINTENANCE")),
                 ],
               ),
             ),
@@ -307,7 +295,9 @@ class _WardsPageState extends State<WardsPage> {
               /// TITLE
               Center(
                 child: Text(
-                  _editingWard == null ? "Add Ward & Beds" : "Edit Ward & Beds",
+                  _editingWard == null
+                      ? "Add Ward & Beds"
+                      : "Edit Ward & Beds",
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -344,7 +334,7 @@ class _WardsPageState extends State<WardsPage> {
 
               /// WARD TYPE
               DropdownButtonFormField<String>(
-                value: selectedWardType,
+                initialValue: selectedWardType,
                 dropdownColor: Colors.white,
                 style: const TextStyle(color: royal),
                 iconEnabledColor: royal,
@@ -364,10 +354,7 @@ class _WardsPageState extends State<WardsPage> {
                 ),
                 items: const [
                   DropdownMenuItem(value: "General", child: Text("General")),
-                  DropdownMenuItem(
-                    value: "Emergency",
-                    child: Text("Emergency"),
-                  ),
+                  DropdownMenuItem(value: "Emergency", child: Text("Emergency")),
                   DropdownMenuItem(value: "Private", child: Text("Private")),
                 ],
                 onChanged: (v) => setState(() => selectedWardType = v),
@@ -459,17 +446,20 @@ class _WardsPageState extends State<WardsPage> {
                       child: _loading
                           ? const CircularProgressIndicator(color: Colors.white)
                           : Text(
-                              _editingWard == null
-                                  ? "Save Ward"
-                                  : "Update Ward",
-                              style: const TextStyle(color: Colors.white),
-                            ),
+                        _editingWard == null
+                            ? "Save Ward"
+                            : "Update Ward",
+                        style: const TextStyle(color: Colors.white),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   TextButton(
                     onPressed: resetForm,
-                    child: const Text("Cancel", style: TextStyle(color: royal)),
+                    child: const Text(
+                      "Cancel",
+                      style: TextStyle(color: royal),
+                    ),
                   ),
                 ],
               ),
@@ -506,7 +496,10 @@ class _WardsPageState extends State<WardsPage> {
               "Name: ${ward["name"]}",
               style: const TextStyle(color: royal, fontWeight: FontWeight.w600),
             ),
-            Text("Type: ${ward["type"]}", style: const TextStyle(color: royal)),
+            Text(
+              "Type: ${ward["type"]}",
+              style: const TextStyle(color: royal),
+            ),
           ],
         ),
         actions: [
@@ -577,13 +570,19 @@ class _WardsPageState extends State<WardsPage> {
             const SizedBox(height: 10),
             const Text(
               "Beds",
-              style: TextStyle(fontWeight: FontWeight.bold, color: royal),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: royal,
+              ),
             ),
             const SizedBox(height: 6),
 
             /// BED LIST
             if (beds.isEmpty)
-              const Text("No beds added", style: TextStyle(color: royal))
+              const Text(
+                "No beds added",
+                style: TextStyle(color: royal),
+              )
             else
               Wrap(
                 spacing: 8,
@@ -604,10 +603,8 @@ class _WardsPageState extends State<WardsPage> {
                   }
 
                   return Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
+                    padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: royal, width: 1),
@@ -636,10 +633,7 @@ class _WardsPageState extends State<WardsPage> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: royal,
-        title: const Text(
-          "Ward & Bed Management",
-          style: TextStyle(color: Colors.white),
-        ),
+        title: const Text("Ward & Bed Management", style: TextStyle(color: Colors.white)),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
@@ -658,10 +652,7 @@ class _WardsPageState extends State<WardsPage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: royal,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),

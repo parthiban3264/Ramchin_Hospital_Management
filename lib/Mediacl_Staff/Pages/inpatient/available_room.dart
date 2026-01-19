@@ -54,24 +54,10 @@ class _AvailableRoomsPageState extends State<AvailableRoomsPage> {
     if (res.statusCode == 200 || res.statusCode == 201) {
       final data = List<Map<String, dynamic>>.from(jsonDecode(res.body));
 
-      // Keep only wards that have AVAILABLE beds
-      final filtered = data
-          .map((ward) {
-        final availableBeds = (ward["beds"] as List)
-            .where((b) => b["status"] == "AVAILABLE")
-            .toList();
-
-        return {
-          ...ward,
-          "beds": availableBeds,
-        };
-      })
-          .where((ward) => (ward["beds"] as List).isNotEmpty)
-          .toList();
-
+      // Keep all beds
       setState(() {
-        wards = filtered;
-        filteredWards = filtered;
+        wards = data;
+        filteredWards = data;
         _loading = false;
       });
     }
@@ -195,23 +181,26 @@ class _AvailableRoomsPageState extends State<AvailableRoomsPage> {
 
             const SizedBox(height: 12),
 
-            /// AVAILABLE BEDS
+            /// ALL BEDS WITH STATUS COLOR
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: beds.map<Widget>((bed) {
+                final isAvailable = bed["status"] == "AVAILABLE";
+
                 return Container(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: royal),
-                    color: Colors.green.withValues(alpha: 0.08),
+                    border: Border.all(color: isAvailable ? Colors.green : Colors.red),
+                    color: (isAvailable
+                        ? Colors.green.withOpacity(0.1)
+                        : Colors.red.withOpacity(0.1)),
                   ),
                   child: Text(
                     "Bed ${bed["bedNo"]}",
-                    style: const TextStyle(
-                      color: royal,
+                    style: TextStyle(
+                      color: isAvailable ? Colors.green.shade800 : Colors.red.shade800,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
