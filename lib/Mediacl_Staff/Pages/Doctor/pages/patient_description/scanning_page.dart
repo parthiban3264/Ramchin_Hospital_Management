@@ -104,8 +104,10 @@ class ScanningPageState extends State<ScanningPage> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (_, __) => _submitAllScans(),
+      canPop: true,
+      onPopInvoked: (_) {
+        PatientDescriptionPageState.onSavedScans(savedScans);
+      },
 
       child: Scaffold(
         appBar: _buildAppBar(),
@@ -135,37 +137,33 @@ class ScanningPageState extends State<ScanningPage> {
             ),
 
             // 🔹 SELECTED TEST SUMMARY (FIXED HEIGHT – ¼ SCREEN)
-            if (savedScans.isNotEmpty)
-              SizedBox(
-                height: screenHeight * 0.20,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Material(
-                    elevation: 3,
-                    borderRadius: BorderRadius.circular(16),
-                    color: Colors.white,
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 12),
-                        Text(
-                          "🧪 Selected Scans Summary",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: primaryColor,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
+            Expanded(
+              child: SingleChildScrollView(
+                physics: BouncingScrollPhysics(),
+                child: Column(
+                  children: [
+                    if (savedScans.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Material(
+                          elevation: 3,
+                          borderRadius: BorderRadius.circular(16),
+                          color: Colors.white,
+                          child: Column(
+                            children: [
+                              const SizedBox(height: 12),
+                              Text(
+                                "🧪 Selected Scans Summary",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: primaryColor,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
 
-                        // 🔹 ONLY THIS SCROLLS
-                        Expanded(
-                          child: ScrollConfiguration(
-                            behavior: const ScrollBehavior().copyWith(
-                              overscroll: false,
-                            ),
-                            child: SingleChildScrollView(
-                              physics: const ClampingScrollPhysics(),
-                              child: Padding(
+                              // 🔹 ONLY THIS SCROLLS
+                              Padding(
                                 padding: const EdgeInsets.all(12),
                                 child: Column(
                                   children: savedScans.entries.map((entry) {
@@ -232,37 +230,43 @@ class ScanningPageState extends State<ScanningPage> {
                                   }).toList(),
                                 ),
                               ),
-                            ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
-                  ),
+                      ),
+                    SizedBox(height: 12),
+                    isSubmitting
+                        ? const Center(child: CircularProgressIndicator())
+                        : filteredScans.isEmpty
+                        ? const Center(
+                            child: Text(
+                              "No scans found.",
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          )
+                        : ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+
+                            padding: const EdgeInsets.only(
+                              left: 16,
+                              right: 16,
+                              bottom: 100,
+                            ),
+                            itemCount: filteredScans.length,
+                            itemBuilder: (context, index) {
+                              return _buildScanCard(
+                                filteredScans[index],
+                                index,
+                              );
+                            },
+                          ),
+                  ],
                 ),
               ),
-
-            Expanded(
-              child: isSubmitting
-                  ? const Center(child: CircularProgressIndicator())
-                  : filteredScans.isEmpty
-                  ? const Center(
-                      child: Text(
-                        "No scans found.",
-                        style: TextStyle(fontSize: 18, color: Colors.grey),
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.only(
-                        left: 16,
-                        right: 16,
-                        bottom: 100,
-                      ),
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: filteredScans.length,
-                      itemBuilder: (context, index) {
-                        return _buildScanCard(filteredScans[index], index);
-                      },
-                    ),
             ),
           ],
         ),

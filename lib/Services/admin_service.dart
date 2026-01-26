@@ -334,4 +334,19 @@ class AdminService {
       throw Exception("Failed to update status");
     }
   }
+
+  Future deleteAdmin(int id) async {
+    final url = Uri.parse("$baseUrl/admins/deleteById/$id");
+
+    final response = await http.delete(
+      url,
+      headers: {"Content-Type": "application/json"},
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception("Failed to delete admin");
+    }
+  }
 }

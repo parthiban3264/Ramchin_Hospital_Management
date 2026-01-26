@@ -610,7 +610,78 @@ class _FeesQueuePageState extends State<FeesQueuePage> {
                       final item = data[index];
                       print('item $item');
                       final patient = item['Patient'] ?? {};
+                      final admission = item['Admission'];
+                      final bed = admission?['bed'];
+                      final ward = bed?['ward'];
 
+                      final num advanceAmount = (admission?['charges'] ?? [])
+                          .where(
+                            (c) =>
+                                (c['status'] ?? '').toString().toUpperCase() ==
+                                    'PAID' &&
+                                (c['description'] ?? '')
+                                        .toString()
+                                        .toUpperCase() ==
+                                    'INPATIENT ADVANCE FEE' &&
+                                c['admissionId'] == item['Admission']['id'],
+                          )
+                          .fold<num>(
+                            0,
+                            (num sum, dynamic c) =>
+                                sum +
+                                (num.tryParse(c['amount']?.toString() ?? '0') ??
+                                    0),
+                          );
+                      final num
+                      chargePendingAmount = (admission?['charges'] ?? [])
+                          .where(
+                            (c) =>
+                                (c['status'] ?? '').toString().toUpperCase() ==
+                                    'PENDING' &&
+                                c['admissionId'] == item['Admission']['id'],
+                          )
+                          .fold<num>(
+                            0,
+                            (num sum, dynamic c) =>
+                                sum +
+                                (num.tryParse(c['amount']?.toString() ?? '0') ??
+                                    0),
+                          );
+
+                      final num chargePaidAmount = (admission?['charges'] ?? [])
+                          .where(
+                            (c) =>
+                                (c['status'] ?? '').toString().toUpperCase() ==
+                                    'PAID' &&
+                                (c['description'] ?? '')
+                                        .toString()
+                                        .toUpperCase() !=
+                                    'INPATIENT ADVANCE FEE' &&
+                                c['admissionId'] == item['Admission']['id'],
+                          )
+                          .fold<num>(
+                            0,
+                            (num sum, dynamic c) =>
+                                sum +
+                                (num.tryParse(c['amount']?.toString() ?? '0') ??
+                                    0),
+                          );
+                      final bool isDischarge = item['type'] == 'DISCHARGEFEE';
+
+                      final num safeAdvance = advanceAmount ?? 0;
+
+                      //final num diff = chargePendingAmount - advanceAmount;
+                      final num diff = _currentIndex != 1
+                          ? chargePendingAmount - safeAdvance
+                          : chargePaidAmount - safeAdvance;
+
+                      final String label = isDischarge && diff < 0
+                          ? 'Return Amount'
+                          : 'Amount';
+
+                      final num displayAmount = isDischarge
+                          ? diff.abs()
+                          : item['amount'] ?? '-';
                       return GestureDetector(
                         onTap: _currentIndex == 2
                             ? null // ❌ Disable tap for Cancelled
@@ -762,7 +833,8 @@ class _FeesQueuePageState extends State<FeesQueuePage> {
 
                                 Center(
                                   child: Text(
-                                    'Amount: ₹ ${item['amount']?.toStringAsFixed(0) ?? '-'}',
+                                    // 'Amount: ₹ ${item['amount']?.toStringAsFixed(0) ?? '-'}',
+                                    "$label : ₹ $displayAmount",
                                     style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,

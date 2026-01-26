@@ -306,14 +306,56 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
       "paymentType": paymentMode,
       "updatedAt": _dateTime.toString(),
     });
-    if (widget.fee['type'] == 'ADMISSIONFEE') {
-      final admissionId = widget.fee['Admission']['id'];
-      print('admissionId: $admissionId');
+    // if (widget.fee['type'] == 'ADVANCEFEE' ||
+    //     widget.fee['type'] == 'DAILYTREATMENTFEE') {
+    //   //final admissionId = widget.fee['Admission']['id'];
+    //   final List<int> chargesIds = widget.fee['Admission']['charges']
+    //       .map<int>((c) => c['id'])
+    //       .toList();
+    //   print('chargesIds $chargesIds');
+    //   await ChargeService().updateChargesByAdmission(
+    //     chargesIds: chargesIds,
+    //     status: 'PAID',
+    //   );
+    // }
+    if (widget.fee['type'] == 'ADVANCEFEE') {
+      final int admissionId = widget.fee['Admission']['id'];
+
+      final List<int> chargesIds = (widget.fee['Admission']['charges'] as List)
+          .cast<Map<String, dynamic>>()
+          .where(
+            (charge) =>
+                charge['description'] == 'Inpatient Advance Fee' &&
+                charge['admissionId'] == admissionId,
+          )
+          .map((charge) => charge['id'] as int)
+          .toList();
+
+      print('chargesIds $chargesIds');
+
       await ChargeService().updateChargesByAdmission(
-        admissionId: admissionId,
+        chargesIds: chargesIds,
         status: 'PAID',
       );
     }
+    if (widget.fee['type'] == 'DAILYTREATMENTFEE' ||
+        widget.fee['type'] == 'DISCHARGEFEE') {
+      final int admissionId = widget.fee['Admission']['id'];
+
+      final List<int> chargesIds = (widget.fee['Admission']['charges'] as List)
+          .cast<Map<String, dynamic>>()
+          .where((charge) => charge['admissionId'] == admissionId)
+          .map((charge) => charge['id'] as int)
+          .toList();
+
+      print('chargesIds $chargesIds');
+
+      await ChargeService().updateChargesByAdmission(
+        chargesIds: chargesIds,
+        status: 'PAID',
+      );
+    }
+
     // final Id = widget.patient['Consultation']?[0]?['id'];
     final consultationId = widget.fee['consultation_Id'];
 
@@ -501,6 +543,13 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
         false;
   }
 
+  String _normalize(String s) {
+    if (s == 'ROOM RENT') return 'Room Rent';
+    if (s == 'DOCTOR FEE') return 'Doctor Fee';
+    if (s == 'NURSE FEE') return 'Nurse Fee';
+    return s;
+  }
+
   @override
   Widget build(BuildContext context) {
     print('widget.: ${widget.fee}');
@@ -557,11 +606,6 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
 
     final String? roomName = ward?['name'];
     final num roomRent = num.tryParse(ward?['rent']?.toString() ?? '0') ?? 0;
-
-    final total = widget.index != 1
-        ? calculateTotal(widget.fee['amount']) -
-              (widget.fee['received_Amount'] ?? 0)
-        : calculateTotal(widget.fee['amount']);
 
     List<MapEntry<String, num>> parseSelectedOption(dynamic selectedOption) {
       if (selectedOption is Map) {
@@ -688,6 +732,272 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
         ).showSnackBar(const SnackBar(content: Text("Failed to remove test")));
       }
     }
+
+    void editAmountDialog(
+      BuildContext context,
+      num currentAmount,
+      Function(num) onSave,
+    ) {
+      final controller = TextEditingController(text: currentAmount.toString());
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) {
+          bool isLoading = false;
+
+          return StatefulBuilder(
+            builder: (context, setDialogState) {
+              return AlertDialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                title: const Text(
+                  "Edit Amount",
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: controller,
+                      autofocus: true,
+                      keyboardType: TextInputType.number,
+                      enabled: !isLoading,
+                      decoration: InputDecoration(
+                        labelText: "Amount",
+                        prefixText: "₹ ",
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                actionsPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: isLoading ? null : () => Navigator.pop(context),
+                    child: const Text("Cancel"),
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                    ),
+                    onPressed: isLoading
+                        ? null
+                        : () async {
+                            final paymentId = widget.fee['id'];
+                            final int admissionId =
+                                widget.fee['Admission']['id'];
+
+                            final List<int> chargesIds =
+                                (widget.fee['Admission']['charges'] as List)
+                                    .cast<Map<String, dynamic>>()
+                                    .where(
+                                      (charge) =>
+                                          charge['description'] ==
+                                              'Inpatient Advance Fee' &&
+                                          charge['admissionId'] == admissionId,
+                                    )
+                                    .map((charge) => charge['id'] as int)
+                                    .toList();
+                            final value = num.tryParse(controller.text);
+
+                            if (value == null) return;
+
+                            setDialogState(() => isLoading = true);
+
+                            try {
+                              await PaymentService().updatePayment(paymentId, {
+                                'amount': value,
+                                'updatedAt': _dateTime.toString(),
+                              });
+                              await ChargeService()
+                                  .updateAdvanceChargesByAdmission(
+                                    chargesIds: chargesIds,
+                                    amount: value,
+                                  );
+
+                              onSave(value);
+                              Navigator.pop(context);
+                            } catch (e) {
+                              setDialogState(() => isLoading = false);
+                            }
+                          },
+                    child: isLoading
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text("Update"),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+    }
+
+    //// ===================== Daily charges cal..---------------------
+    final charges = (admission?['charges'] ?? [])
+        .where(
+          (c) =>
+              (c['status'] ?? '').toString().toUpperCase() ==
+              (widget.index == 1 ? 'PAID' : 'PENDING'),
+        )
+        .toList();
+    charges.sort((a, b) {
+      DateTime parse(dynamic c) {
+        final dateStr = c['chargeDate'] ?? c['createdAt'];
+        return DateTime.tryParse(dateStr?.toString() ?? '') ??
+            DateTime.fromMillisecondsSinceEpoch(0);
+      }
+
+      return parse(a).compareTo(parse(b));
+    });
+
+    String formatDate(DateTime d) =>
+        "${d.day.toString().padLeft(2, '0')} "
+        "${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][d.month - 1]} "
+        "${d.year}";
+
+    Widget dateHeader(List charges) {
+      if (charges.isEmpty) return const SizedBox.shrink();
+
+      final dates = charges
+          .map((c) => DateTime.parse(c['chargeDate']))
+          .toList();
+
+      final from = dates.first;
+      final to = dates.last;
+
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Text(
+          from.day == to.day
+              ? formatDate(from)
+              : "${formatDate(from)} → ${formatDate(to)}",
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 15,
+            color: Colors.black87,
+          ),
+        ),
+      );
+    }
+
+    // Map<String, List<Map<String, dynamic>>> groupedCharges = {};
+    //
+    // for (final c in charges) {
+    //   final key = c['description'] ?? 'Charge';
+    //   groupedCharges.putIfAbsent(key, () => []).add(c);
+    // }
+
+    const knownCharges = {'ROOM RENT', 'DOCTOR FEE', 'NURSE FEE'};
+
+    Map<String, List<Map<String, dynamic>>> grouped = {
+      'Room Rent': [],
+      'Doctor Fee': [],
+      'Nurse Fee': [],
+      'Others': [],
+    };
+
+    // for (final c in charges) {
+    //   final desc = (c['description'] ?? '').toString().toUpperCase();
+    //
+    //   if (knownCharges.contains(desc)) {
+    //     grouped[_normalize(desc)]!.add(c);
+    //   } else {
+    //     if (desc == 'INPATIENT ADVANCE FEE') {
+    //       continue;
+    //     }
+    //     grouped['Others']!.add(c);
+    //   }
+    // }
+    for (final c in charges) {
+      final desc = (c['description'] ?? '').toString().toUpperCase();
+
+      // ⛔ Always skip advance fee
+      if (desc == 'INPATIENT ADVANCE FEE') {
+        continue;
+      }
+
+      if (knownCharges.contains(desc)) {
+        grouped[_normalize(desc)]!.add(c);
+      } else {
+        grouped['Others']!.add(c);
+      }
+    }
+    final num advanceAmount = (admission?['charges'] ?? [])
+        .where(
+          (c) =>
+              (c['status'] ?? '').toString().toUpperCase() == 'PAID' &&
+              (c['description'] ?? '').toString().toUpperCase() ==
+                  'INPATIENT ADVANCE FEE' &&
+              c['admissionId'] == widget.fee['Admission']['id'],
+        )
+        .fold<num>(
+          0,
+          (num sum, dynamic c) =>
+              sum + (num.tryParse(c['amount']?.toString() ?? '0') ?? 0),
+        );
+    final num chargePendingAmount = (admission?['charges'] ?? [])
+        .where(
+          (c) =>
+              (c['status'] ?? '').toString().toUpperCase() == 'PENDING' &&
+              c['admissionId'] == widget.fee['Admission']['id'],
+        )
+        .fold<num>(
+          0,
+          (num sum, dynamic c) =>
+              sum + (num.tryParse(c['amount']?.toString() ?? '0') ?? 0),
+        );
+
+    final num chargePaidAmount = (admission?['charges'] ?? [])
+        .where(
+          (c) =>
+              (c['status'] ?? '').toString().toUpperCase() == 'PAID' &&
+              (c['description'] ?? '').toString().toUpperCase() !=
+                  'INPATIENT ADVANCE FEE' &&
+              c['admissionId'] == widget.fee['Admission']['id'],
+        )
+        .fold<num>(
+          0,
+          (num sum, dynamic c) =>
+              sum + (num.tryParse(c['amount']?.toString() ?? '0') ?? 0),
+        );
+    final total = widget.index != 1
+        ? calculateTotal(widget.fee['amount']) -
+              (widget.fee['received_Amount'] ?? 0)
+        : calculateTotal(widget.fee['amount']);
+
+    final bool isDischarge = widget.fee['type'] == 'DISCHARGEFEE';
+    final num safeAdvance = advanceAmount ?? 0;
+
+    final num diff = widget.index != 1
+        ? chargePendingAmount - safeAdvance
+        : chargePaidAmount - safeAdvance;
+
+    final String label = isDischarge && diff < 0
+        ? 'Return ${widget.index == 1 ? '' : 'Amount'}'
+        : 'Total';
+
+    final num displayAmount = isDischarge ? diff.abs() : total;
 
     return Scaffold(
       backgroundColor: background,
@@ -856,6 +1166,55 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                   _infoRow("Address ", addressController.text),
 
                   const Divider(thickness: 1.2, height: 30),
+                  if (widget.fee['type'] == 'DAILYTREATMENTFEE' ||
+                      widget.fee['type'] == 'DISCHARGEFEE' ||
+                      widget.fee['type'] == 'ADVANCEFEE') ...[
+                    const Text(
+                      "Admission Details",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    _infoRow(
+                      "Admit Id ",
+                      widget.fee['Admission']['id'].toString(),
+                    ),
+                    _infoRow(
+                      "Ward Name",
+                      '${widget.fee['Admission']['bed']['ward']['name']} - '
+                          '${widget.fee['Admission']['bed']['ward']['type']}',
+                    ),
+                    _infoRow(
+                      "Ward No ",
+                      widget.fee['Admission']['bed']['ward']['id'].toString(),
+                    ),
+                    _infoRow(
+                      "Bed No ",
+                      widget.fee['Admission']['bed']['bedNo'].toString(),
+                    ),
+
+                    _infoRow(
+                      "Admit Date ",
+                      widget.fee['Admission']['admitTime']
+                          .toString()
+                          .split('T')
+                          .first,
+                    ),
+                    if (widget.fee['type'] == 'DISCHARGEFEE')
+                      _infoRow(
+                        "Discharge Date ",
+                        widget.fee['Admission']['dischargeTime']
+                            .toString()
+                            .split('T')
+                            .first,
+                      ),
+
+                    //_infoRow("Dr Name ", ['name']),
+                    const Divider(thickness: 1.2, height: 30),
+                  ],
 
                   // 💳 Fee Details
                   // if (widget.fee['type'] == 'REGISTRATIONFEE') ...[
@@ -1060,6 +1419,83 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                           ),
                   ],
 
+                  // if (widget.fee['type'] == 'ADVANCEFEE') ...[
+                  //   feeRowWithRemove(
+                  //     title: "Inpatient Advance",
+                  //     amount: widget.fee['amount'],
+                  //     removable: false, // ❌ disabled
+                  //   ),
+                  // ],
+                  if (widget.fee['type'] == 'ADVANCEFEE') ...[
+                    feeRowWithRemove(
+                      title: "Inpatient Advance",
+                      amount: widget.fee['amount'],
+                      removable: false,
+                      onEdit: () => editAmountDialog(
+                        context,
+                        widget.fee['amount'],
+                        (newAmount) {
+                          setState(() {
+                            widget.fee['amount'] = newAmount;
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+
+                  if (widget.fee['type'] == 'DAILYTREATMENTFEE' ||
+                      widget.fee['type'] == 'DISCHARGEFEE') ...[
+                    // if (widget.index == 1)
+                    //   for (final charge in admission?['charges'] ?? [])
+                    //     if ((charge['status'] ?? '').toString().toUpperCase() ==
+                    //         'PAID')
+                    //       feeRowWithRemove(
+                    //         title: charge['description'] ?? 'Charge',
+                    //         amount:
+                    //             num.tryParse(
+                    //               charge['amount']?.toString() ?? '0',
+                    //             ) ??
+                    //             0,
+                    //         removable: false,
+                    //       ),
+                    // if (widget.index != 1)
+                    //   for (final charge in admission?['charges'] ?? [])
+                    //     if ((charge['status'] ?? '').toString().toUpperCase() ==
+                    //         'PENDING')
+                    //       feeRowWithRemove(
+                    //         title: charge['description'] ?? 'Charge',
+                    //         amount:
+                    //             num.tryParse(
+                    //               charge['amount']?.toString() ?? '0',
+                    //             ) ??
+                    //             0,
+                    //         removable: false,
+                    //       ),
+                    // Column(
+                    //   crossAxisAlignment: CrossAxisAlignment.center,
+                    //   children: [
+                    //     // 📅 Date range header
+                    //     dateHeader(charges),
+                    //
+                    //     const SizedBox(height: 4),
+                    //
+                    //     // 💰 Grouped charges
+                    //     for (final entry in groupedCharges.entries)
+                    //       _buildGroupedFee(entry.key, entry.value),
+                    //   ],
+                    // ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        dateHeader(charges),
+
+                        for (final entry in grouped.entries)
+                          if (entry.value.isNotEmpty)
+                            _groupedFeeRow(entry.key, entry.value),
+                      ],
+                    ),
+                  ],
+
                   if (tests.isNotEmpty) ...[
                     const SizedBox(height: 10),
                     Text(
@@ -1231,8 +1667,20 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                     }),
                   ],
 
-                  const Divider(thickness: 1.5, height: 25),
+                  if (widget.fee['type'] == 'DISCHARGEFEE')
+                    Column(
+                      children: [
+                        if (advanceAmount > 0) ...[
+                          const Divider(thickness: 1.5, height: 6),
+                          feeRowAdvance(
+                            title: 'Inpatient Advance',
+                            amount: advanceAmount,
+                          ),
+                        ],
+                      ],
+                    ),
 
+                  const Divider(thickness: 1.5, height: 22),
                   // 🧮 Total Amount
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -1245,14 +1693,31 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                         Spacer(),
                       ],
 
+                      // Align(
+                      //   alignment: Alignment.centerRight,
+                      //   child: Text(
+                      //     "Total : ₹ $total",
+                      //     style: const TextStyle(
+                      //       fontSize: 22,
+                      //       fontWeight: FontWeight.bold,
+                      //       color: Colors.black87,
+                      //     ),
+                      //   ),
+                      // ),
                       Align(
                         alignment: Alignment.centerRight,
                         child: Text(
-                          "Total : ₹ $total",
-                          style: const TextStyle(
+                          "$label : ₹ $displayAmount",
+                          style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                            color: widget.index == 1
+                                ? (label == 'Return '
+                                      ? Colors.blue
+                                      : Colors.black87)
+                                : (label == 'Return Amount'
+                                      ? Colors.blue
+                                      : Colors.black87),
                           ),
                         ),
                       ),
@@ -1268,10 +1733,12 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                             Center(
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 200),
-                                width: _isProcessing ? 120 : 140,
+                                width: _isProcessing ? 140 : 120,
                                 child: ElevatedButton.icon(
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: themeColor,
+                                    backgroundColor: label == 'Return Amount'
+                                        ? Colors.blue
+                                        : Colors.green,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(10),
                                     ),
@@ -1289,8 +1756,10 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                                           "Processing...",
                                           style: TextStyle(color: Colors.white),
                                         )
-                                      : const Text(
-                                          "Pay Bill",
+                                      : Text(
+                                          label == 'Return Amount'
+                                              ? "Get Bill"
+                                              : "Pay Bill",
                                           style: TextStyle(
                                             color: Colors.white,
                                             fontSize: 18,
@@ -1303,43 +1772,58 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                                 ),
                               ),
                             ),
-                            Spacer(),
-                            ElevatedButton.icon(
-                              onPressed: () async {
-                                final prefs =
-                                    await SharedPreferences.getInstance();
-                                final paymentId = widget.fee['id'];
-                                final consultationId =
-                                    widget.fee['type'] == 'ADMISSIONFEE'
-                                    ? widget.fee['Admission']['id']
-                                    : widget.fee['consultation_Id'];
-                                final staffId = prefs.getString('userId');
-                                if (context.mounted) {
-                                  _showCancelDialog(
-                                    context,
-                                    paymentId: paymentId,
-                                    consultationId: consultationId,
-                                    staffId: staffId,
-                                  );
-                                }
-                              },
-                              icon: const Icon(Icons.cancel, size: 22),
-                              label: const Text(
-                                "Cancel ",
-                                style: TextStyle(fontSize: 18),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.redAccent,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 14,
+
+                            if (widget.fee['type'] != 'DISCHARGEFEE') ...[
+                              Spacer(),
+                              ElevatedButton.icon(
+                                onPressed: () async {
+                                  final prefs =
+                                      await SharedPreferences.getInstance();
+                                  final paymentId = widget.fee['id'];
+                                  final consultationId =
+                                      widget.fee['type'] == 'ADMISSIONFEE' ||
+                                          widget.fee['type'] ==
+                                              'DAILYTREATMENTFEE'
+                                      ? widget.fee['Admission']['id']
+                                      : widget.fee['consultation_Id'];
+                                  final staffId = prefs.getString('userId');
+                                  if (context.mounted) {
+                                    _showCancelDialog(
+                                      context,
+                                      paymentId: paymentId,
+                                      consultationId: consultationId,
+                                      staffId: staffId,
+                                    );
+                                  }
+                                },
+                                icon: Icon(
+                                  widget.fee['type'] == 'DAILYTREATMENTFEE'
+                                      ? Icons.skip_next
+                                      : Icons.cancel,
+                                  size: 22,
                                 ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
+                                label: Text(
+                                  widget.fee['type'] == 'DAILYTREATMENTFEE'
+                                      ? "Pay Later "
+                                      : "Cancel ",
+                                  style: TextStyle(fontSize: 18),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor:
+                                      widget.fee['type'] == 'DAILYTREATMENTFEE'
+                                      ? Colors.blueAccent
+                                      : Colors.redAccent,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 14,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                           ],
                         )
                       : Row(
@@ -1481,8 +1965,38 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                                       tests,
                                     ),
                                   );
+                                } else if (widget.fee['type'] == 'ADVANCEFEE') {
+                                  await WhatsAppSendPaymentBill.sendAdvanceBill(
+                                    phoneNumber: cellController.text.replaceAll(
+                                      '+',
+                                      '',
+                                    ),
+                                    patientName: nameController.text,
+                                    patientId: idController.text,
+                                    tokenNo: tokenNo,
+                                    age: calculateAge(dobController.text),
+                                    address: addressController.text,
+                                    advancedFee: widget.fee['amount'] ?? 0,
+                                  );
+                                } else if (widget.fee['type'] ==
+                                        'DISCHARGEFEE' ||
+                                    widget.fee['type'] == 'DAILYTREATMENTFEE') {
+                                  await WhatsAppSendPaymentBill.sendDischargeBill(
+                                    phoneNumber: cellController.text.replaceAll(
+                                      '+',
+                                      '',
+                                    ),
+                                    patientName: nameController.text,
+                                    patientId: idController.text,
+                                    tokenNo: tokenNo,
+                                    age: calculateAge(dobController.text),
+                                    address: addressController.text,
+                                    advancedFee: widget.fee['amount'] ?? 0,
+                                    fee: widget.fee,
+                                  );
                                 }
                               },
+
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 15,
@@ -1635,6 +2149,42 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
     );
   }
 
+  // Widget _buildGroupedFee(String title, List<Map<String, dynamic>> items) {
+  //   final days = items.length;
+  //   final perDayAmount = num.tryParse(items.first['amount'].toString()) ?? 0;
+  //
+  //   final totalAmount = items.fold<num>(
+  //     0,
+  //     (sum, c) => sum + (num.tryParse(c['amount'].toString()) ?? 0),
+  //   );
+  //
+  //   final displayTitle = days > 1 ? "$title × ${days}d" : title;
+  //
+  //   return feeRowWithRemove(
+  //     title: displayTitle,
+  //     amount: totalAmount,
+  //     removable: false,
+  //   );
+  // }
+  Widget _groupedFeeRow(String title, List<Map<String, dynamic>> items) {
+    final total = items.fold<num>(
+      0,
+      (sum, c) => sum + (num.tryParse(c['amount'].toString()) ?? 0),
+    );
+
+    final days = items.length;
+
+    final displayTitle = (title != 'Others' && days > 1)
+        ? "$title × ${days}d"
+        : title;
+
+    return feeRowWithRemove(
+      title: displayTitle,
+      amount: total,
+      removable: false,
+    );
+  }
+
   Widget feeHeader(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -1707,11 +2257,43 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
     );
   }
 
+  // Widget feeRowWithRemove({
+  //   required String title,
+  //   required num? amount,
+  //   required bool removable,
+  //   VoidCallback? onRemove,
+  // }) {
+  //   if (amount == null || amount == 0) return const SizedBox.shrink();
+  //
+  //   return Padding(
+  //     padding: const EdgeInsets.symmetric(vertical: 0),
+  //     child: Row(
+  //       crossAxisAlignment: CrossAxisAlignment.center,
+  //       children: [
+  //         Expanded(child: feeRow(title, amount)),
+  //
+  //         /// Remove Icon
+  //         if (widget.index != 1) ...[
+  //           IconButton(
+  //             icon: Icon(
+  //               Icons.remove_circle_outline,
+  //               size: 20,
+  //               color: removable ? Colors.redAccent : Colors.grey,
+  //             ),
+  //             onPressed: removable ? onRemove : null, // 🔒 disable others
+  //             tooltip: removable ? "Remove $title" : null,
+  //           ),
+  //         ],
+  //       ],
+  //     ),
+  //   );
+  // }
   Widget feeRowWithRemove({
     required String title,
     required num? amount,
     required bool removable,
     VoidCallback? onRemove,
+    VoidCallback? onEdit,
   }) {
     if (amount == null || amount == 0) return const SizedBox.shrink();
 
@@ -1720,20 +2302,48 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Expanded(child: feeRow(title, amount)),
+          /// Amount Row (tap to edit)
+          Expanded(
+            child: InkWell(onTap: onEdit, child: feeRow(title, amount)),
+          ),
 
-          /// Remove Icon
-          if (widget.index != 1) ...[
+          /// Action Icon (Edit OR Remove)
+          if (widget.index != 1)
             IconButton(
               icon: Icon(
-                Icons.remove_circle_outline,
+                onEdit != null
+                    ? Icons.edit_outlined
+                    : Icons.remove_circle_outline,
                 size: 20,
-                color: removable ? Colors.redAccent : Colors.grey,
+                color: onEdit != null
+                    ? const Color(0xFFBF955E)
+                    : (removable ? Colors.redAccent : Colors.grey),
               ),
-              onPressed: removable ? onRemove : null, // 🔒 disable others
-              tooltip: removable ? "Remove $title" : null,
+              onPressed: onEdit ?? (removable ? onRemove : null),
+              tooltip: onEdit != null
+                  ? "Edit $title"
+                  : (removable ? "Remove $title" : null),
             ),
-          ],
+        ],
+      ),
+    );
+  }
+
+  Widget feeRowAdvance({required String title, required num? amount}) {
+    if (amount == null || amount == 0) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          /// Amount Row (tap to edit)
+          Expanded(child: InkWell(child: feeRow(title, amount))),
+          if (widget.index != 1)
+            IconButton(
+              icon: Icon(Icons.check_circle, size: 22, color: Colors.green),
+              onPressed: () {},
+            ),
         ],
       ),
     );
@@ -1822,12 +2432,14 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
               ),
-              title: const Text(
-                "Cancel Confirmation",
+              title: Text(
+                widget.fee['type'] == 'DAILYTREATMENTFEE'
+                    ? "Pay Later Confirmation"
+                    : "Cancel Confirmation",
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              content: const Text(
-                "Are you sure you want to cancel this payment and consultation?",
+              content: Text(
+                "Are you sure you want to ${widget.fee['type'] == 'DAILYTREATMENTFEE' ? 'Pay later' : 'cancel'} this payment and consultation?",
               ),
               actions: [
                 /// ❌ CANCEL BUTTON
@@ -1854,30 +2466,42 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
 
                             /// 🔹 Update Payment
                             await PaymentService().updatePayment(paymentId, {
-                              'status': 'CANCELLED',
+                              'status':
+                                  widget.fee['type'] == 'DAILYTREATMENTFEE'
+                                  ? 'PAYLATER'
+                                  : 'CANCELLED',
                               'staff_Id': staffId.toString(),
                               'updatedAt': dateTime.toString(),
                             });
-
-                            widget.fee['type'] == 'ADMISSIONFEE'
-                                ? await ChargeService().updateStatusByAdmission(
-                                    admissionId: consultationId,
-                                    status: 'CANCELLED',
-                                  )
-                                :
-                                  /// 🔹 Update Consultation
-                                  await ConsultationService()
-                                      .updateConsultation(consultationId, {
-                                        'status': 'CANCELLED',
-                                      });
+                            if (widget.fee['type'] != 'DAILYTREATMENTFEE') {
+                              widget.fee['type'] == 'ADMISSIONFEE'
+                                  ? await ChargeService()
+                                        .updateStatusByAdmission(
+                                          admissionId: consultationId,
+                                          status: 'CANCELLED',
+                                        )
+                                  :
+                                    /// 🔹 Update Consultation
+                                    await ConsultationService()
+                                        .updateConsultation(consultationId, {
+                                          'status': 'CANCELLED',
+                                        });
+                            }
 
                             if (context.mounted) {
                               Navigator.pop(ctx); // close dialog
 
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("❌ Cancelled successfully"),
-                                  backgroundColor: Colors.redAccent,
+                                SnackBar(
+                                  content: Text(
+                                    widget.fee['type'] == 'DAILYTREATMENTFEE'
+                                        ? " Pay later successfully"
+                                        : "❌ Cancelled successfully",
+                                  ),
+                                  backgroundColor:
+                                      widget.fee['type'] == 'DAILYTREATMENTFEE'
+                                      ? Colors.blueAccent
+                                      : Colors.redAccent,
                                 ),
                               );
                               Navigator.pop(context, true);
@@ -1904,7 +2528,10 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                             color: Colors.white,
                           ),
                         )
-                      : const Text("OK", style: TextStyle(color: Colors.white)),
+                      : const Text(
+                          "YES",
+                          style: TextStyle(color: Colors.white),
+                        ),
                 ),
               ],
             );

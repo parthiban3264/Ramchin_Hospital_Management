@@ -396,6 +396,94 @@ class _AccountsReportState extends State<AccountsReport> {
   //     }
   //   }
   // }
+  Map<String, DateTime> _getPreviousRange(DateFilter filter, DateTime from) {
+    late DateTime prevFrom;
+    late DateTime prevTo;
+
+    switch (filter) {
+      case DateFilter.day:
+        prevFrom = DateTime(from.year, from.month, from.day - 1);
+        prevTo = DateTime(
+          prevFrom.year,
+          prevFrom.month,
+          prevFrom.day,
+          23,
+          59,
+          59,
+        );
+        break;
+
+      case DateFilter.month:
+        prevFrom = DateTime(from.year, from.month - 1, 1);
+        prevTo = DateTime(from.year, from.month, 0, 23, 59, 59);
+        break;
+
+      case DateFilter.year:
+        prevFrom = DateTime(from.year - 1, 1, 1);
+        prevTo = DateTime(from.year - 1, 12, 31, 23, 59, 59);
+        break;
+
+      case DateFilter.periodical:
+        prevFrom = from.subtract(const Duration(days: 1));
+        prevTo = prevFrom;
+        break;
+    }
+
+    return {'from': prevFrom, 'to': prevTo};
+  }
+
+  Future<double> _calculatePreviousClosingBalance() async {
+    final range = _getPreviousRange(_currentFilter!, _reportFromDate!);
+
+    final prevFrom = range['from']!;
+    final prevTo = range['to']!;
+
+    // Filter previous payments
+    final prevPayments = _allPayments.where((p) {
+      final createdAt = p['createdAt'] as DateTime;
+      return !createdAt.isBefore(prevFrom) && !createdAt.isAfter(prevTo);
+    }).toList();
+
+    double cashIncome = 0;
+    double expenses = 0;
+    double drawing = 0;
+
+    // Payments
+    for (var p in prevPayments) {
+      final amount = (p['amount'] ?? 0).toDouble();
+      final paymentType = (p['paymentType'] ?? "").toString().toUpperCase();
+
+      if (paymentType == "MANUALPAY") {
+        cashIncome += amount;
+      }
+    }
+
+    // Expenses
+    final exp = await _incexpService.getIncomeExpenseService();
+    for (var e in exp) {
+      final createdAt = parseAppDate(e['createdAt']);
+      if (!createdAt.isBefore(prevFrom) && !createdAt.isAfter(prevTo)) {
+        if (e['type']?.toString().toUpperCase() == "EXPENSE") {
+          expenses += (e['amount'] as num).toDouble();
+        }
+        if (e['type']?.toString().toUpperCase() == "INCOME") {
+          cashIncome += (e['amount'] as num).toDouble();
+        }
+      }
+    }
+
+    // Drawings
+    final draws = await _drawerService.getDrawers();
+    for (var d in draws) {
+      final createdAt = parseAppDate(d['createdAt']);
+      if (!createdAt.isBefore(prevFrom) && !createdAt.isAfter(prevTo)) {
+        drawing += (d['amount'] as num).toDouble();
+      }
+    }
+
+    // 🔥 Previous closing balance
+    return cashIncome - expenses - drawing;
+  }
 
   Future<void> _generatePdf() async {
     if (_filteredPayments.isEmpty || _isGeneratingPdf) return;
@@ -416,6 +504,7 @@ class _AccountsReportState extends State<AccountsReport> {
         // periodical
         reportDate = _reportFromDate!;
       }
+      final previousBalance = await _calculatePreviousClosingBalance();
 
       await AccountsReportPdf.generate(
         payments: _filteredPayments,
@@ -424,6 +513,7 @@ class _AccountsReportState extends State<AccountsReport> {
         income: _totalIncomes,
         expenses: _totalExpenses,
         drawingOut: _totalDrawing,
+        previousBalance: previousBalance,
         reportDate: reportDate, // ✅ FIXED
         // ✅ NOW VALID
         reportFilter: _currentFilter!,

@@ -76,7 +76,6 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       backendUserId!,
       oldPasswordController.text,
     );
-
     setState(() {
       isOldPasswordWrong = !isCorrect;
       isCheckingOldPassword = false;
@@ -361,9 +360,28 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         filled: true,
         fillColor: Colors.grey.shade100,
       ),
+      // onChanged: (_) {
+      //   setState(() {
+      //     if (label == "Re-enter New Password") {
+      //       isRePasswordMismatch =
+      //           reNewPasswordController.text.isNotEmpty &&
+      //           newPasswordController.text != reNewPasswordController.text;
+      //
+      //       isRePasswordMatch =
+      //           newPasswordController.text == reNewPasswordController.text &&
+      //           reNewPasswordController.text.isNotEmpty;
+      //     }
+      //   });
+      // },
       onChanged: (_) {
-        setState(() {
-          if (label == "Re-enter New Password") {
+        if (label == "Old Password") {
+          setState(() {
+            isOldPasswordWrong = false; // ✅ reset red immediately
+          });
+        }
+
+        if (label == "Re-enter New Password") {
+          setState(() {
             isRePasswordMismatch =
                 reNewPasswordController.text.isNotEmpty &&
                 newPasswordController.text != reNewPasswordController.text;
@@ -371,8 +389,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
             isRePasswordMatch =
                 newPasswordController.text == reNewPasswordController.text &&
                 reNewPasswordController.text.isNotEmpty;
-          }
-        });
+          });
+        }
       },
     );
   }

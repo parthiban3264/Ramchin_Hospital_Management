@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -22,6 +23,12 @@ class _OverallAdministratorDashPageState
   String? hospitalName;
   String? hospitalPlace;
   String? hospitalPhoto;
+  bool isPhoneValid = false;
+  String? phoneError;
+  bool isCheckingHospitalId = false;
+  bool? isHospitalIdAvailable; // null = untouched
+  String? hospitalIdError;
+  Timer? _debounce;
 
   // Create Hospital FORM
   bool expandForm = false;
@@ -94,13 +101,11 @@ class _OverallAdministratorDashPageState
           adminCount++;
         }
 
-        if (admin["role"].toString().toLowerCase() == "medical staff" &&
-            admin["designation"].toString().toLowerCase() == "doctor") {
+        if (admin["role"].toString().toLowerCase() == "doctor") {
           doctorCount++;
         }
 
-        if (admin["role"].toString().toLowerCase() == "medical staff" &&
-            admin["designation"].toString().toLowerCase() != "doctor") {
+        if (admin["role"].toString().toLowerCase() != "doctor") {
           staffCount++;
         }
       }
@@ -116,81 +121,6 @@ class _OverallAdministratorDashPageState
     });
   }
 
-  // Future<void> saveHospital() async {
-  //   setState(() => isLoading = true);
-  //   final body = {
-  //     "name": nameCtrl.text,
-  //     "address": addrCtrl.text,
-  //     "HospitalStatus": 'ACTIVE',
-  //     "phone": phoneCtrl.text,
-  //     "mail": mailCtrl.text,
-  //   };
-  //
-  //   final ok = await service.createHospital(body);
-  //   setState(() => isLoading = true);
-  //   if (ok) {
-  //     ScaffoldMessenger.of(
-  //       context,
-  //     ).showSnackBar(SnackBar(content: Text("Hospital Created Successfully")));
-  //     expandForm = false;
-  //     loadHospitals();
-  //   }
-  // }
-  // String? base64Image;
-  //
-  // // If user picked an image → convert to base64
-  // if (pickedImage != null) {
-  // final bytes = await File(pickedImage!.path).readAsBytes();
-  // base64Image = base64Encode(bytes);
-  // }
-
-  // Future<void> saveHospital() async {
-  //   // // If user picked an image → convert to base64
-  //   String? base64Image;
-  //   if (pickedImage != null) {
-  //     final bytes = await File(pickedImage!.path).readAsBytes();
-  //     base64Image = base64Encode(bytes);
-  //   }
-  //   // Validate empty fields
-  //   if (idCtrl.text.isEmpty ||
-  //       nameCtrl.text.isEmpty ||
-  //       addrCtrl.text.isEmpty ||
-  //       phoneCtrl.text.isEmpty ||
-  //       mailCtrl.text.isEmpty) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text("Please fill in all required fields")),
-  //     );
-  //     return; // stop execution
-  //   }
-  //
-  //   setState(() => isLoading = true);
-  //
-  //   final body = {
-  //     "id": int.parse(idCtrl.text),
-  //     "name": nameCtrl.text,
-  //     "file": pickedImage,
-  //     "address": addrCtrl.text,
-  //     "HospitalStatus": "ACTIVE",
-  //     "phone": phoneCtrl.text,
-  //     "mail": mailCtrl.text,
-  //   };
-  //
-  //   final ok = await service.createHospital(body);
-  //
-  //   setState(() => isLoading = false);
-  //
-  //   if (ok['status'] == 'success') {
-  //     ScaffoldMessenger.of(
-  //       context,
-  //     ).showSnackBar(SnackBar(content: Text("Hospital created successfully")));
-  //     expandForm = false;
-  //     loadHospitals();
-  //   } else {
-  //     ScaffoldMessenger.of(
-  //       context,
-  //     ).showSnackBar(SnackBar(content: Text("Failed: ${ok['error']}")));
-  //   }
-  // }
   Future<void> saveHospital() async {
     if (pickedImage == null) {
       ScaffoldMessenger.of(
@@ -201,8 +131,7 @@ class _OverallAdministratorDashPageState
 
     if (nameCtrl.text.isEmpty ||
         addrCtrl.text.isEmpty ||
-        phoneCtrl.text.isEmpty ||
-        mailCtrl.text.isEmpty) {
+        phoneCtrl.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Please fill in all required fields")),
       );
@@ -572,7 +501,8 @@ class _OverallAdministratorDashPageState
                       ),
 
                       SizedBox(height: 20),
-                      _inputField(Icons.local_hospital, "Hospital ID", idCtrl),
+                      //_inputField(Icons.local_hospital, "Hospital ID", idCtrl),
+                      _hospitalIdInputField(),
                       SizedBox(height: 8),
                       _inputField(
                         Icons.local_hospital,
@@ -584,10 +514,15 @@ class _OverallAdministratorDashPageState
                       _inputField(Icons.location_on, "Address", addrCtrl),
                       SizedBox(height: 8),
 
-                      _inputField(Icons.phone, "Phone Number", phoneCtrl),
+                      //_inputField(Icons.phone, "Phone Number", phoneCtrl),
+                      _phoneInputField(),
                       SizedBox(height: 8),
 
-                      _inputField(Icons.mail, "Email Address", mailCtrl),
+                      _inputField(
+                        Icons.mail,
+                        "Email Address (Optional)",
+                        mailCtrl,
+                      ),
                       SizedBox(height: 22),
 
                       // ⭐ SAVE BUTTON
@@ -602,7 +537,17 @@ class _OverallAdministratorDashPageState
                               borderRadius: BorderRadius.circular(14),
                             ),
                           ),
-                          onPressed: isLoading ? null : saveHospital,
+                          // onPressed: isLoading ? null : saveHospital,
+                          // onPressed: (isLoading || !isPhoneValid)
+                          //     ? null
+                          //     : saveHospital,
+                          onPressed:
+                              (isLoading ||
+                                  !isPhoneValid ||
+                                  isHospitalIdAvailable != true)
+                              ? null
+                              : saveHospital,
+
                           child: isLoading
                               ? SizedBox(
                                   height: 20,
@@ -875,13 +820,159 @@ class _OverallAdministratorDashPageState
           SizedBox(width: 12),
           Expanded(
             child: TextField(
+              cursorColor: Color(0xFFA57E4B),
               controller: ctrl,
               decoration: InputDecoration(
                 labelText: label,
+                labelStyle: TextStyle(color: Colors.black),
                 border: InputBorder.none,
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _phoneInputField() {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: phoneError != null ? Colors.red : Colors.black12,
+        ),
+        color: Colors.grey.shade100,
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.phone, color: Color(0xFFC59A62)),
+          SizedBox(width: 12),
+          Expanded(
+            child: TextField(
+              controller: phoneCtrl,
+              cursorColor: Color(0xFFA57E4B),
+              keyboardType: TextInputType.phone,
+              maxLength: 10,
+              onChanged: (value) {
+                if (value.isEmpty) {
+                  setState(() {
+                    phoneError = null;
+                    isPhoneValid = false;
+                  });
+                } else if (value.length < 10) {
+                  setState(() {
+                    phoneError = "Phone number must be 10 digits";
+                    isPhoneValid = false;
+                  });
+                } else {
+                  setState(() {
+                    phoneError = null;
+                    isPhoneValid = true;
+                  });
+                }
+              },
+              decoration: InputDecoration(
+                labelText: "Phone Number",
+                labelStyle: TextStyle(color: Colors.black),
+                counterText: "",
+                border: InputBorder.none,
+                errorText: phoneError,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> checkHospitalId(String id) async {
+    if (id.isEmpty) {
+      setState(() {
+        isHospitalIdAvailable = null;
+        hospitalIdError = null;
+      });
+      return;
+    }
+
+    setState(() {
+      isCheckingHospitalId = true;
+      isHospitalIdAvailable = null;
+    });
+
+    try {
+      final result = await service.getHospitalById(id);
+
+      if (result["status"] == "success" && result["data"] != null) {
+        // Hospital exists
+        setState(() {
+          isHospitalIdAvailable = false;
+          hospitalIdError = "Hospital ID already exists";
+        });
+      } else {
+        // Available
+        setState(() {
+          isHospitalIdAvailable = true;
+          hospitalIdError = null;
+        });
+      }
+    } catch (_) {
+      setState(() {
+        isHospitalIdAvailable = true;
+        hospitalIdError = null;
+      });
+    }
+
+    setState(() => isCheckingHospitalId = false);
+  }
+
+  Widget _hospitalIdInputField() {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: hospitalIdError != null
+              ? Colors.red
+              : isHospitalIdAvailable == true
+              ? Colors.green
+              : Colors.black12,
+        ),
+        color: Colors.grey.shade100,
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.local_hospital, color: Color(0xFFC59A62)),
+          SizedBox(width: 12),
+          Expanded(
+            child: TextField(
+              controller: idCtrl,
+              keyboardType: TextInputType.number,
+              onChanged: (value) {
+                if (_debounce?.isActive ?? false) _debounce!.cancel();
+                _debounce = Timer(Duration(milliseconds: 600), () {
+                  checkHospitalId(value);
+                });
+              },
+              decoration: InputDecoration(
+                labelText: "Hospital ID",
+                border: InputBorder.none,
+                errorText: hospitalIdError,
+              ),
+            ),
+          ),
+
+          // RIGHT ICON AREA
+          if (isCheckingHospitalId)
+            SizedBox(
+              height: 18,
+              width: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          else if (isHospitalIdAvailable == true)
+            Icon(Icons.check_circle, color: Colors.green)
+          else if (isHospitalIdAvailable == false)
+            Icon(Icons.cancel, color: Colors.red),
         ],
       ),
     );

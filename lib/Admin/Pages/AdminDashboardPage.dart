@@ -276,7 +276,9 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                           context,
                                           MaterialPageRoute(
                                             builder: (_) =>
-                                                const DrInPatientQueuePage(),
+                                                const DrInPatientQueuePage(
+                                                  role: 'doctor',
+                                                ),
                                           ),
                                         );
                                       },
@@ -446,6 +448,18 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                             context,
                             MaterialPageRoute(
                               builder: (_) => const AdmitPatientPage(),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildActionItem(
+                        Icons.add_business,
+                        "Change bed & staff",
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const AdmittedPatientsPage(),
                             ),
                           );
                         },

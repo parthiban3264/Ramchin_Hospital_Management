@@ -399,7 +399,13 @@ class PatientListReportPdf {
       data: rows,
       headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
       headerDecoration: pw.BoxDecoration(color: PdfColors.grey400),
-      cellAlignment: pw.Alignment.centerLeft,
+      cellAlignments: {
+        0: pw.Alignment.centerLeft, // Fee Type
+        1: pw.Alignment.center, // Count
+        2: pw.Alignment.centerRight, // Cash
+        3: pw.Alignment.centerRight, // Online
+        4: pw.Alignment.centerRight, // Amount
+      },
       border: pw.TableBorder.all(color: PdfColors.grey300),
     );
   }
@@ -445,7 +451,13 @@ class PatientListReportPdf {
       data: rows,
       headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
       headerDecoration: pw.BoxDecoration(color: PdfColors.grey400),
-      cellAlignment: pw.Alignment.centerLeft,
+      cellAlignments: {
+        0: pw.Alignment.centerLeft, // Fee Type
+        1: pw.Alignment.center, // Count
+        2: pw.Alignment.centerRight, // Cash
+        3: pw.Alignment.centerRight, // Online
+        4: pw.Alignment.centerRight, // Amount
+      },
       border: pw.TableBorder.all(color: PdfColors.grey300),
     );
   }

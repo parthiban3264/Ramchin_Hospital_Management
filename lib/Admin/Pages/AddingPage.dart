@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hospitrax/Admin/Pages/AddingPage/app_payment.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -20,6 +21,8 @@ import 'AddingPage/Medicine/MedicinePage.dart';
 import 'AddingPage/StaffAddPage.dart';
 import 'AddingPage/Tonic/TonicPage.dart';
 import 'AddingPage/create_test_scan.dart';
+import 'AddingPage/create_test_scan/create_test_scan.dart';
+import 'AddingPage/submit_tickets.dart';
 
 class AdminAddingPage extends StatefulWidget {
   const AdminAddingPage({super.key});
@@ -182,18 +185,7 @@ class _AdminAddingPageState extends State<AdminAddingPage> {
                       MaterialPageRoute(builder: (_) => const WardsPage()),
                     );
                   }),
-                  _buildActionItem(
-                    Icons.add_business,
-                    "Change bed & staff",
-                    () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const AdmittedPatientsPage(),
-                        ),
-                      );
-                    },
-                  ),
+
                   // _buildActionItem(Icons.add_business, "Manage Rooms", () {
                   //   Navigator.push(
                   //     context,
@@ -203,6 +195,29 @@ class _AdminAddingPageState extends State<AdminAddingPage> {
                 ]),
               ),
 
+              _buildSection(
+                "SERVICES",
+                _responsiveGrid([
+                  _buildActionItem(Icons.payment_rounded, "App Payment", () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const AppPaymentPage()),
+                    );
+                  }),
+                  _buildActionItem(
+                    Icons.support_agent_sharp,
+                    "Submit Tickets",
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const SubmitTicketPage(),
+                        ),
+                      );
+                    },
+                  ),
+                ]),
+              ),
               // ===== ADD PHARMACY =====
               _buildSection(
                 "ADD PHARMACY",

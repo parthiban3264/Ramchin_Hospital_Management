@@ -308,7 +308,9 @@ class _AssistantDrOpDashboardPageState
                                         context,
                                         MaterialPageRoute(
                                           builder: (_) =>
-                                              const DrInPatientQueuePage(),
+                                              const DrInPatientQueuePage(
+                                                role: 'assistant doctor',
+                                              ),
                                         ),
                                       );
                                     },

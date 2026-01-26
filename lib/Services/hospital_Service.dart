@@ -39,6 +39,23 @@ class HospitalService {
   //   final decoded = jsonDecode(res.body) as Map<String, dynamic>;
   //   return decoded;
   // }
+  Future<Map<String, dynamic>> getHospitalById(String id) async {
+    try {
+      final res = await http.get(Uri.parse('$baseUrl/hospitals/getById/$id'));
+
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        final data = jsonDecode(res.body);
+        return data;
+      } else {
+        return {
+          "status": "failed",
+          "error": "Server returned ${res.statusCode}",
+        };
+      }
+    } catch (e) {
+      return {"status": "failed", "error": e.toString()};
+    }
+  }
 
   Future<Map<String, dynamic>> createHospital({
     required String hospitalId,

@@ -158,6 +158,133 @@ ${hospital['name'] ?? 'Hospital'}
     await _sendToWhatsApp(phoneNumber, billText);
   }
 
+  /// ================= ADVANCED BILL =================
+  static Future<void> sendAdvanceBill({
+    required String phoneNumber,
+    required String patientName,
+    required String patientId,
+    required String tokenNo,
+    required String age,
+    required String address,
+    required String advancedFee,
+  }) async {
+    /// ---------- FETCH HOSPITAL DATA ----------
+    final hospital = await HospitalStorage.getHospitalData();
+    final date = DateFormat('dd-MM-yyyy').format(DateTime.now());
+    final hasAdvance = advancedFee.isNotEmpty && advancedFee != '0';
+
+    /// ---------- BILL TEXT ----------
+    final billText =
+        '''
+🧾 *INVOICE / HOSPITAL BILL*
+
+🏥 *${hospital['name'] ?? 'Hospital'}*
+📍 ${hospital['place'] ?? '-'}
+
+📅 *Date:* $date
+🎟️ *Token No:* $tokenNo
+
+━━━━━━━━━━━━━━━━━━━
+👤 *PATIENT DETAILS*
+━━━━━━━━━━━━━━━━━━━
+Name    : $patientName
+PID     : $patientId
+Age     : $age
+Address : $address
+
+━━━━━━━━━━━━━━━━━━━━
+💳 *PAYMENT DETAILS*
+━━━━━━━━━━━━━━━━━━━━
+${hasAdvance ? '• Advance Fee : ₹ $advancedFee' : '• No charges'}
+
+━━━━━━━━━━━━━━━━━━━
+💰 *TOTAL AMOUNT* : ₹ $advancedFee
+━━━━━━━━━━━━━━━━━━━
+
+✅ *PAYMENT STATUS:* PAID
+
+🙏 Thank you for visiting
+${hospital['name'] ?? 'Hospital'}
+''';
+
+    /// ---------- SEND TO WHATSAPP ----------
+    await _sendToWhatsApp(phoneNumber, billText);
+  }
+
+  static Future<void> sendDischargeBill({
+    required final Map<String, dynamic> fee,
+    required String phoneNumber,
+    required String patientName,
+    required String patientId,
+    required String tokenNo,
+    required String age,
+    required String address,
+    required String advancedFee,
+  }) async {
+    /// ---------- FETCH HOSPITAL DATA ----------
+    final hospital = await HospitalStorage.getHospitalData();
+    final date = DateFormat('dd-MM-yyyy').format(DateTime.now());
+    final hasAdvance = advancedFee.isNotEmpty && advancedFee != '0';
+    final admitId = fee['Admission']['id'].toString();
+    final bedNo = fee['Admission']['bed']['bedNo'].toString();
+    final wardName =
+        '${fee['Admission']['bed']['ward']['name']} - '
+        '${fee['Admission']['bed']['ward']['type']}';
+    final wardNo = fee['Admission']['bed']['ward']['id'].toString();
+    final admitDate = fee['Admission']['admitTime'].toString().split('T').first;
+    final dischargeDate = fee['Admission']['dischargeTime']
+        .toString()
+        .split('T')
+        .first;
+
+    /// ---------- BILL TEXT ----------
+    final billText =
+        '''
+🧾 *INVOICE / HOSPITAL BILL*
+
+🏥 *${hospital['name'] ?? 'Hospital'}*
+📍 ${hospital['place'] ?? '-'}
+
+📅 *Date:* $date
+🎟️ *Token No:* $tokenNo
+
+━━━━━━━━━━━━━━━━━━━
+👤 *PATIENT DETAILS*
+━━━━━━━━━━━━━━━━━━━
+Name    : $patientName
+PID     : $patientId
+Age     : $age
+Address : $address
+
+━━━━━━━━━━━━━━━━━━━
+👤 *ADMISSION DETAILS*
+━━━━━━━━━━━━━━━━━━━
+Admit ID  : $admitId
+Ward Name : $wardName
+Ward No   : $wardNo
+Bed No    : $bedNo
+Admit Date : $admitDate
+Discharge Date : $dischargeDate
+
+━━━━━━━━━━━━━━━━━━━━
+💳 *PAYMENT DETAILS*
+━━━━━━━━━━━━━━━━━━━━
+${hasAdvance ? '• Advance Fee : ₹ $advancedFee' : '• No charges'}
+
+━━━━━━━━━━━━━━━━━━━
+💰 *TOTAL AMOUNT* : ₹ $advancedFee
+━━━━━━━━━━━━━━━━━━━
+
+✅ *PAYMENT STATUS:* PAID
+
+🙏 Thank you for visiting
+${hospital['name'] ?? 'Hospital'}
+''';
+
+    /// ---------- SEND TO WHATSAPP ----------
+    await _sendToWhatsApp(phoneNumber, billText);
+  }
+
   /// ================= TESTING & SCANNING BILL =================
   static Future<void> sendTestingBill({
     required String phoneNumber,

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hospitrax/Mediacl_Staff/Pages/OutPatient/patient_registration/test_registration.dart';
+import 'package:hospitrax/Mediacl_Staff/Pages/OutPatient/patient_registration/widget/voice.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -136,7 +137,9 @@ class _PatientRegistrationPagesState extends State<PatientRegistrationPages> {
   late FocusNode ageDobFocus;
   late FocusNode addressFocus;
   late FocusNode complaintFocus;
-
+  bool nameMicOpen = false;
+  bool addressMicOpen = false;
+  bool complaintMicOpen = false;
   @override
   void initState() {
     super.initState();
@@ -182,187 +185,187 @@ class _PatientRegistrationPagesState extends State<PatientRegistrationPages> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final bool isMobile = constraints.maxWidth < 600;
-        final bool isTablet =
-            constraints.maxWidth >= 600 && constraints.maxWidth < 1024;
+    final double scWidth = MediaQuery.of(context).size.width;
+    final bool isMobile = scWidth < 600;
+    final bool isTablet = scWidth >= 600 && scWidth < 1024;
 
-        return SingleChildScrollView(
-          padding: EdgeInsets.all(isMobile ? 12 : 20),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1100),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  buildHospitalCard(
-                    hospitalName: hospitalName,
-                    hospitalPlace: hospitalPlace,
-                    hospitalPhoto: hospitalPhoto,
-                  ),
-                  const SizedBox(height: 18),
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(isMobile ? 12 : 20),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1100),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              buildHospitalCard(
+                hospitalName: hospitalName,
+                hospitalPlace: hospitalPlace,
+                hospitalPhoto: hospitalPhoto,
+              ),
+              const SizedBox(height: 18),
 
-                  /// 🔹 MAIN FORM CARD
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      vertical: isMobile ? 14 : 20,
-                      horizontal: isMobile ? 12 : 20,
+              /// 🔹 MAIN FORM CARD
+              Container(
+                padding: EdgeInsets.symmetric(
+                  vertical: isMobile ? 14 : 20,
+                  horizontal: isMobile ? 12 : 20,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withValues(alpha: 0.08),
+                      blurRadius: 12,
+                      offset: const Offset(2, 6),
                     ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withValues(alpha: 0.08),
-                          blurRadius: 12,
-                          offset: const Offset(2, 6),
+                  ],
+                ),
+                child: Wrap(
+                  spacing: 16,
+                  runSpacing: 16,
+                  children: [
+                    /// 🔹 Emergency Toggle (Full Width)
+                    SizedBox(
+                      width: double.infinity,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
                         ),
+                        decoration: BoxDecoration(
+                          color: isEmergency
+                              ? Colors.red.shade50
+                              : Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isEmergency
+                                ? Colors.red.shade400
+                                : Colors.grey.shade300,
+                          ),
+                        ),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(16),
+                          onTap: () =>
+                              setState(() => isEmergency = !isEmergency),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.warning_rounded,
+                                color: Colors.red.shade700,
+                              ),
+                              const SizedBox(width: 12),
+                              const Expanded(
+                                child: Text(
+                                  "Emergency Case",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              Switch(
+                                value: isEmergency,
+                                activeColor: Colors.red,
+                                onChanged: (v) =>
+                                    setState(() => isEmergency = v),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    /// 🔹 Phone
+                    // SizedBox(
+                    //   width: isMobile ? double.infinity : 520,
+                    //   child: buildInput(
+                    //     "Cell No *",
+                    //     phoneController,
+                    //     hint: "+911234567890",
+                    //     keyboardType: TextInputType.phone,
+                    //     errorText: formValidatedErrorText(
+                    //       formValidated: formValidated,
+                    //       valid: phoneValid,
+                    //       errMsg: 'Enter valid 10 digit number',
+                    //     ),
+                    //     inputFormatters: [
+                    //       FilteringTextInputFormatter.digitsOnly,
+                    //       IndianPhoneNumberFormatter(),
+                    //     ],
+                    //   ),
+                    // ),
+                    _buildInput(
+                      "Cell No *",
+                      phoneController,
+                      focusNode: phoneFocus,
+                      textInputAction: TextInputAction.next,
+                      onSubmitted: (_) {
+                        FocusScope.of(context).requestFocus(nameFocus);
+                      },
+                      hint: "+911234567890",
+                      errorText: formValidatedErrorText(
+                        formValidated: formValidated,
+                        valid: phoneValid,
+                        errMsg: 'Enter valid 10 digit number',
+                      ),
+                      keyboardType: TextInputType.phone,
+                      onChanged: (val) => onPhoneChanged(
+                        val,
+                        (valid) => setState(() => phoneValid = valid),
+                      ),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        IndianPhoneNumberFormatter(),
                       ],
+                      suffix: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 250),
+                        transitionBuilder: (child, anim) =>
+                            ScaleTransition(scale: anim, child: child),
+                        child: phoneController.text.isEmpty
+                            ? const SizedBox.shrink(
+                                key: ValueKey('empty'),
+                              ) // 👈 no icon when empty
+                            : isCheckingUser
+                            ? const SizedBox(
+                                key: ValueKey('loader'),
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : (phoneValid
+                                  ? Icon(
+                                      isExistingUser
+                                          ? Icons
+                                                .person // existing patient found
+                                          : Icons
+                                                .check_circle, // new number valid
+                                      color: isExistingUser
+                                          ? Colors.orange
+                                          : Colors.green,
+                                      key: ValueKey('valid'),
+                                    )
+                                  : const SizedBox.shrink(
+                                      key: ValueKey('no-valid'),
+                                    )),
+                      ),
                     ),
-                    child: Wrap(
-                      spacing: 16,
-                      runSpacing: 16,
-                      children: [
-                        /// 🔹 Emergency Toggle (Full Width)
-                        SizedBox(
-                          width: double.infinity,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 14,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isEmergency
-                                  ? Colors.red.shade50
-                                  : Colors.grey.shade50,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: isEmergency
-                                    ? Colors.red.shade400
-                                    : Colors.grey.shade300,
-                              ),
-                            ),
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(16),
-                              onTap: () =>
-                                  setState(() => isEmergency = !isEmergency),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.warning_rounded,
-                                    color: Colors.red.shade700,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  const Expanded(
-                                    child: Text(
-                                      "Emergency Case",
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                  Switch(
-                                    value: isEmergency,
-                                    activeColor: Colors.red,
-                                    onChanged: (v) =>
-                                        setState(() => isEmergency = v),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
 
-                        /// 🔹 Phone
-                        // SizedBox(
-                        //   width: isMobile ? double.infinity : 520,
-                        //   child: buildInput(
-                        //     "Cell No *",
-                        //     phoneController,
-                        //     hint: "+911234567890",
-                        //     keyboardType: TextInputType.phone,
-                        //     errorText: formValidatedErrorText(
-                        //       formValidated: formValidated,
-                        //       valid: phoneValid,
-                        //       errMsg: 'Enter valid 10 digit number',
-                        //     ),
-                        //     inputFormatters: [
-                        //       FilteringTextInputFormatter.digitsOnly,
-                        //       IndianPhoneNumberFormatter(),
-                        //     ],
-                        //   ),
-                        // ),
-                        _buildInput(
-                          "Cell No *",
-                          phoneController,
-                          focusNode: phoneFocus,
-                          textInputAction: TextInputAction.next,
-                          onSubmitted: (_) {
-                            FocusScope.of(context).requestFocus(nameFocus);
-                          },
-                          hint: "+911234567890",
-                          errorText: formValidatedErrorText(
-                            formValidated: formValidated,
-                            valid: phoneValid,
-                            errMsg: 'Enter valid 10 digit number',
-                          ),
-                          keyboardType: TextInputType.phone,
-                          onChanged: (val) => onPhoneChanged(
-                            val,
-                            (valid) => setState(() => phoneValid = valid),
-                          ),
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                            IndianPhoneNumberFormatter(),
-                          ],
-                          suffix: AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 250),
-                            transitionBuilder: (child, anim) =>
-                                ScaleTransition(scale: anim, child: child),
-                            child: phoneController.text.isEmpty
-                                ? const SizedBox.shrink(
-                                    key: ValueKey('empty'),
-                                  ) // 👈 no icon when empty
-                                : isCheckingUser
-                                ? const SizedBox(
-                                    key: ValueKey('loader'),
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : (phoneValid
-                                      ? Icon(
-                                          isExistingUser
-                                              ? Icons
-                                                    .person // existing patient found
-                                              : Icons
-                                                    .check_circle, // new number valid
-                                          color: isExistingUser
-                                              ? Colors.orange
-                                              : Colors.green,
-                                          key: ValueKey('valid'),
-                                        )
-                                      : const SizedBox.shrink(
-                                          key: ValueKey('no-valid'),
-                                        )),
-                          ),
-                        ),
+                    /// 🔹 Family Members
+                    if (familyPatients.isNotEmpty)
+                      SizedBox(
+                        width: double.infinity,
+                        child: _buildFamilySection(),
+                      ),
 
-                        /// 🔹 Family Members
-                        if (familyPatients.isNotEmpty)
-                          SizedBox(
-                            width: double.infinity,
-                            child: _buildFamilySection(),
-                          ),
-
-                        /// 🔹 Name
-                        SizedBox(
-                          width: isMobile ? double.infinity : 520,
-                          child: _buildInput(
+                    /// 🔹 Name
+                    SizedBox(
+                      width: isMobile ? double.infinity : 520,
+                      child: Row(
+                        children: [
+                          _buildInput(
                             "Name *",
                             fullNameController,
                             focusNode: nameFocus,
@@ -373,314 +376,423 @@ class _PatientRegistrationPagesState extends State<PatientRegistrationPages> {
                             hint: "Enter full name",
                             inputFormatters: [UpperCaseTextFormatter()],
                           ),
-                        ),
-
-                        /// 🔹 Age / DOB
-                        SizedBox(
-                          width: isMobile ? double.infinity : 520,
-                          child: AgeDobField(
-                            dobController: dobController,
-                            ageController: ageController,
-                            focusNode: ageDobFocus,
-                            onSubmitted: () {
-                              FocusScope.of(context).requestFocus(addressFocus);
-                            },
-                          ),
-                        ),
-
-                        isTablet || isMobile
-                            ? Column(
-                                children: [
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        sectionLabel("Gender *"),
-                                        const SizedBox(height: 8),
-                                        Wrap(
-                                          spacing: 12,
-                                          children: genders
-                                              .map(
-                                                (e) => buildSelectionCard(
-                                                  label: e,
-                                                  selected: selectedGender == e,
-                                                  onTap: () => setState(
-                                                    () => selectedGender = e,
-                                                  ),
-                                                ),
-                                              )
-                                              .toList(),
-                                        ),
-                                      ],
-                                    ),
+                          !nameMicOpen
+                              ? Padding(
+                                  padding: const EdgeInsets.only(top: 30),
+                                  child: IconButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        fullNameController.text = '';
+                                        nameMicOpen = true;
+                                      });
+                                    },
+                                    icon: Icon(Icons.mic),
                                   ),
-
-                                  /// 🔹 Blood Type
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        sectionLabel("Blood Type (Optional)"),
-                                        const SizedBox(height: 12),
-
-                                        Wrap(
-                                          spacing: 5,
-                                          runSpacing: 10,
-                                          children: bloodTypes.map((type) {
-                                            final selected =
-                                                selectedBloodType == type;
-
-                                            return GestureDetector(
-                                              onTap: () {
-                                                setState(() {
-                                                  selectedBloodType = selected
-                                                      ? null
-                                                      : type; // ✅ toggle logic
-                                                });
-                                              },
-                                              child: AnimatedContainer(
-                                                duration: const Duration(
-                                                  milliseconds: 180,
-                                                ),
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 18,
-                                                      vertical: 10,
-                                                    ),
-                                                decoration: BoxDecoration(
-                                                  color: selected
-                                                      ? customGold
-                                                      : Colors.white,
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                  border: Border.all(
-                                                    color: selected
-                                                        ? customGold
-                                                        : Colors.grey.shade300,
-                                                    width: 1.2,
-                                                  ),
-                                                  boxShadow: selected
-                                                      ? [
-                                                          BoxShadow(
-                                                            color: customGold
-                                                                .withValues(
-                                                                  alpha: 0.25,
-                                                                ),
-                                                            blurRadius: 6,
-                                                            offset:
-                                                                const Offset(
-                                                                  0,
-                                                                  3,
-                                                                ),
-                                                          ),
-                                                        ]
-                                                      : [],
-                                                ),
-                                                child: Text(
-                                                  type,
-                                                  style: TextStyle(
-                                                    fontSize: 15,
-                                                    fontWeight: FontWeight.w700,
-                                                    color: selected
-                                                        ? Colors.white
-                                                        : Colors.black87,
-                                                  ),
-                                                ),
-                                              ),
-                                            );
-                                          }).toList(),
-                                        ),
-
-                                        const SizedBox(height: 8),
-                                      ],
-                                    ),
+                                )
+                              : Padding(
+                                  padding: const EdgeInsets.only(
+                                    top: 30,
+                                    left: 2,
                                   ),
-                                ],
-                              )
-                            : Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  /// 🔹 Gender (LEFT)
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        sectionLabel("Gender *"),
-                                        SizedBox(height: 5),
-                                        Wrap(
-                                          spacing: 12,
-                                          children: genders
-                                              .map(
-                                                (e) => buildSelectionCard(
-                                                  label: e,
-                                                  selected: selectedGender == e,
-                                                  onTap: () => setState(
-                                                    () => selectedGender = e,
-                                                  ),
-                                                ),
-                                              )
-                                              .toList(),
-                                        ),
-                                      ],
-                                    ),
+                                  child: VoiceSearchDialog(
+                                    onClose: () {
+                                      setState(() {
+                                        nameMicOpen = false;
+                                      });
+                                    },
+                                    onResult: (text) {
+                                      fullNameController.text = text
+                                          .toUpperCase();
+                                      fullNameController.selection =
+                                          TextSelection.fromPosition(
+                                            TextPosition(
+                                              offset: fullNameController
+                                                  .text
+                                                  .length,
+                                            ),
+                                          );
+                                    },
                                   ),
+                                ),
+                        ],
+                      ),
+                    ),
 
-                                  const SizedBox(width: 4),
+                    /// 🔹 Age / DOB
+                    SizedBox(
+                      width: isMobile ? double.infinity : 520,
+                      child: AgeDobField(
+                        dobController: dobController,
+                        ageController: ageController,
+                        focusNode: ageDobFocus,
+                        onSubmitted: () {
+                          FocusScope.of(context).requestFocus(addressFocus);
+                        },
+                      ),
+                    ),
 
-                                  /// 🔹 Blood Type (RIGHT)
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        sectionLabel("Blood Type (Optional)"),
-                                        SizedBox(height: 5),
-                                        Wrap(
-                                          spacing: 8,
-                                          runSpacing: 8,
-                                          children: bloodTypes.map((type) {
-                                            final selected =
-                                                selectedBloodType == type;
-                                            return GestureDetector(
+                    isTablet || isMobile
+                        ? Column(
+                            children: [
+                              SizedBox(
+                                width: double.infinity,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    sectionLabel("Gender *"),
+                                    const SizedBox(height: 8),
+                                    Wrap(
+                                      spacing: 12,
+                                      children: genders
+                                          .map(
+                                            (e) => buildSelectionCard(
+                                              label: e,
+                                              selected: selectedGender == e,
                                               onTap: () => setState(
-                                                () => selectedBloodType = type,
+                                                () => selectedGender = e,
                                               ),
-                                              child: Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 14,
-                                                      vertical: 8,
-                                                    ),
-                                                decoration: BoxDecoration(
-                                                  color: selected
-                                                      ? customGold
-                                                      : Colors.white,
-                                                  borderRadius:
-                                                      BorderRadius.circular(10),
-                                                  border: Border.all(
-                                                    color: selected
-                                                        ? customGold
-                                                        : Colors.grey.shade300,
-                                                  ),
-                                                ),
-                                                child: Text(
-                                                  type,
-                                                  style: TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.w700,
-                                                    color: selected
-                                                        ? Colors.white
-                                                        : Colors.black87,
-                                                  ),
-                                                ),
-                                              ),
-                                            );
-                                          }).toList(),
-                                        ),
-                                      ],
+                                            ),
+                                          )
+                                          .toList(),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
 
-                        /// 🔹 Address
-                        SizedBox(
-                          width: double.infinity,
-                          child: _buildInput(
-                            "Address *",
-                            addressController,
-                            focusNode: addressFocus,
-                            textInputAction: TextInputAction.next,
+                              /// 🔹 Blood Type
+                              SizedBox(
+                                width: double.infinity,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    sectionLabel("Blood Type (Optional)"),
+                                    const SizedBox(height: 12),
 
-                            onSubmitted: (_) {
-                              FocusScope.of(
-                                context,
-                              ).requestFocus(complaintFocus);
-                            },
-                            maxLines: 3,
-                            inputFormatters: [UpperCaseTextFormatter()],
-                          ),
-                        ),
+                                    Wrap(
+                                      spacing: 5,
+                                      runSpacing: 10,
+                                      children: bloodTypes.map((type) {
+                                        final selected =
+                                            selectedBloodType == type;
 
-                        /// 🔹 Complaint
-                        SizedBox(
-                          width: double.infinity,
-                          child: _buildInput(
-                            "Chief Complaint (Optional)",
-                            complaintController,
-                            focusNode: complaintFocus,
-                            textInputAction: TextInputAction.done,
-                          ),
-                        ),
+                                        return GestureDetector(
+                                          onTap: () {
+                                            setState(() {
+                                              selectedBloodType = selected
+                                                  ? null
+                                                  : type; // ✅ toggle logic
+                                            });
+                                          },
+                                          child: AnimatedContainer(
+                                            duration: const Duration(
+                                              milliseconds: 180,
+                                            ),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 18,
+                                              vertical: 10,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: selected
+                                                  ? customGold
+                                                  : Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              border: Border.all(
+                                                color: selected
+                                                    ? customGold
+                                                    : Colors.grey.shade300,
+                                                width: 1.2,
+                                              ),
+                                              boxShadow: selected
+                                                  ? [
+                                                      BoxShadow(
+                                                        color: customGold
+                                                            .withValues(
+                                                              alpha: 0.25,
+                                                            ),
+                                                        blurRadius: 6,
+                                                        offset: const Offset(
+                                                          0,
+                                                          3,
+                                                        ),
+                                                      ),
+                                                    ]
+                                                  : [],
+                                            ),
+                                            child: Text(
+                                              type,
+                                              style: TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.w700,
+                                                color: selected
+                                                    ? Colors.white
+                                                    : Colors.black87,
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      }).toList(),
+                                    ),
 
-                        /// 🔹 Sugar Test
-                        SizedBox(
-                          width: double.infinity,
-                          child: _buildSugarToggle(),
-                        ),
-
-                        /// 🔹 Doctors
-                        SizedBox(
-                          width: double.infinity,
-                          child: Column(
+                                    const SizedBox(height: 8),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          )
+                        : Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              sectionLabel(
-                                isExistingUser
-                                    ? "Create Appointment"
-                                    : "Available Doctors *",
+                              /// 🔹 Gender (LEFT)
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    sectionLabel("Gender *"),
+                                    SizedBox(height: 5),
+                                    Wrap(
+                                      spacing: 12,
+                                      children: genders
+                                          .map(
+                                            (e) => buildSelectionCard(
+                                              label: e,
+                                              selected: selectedGender == e,
+                                              onTap: () => setState(
+                                                () => selectedGender = e,
+                                              ),
+                                            ),
+                                          )
+                                          .toList(),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              const SizedBox(height: 12),
-                              if (showDoctorSection) buildDoctorList(),
+
+                              const SizedBox(width: 4),
+
+                              /// 🔹 Blood Type (RIGHT)
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    sectionLabel("Blood Type (Optional)"),
+                                    SizedBox(height: 5),
+                                    Wrap(
+                                      spacing: 8,
+                                      runSpacing: 8,
+                                      children: bloodTypes.map((type) {
+                                        final selected =
+                                            selectedBloodType == type;
+                                        return GestureDetector(
+                                          onTap: () => setState(
+                                            () => selectedBloodType = type,
+                                          ),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 14,
+                                              vertical: 8,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: selected
+                                                  ? customGold
+                                                  : Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                              border: Border.all(
+                                                color: selected
+                                                    ? customGold
+                                                    : Colors.grey.shade300,
+                                              ),
+                                            ),
+                                            child: Text(
+                                              type,
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w700,
+                                                color: selected
+                                                    ? Colors.white
+                                                    : Colors.black87,
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      }).toList(),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ],
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
 
-                  const SizedBox(height: 28),
-
-                  /// 🔹 Submit Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton(
-                      onPressed: isSubmitting ? null : _submitPatient,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: customGold,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: isSubmitting
-                          ? const CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            )
-                          : Text(
-                              isExistingUser
-                                  ? "Create Appointment"
-                                  : "Register Patient",
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
+                    /// 🔹 Address
+                    SizedBox(
+                      width: isMobile ? double.infinity : 520,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _buildInput(
+                              "Address *",
+                              addressController,
+                              focusNode: addressFocus,
+                              maxLines: 3,
+                              inputFormatters: [UpperCaseTextFormatter()],
                             ),
+                          ),
+                          const SizedBox(width: 6),
+                          addressMicOpen
+                              ? Padding(
+                                  padding: const EdgeInsets.only(top: 20),
+                                  child: VoiceSearchDialog(
+                                    onClose: () {
+                                      setState(() => addressMicOpen = false);
+                                    },
+                                    onResult: (text) {
+                                      addressController.text = text
+                                          .toUpperCase();
+                                      addressController.selection =
+                                          TextSelection.fromPosition(
+                                            TextPosition(
+                                              offset:
+                                                  addressController.text.length,
+                                            ),
+                                          );
+                                    },
+                                  ),
+                                )
+                              : Padding(
+                                  padding: const EdgeInsets.only(top: 20),
+                                  child: IconButton(
+                                    icon: const Icon(Icons.mic),
+                                    onPressed: () {
+                                      setState(() {
+                                        addressController.clear();
+                                        addressMicOpen = true;
+                                      });
+                                    },
+                                  ),
+                                ),
+                        ],
+                      ),
+                    ),
+
+                    /// 🔹 Complaint
+                    SizedBox(
+                      width: isMobile ? double.infinity : 520,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: _buildInput(
+                              "Chief Complaint (Optional)",
+                              complaintController,
+                              focusNode: complaintFocus,
+                              textInputAction: TextInputAction.done,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          !complaintMicOpen
+                              ? Padding(
+                                  padding: const EdgeInsets.only(top: 30),
+                                  child: IconButton(
+                                    icon: const Icon(Icons.mic),
+                                    onPressed: () {
+                                      setState(() {
+                                        complaintController.clear();
+                                        complaintMicOpen = true;
+                                      });
+                                    },
+                                  ),
+                                )
+                              : Padding(
+                                  padding: const EdgeInsets.only(
+                                    top: 30,
+                                    left: 2,
+                                  ),
+                                  child: VoiceSearchDialog(
+                                    onClose: () {
+                                      setState(() {
+                                        complaintMicOpen = false;
+                                      });
+                                    },
+                                    onResult: (text) {
+                                      complaintController.text = text
+                                          .toUpperCase();
+                                      complaintController.selection =
+                                          TextSelection.fromPosition(
+                                            TextPosition(
+                                              offset: complaintController
+                                                  .text
+                                                  .length,
+                                            ),
+                                          );
+                                    },
+                                  ),
+                                ),
+                        ],
+                      ),
+                    ),
+
+                    /// 🔹 Sugar Test
+                    SizedBox(
+                      width: double.infinity,
+                      child: _buildSugarToggle(),
+                    ),
+
+                    /// 🔹 Doctors
+                    SizedBox(
+                      width: double.infinity,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          sectionLabel(
+                            isExistingUser
+                                ? "Create Appointment"
+                                : "Available Doctors *",
+                          ),
+                          const SizedBox(height: 12),
+                          if (showDoctorSection) buildDoctorList(),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 28),
+
+              /// 🔹 Submit Button
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: isSubmitting ? null : _submitPatient,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: customGold,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                ],
+                  child: isSubmitting
+                      ? const CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        )
+                      : Text(
+                          isExistingUser
+                              ? "Create Appointment"
+                              : "Register Patient",
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                ),
               ),
-            ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -1007,90 +1119,86 @@ class _PatientRegistrationPagesState extends State<PatientRegistrationPages> {
       );
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        double width = constraints.maxWidth;
+    final double scWidth = MediaQuery.of(context).size.width;
+    int crossAxisCount;
 
-        int crossAxisCount;
-        if (width < 600) {
-          crossAxisCount = 3; // 📱 phones
-        } else if (width < 900) {
-          crossAxisCount = 4; // 📲 tablets
-        } else if (width < 1200) {
-          crossAxisCount = 5; // 💻 small web
-        } else {
-          crossAxisCount = 6; // 🖥️ large screens
-        }
+    if (scWidth < 600) {
+      crossAxisCount = 3; // 📱 phones
+    } else if (scWidth < 900) {
+      crossAxisCount = 4; // 📲 tablets
+    } else if (scWidth < 1200) {
+      crossAxisCount = 5; // 💻 small web
+    } else {
+      crossAxisCount = 6; // 🖥️ large screens
+    }
 
-        return GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: filteredDoctors.length,
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossAxisCount,
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 8,
-            childAspectRatio: width < 600 ? 1.1 : 1.3,
-          ),
-          itemBuilder: (_, i) {
-            final doc = filteredDoctors[i];
-            final isSelected =
-                selectedDoctor != null && selectedDoctor!['id'] == doc['id'];
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: filteredDoctors.length,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+        childAspectRatio: scWidth < 600 ? 1.1 : 1.3,
+      ),
+      itemBuilder: (_, i) {
+        final doc = filteredDoctors[i];
+        final isSelected =
+            selectedDoctor != null && selectedDoctor!['id'] == doc['id'];
 
-            return GestureDetector(
-              onTap: () {
-                setState(() {
-                  selectedDoctor = doc;
-                  doctorIdController.text = doc['id'].toString();
-                  doctorNameController.text = doc['name'];
-                  departmentController.text = doc['department'];
-                });
-              },
-              child: Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? customGold.withValues(alpha: 0.25)
-                      : Colors.white,
-                  border: Border.all(
-                    color: customGold,
-                    width: isSelected ? 2 : 0.6,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: customGold.withValues(alpha: 0.1),
-                      blurRadius: 4,
-                      offset: const Offset(1, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      doc['name'] ?? '',
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: width < 600 ? 12 : 14,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      doc['department'] ?? '',
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 11, color: customGold),
-                    ),
-                  ],
-                ),
-              ),
-            );
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              selectedDoctor = doc;
+              doctorIdController.text = doc['id'].toString();
+              doctorNameController.text = doc['name'];
+              departmentController.text = doc['department'];
+            });
           },
+          child: Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? customGold.withValues(alpha: 0.25)
+                  : Colors.white,
+              border: Border.all(
+                color: customGold,
+                width: isSelected ? 2 : 0.6,
+              ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: customGold.withValues(alpha: 0.1),
+                  blurRadius: 4,
+                  offset: const Offset(1, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  doc['name'] ?? '',
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: scWidth < 600 ? 12 : 14,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  doc['department'] ?? '',
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 11, color: customGold),
+                ),
+              ],
+            ),
+          ),
         );
       },
     );

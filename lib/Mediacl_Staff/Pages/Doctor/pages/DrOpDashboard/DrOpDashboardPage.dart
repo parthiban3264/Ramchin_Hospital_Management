@@ -254,7 +254,9 @@ class _DrOpDashboardPageState extends State<DrOpDashboardPage> {
                                         context,
                                         MaterialPageRoute(
                                           builder: (_) =>
-                                              const DrInPatientQueuePage(),
+                                              const DrInPatientQueuePage(
+                                                role: 'doctor',
+                                              ),
                                         ),
                                       );
                                     },

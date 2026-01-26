@@ -27,6 +27,7 @@ class _AdministratorHomeState extends State<AdministratorHome> {
     int adminCount = 0;
     int doctorCount = 0;
     int staffCount = 0;
+    int patientCount = 0;
 
     for (var a in admins) {
       final role = (a["role"] ?? "").toString().toLowerCase();
@@ -34,11 +35,14 @@ class _AdministratorHomeState extends State<AdministratorHome> {
 
       if (role == "admin") {
         adminCount++;
-      } else if (role == "medical staff" && desi == "doctor") {
+      } else if (desi == "doctor") {
         doctorCount++;
-      } else if (role == "medical staff" && desi != "doctor") {
+      } else if (desi != "doctor") {
         staffCount++;
       }
+      // else {
+      //   patientCount++;
+      // }
     }
 
     setState(() {

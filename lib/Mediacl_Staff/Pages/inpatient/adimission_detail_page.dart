@@ -4,6 +4,8 @@ import 'package:http/http.dart' as http;
 import '../../../../../../utils/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../Services/charge_Service.dart';
+
 const Color royal = Color(0xFFBF955E);
 
 class AdmissionDetailPage extends StatefulWidget {
@@ -24,6 +26,7 @@ class _AdmissionDetailPageState extends State<AdmissionDetailPage> {
     super.initState();
     loadBeds();
   }
+
   Future<void> loadBeds() async {
     final prefs = await SharedPreferences.getInstance();
     final hospitalId = prefs.getString('hospitalId');
@@ -36,19 +39,16 @@ class _AdmissionDetailPageState extends State<AdmissionDetailPage> {
       final List<dynamic> wardBeds = ward['beds'] ?? [];
 
       for (final bed in wardBeds) {
-        allBeds.add({
-          ...bed,
-          'ward': ward,
-        });
+        allBeds.add({...bed, 'ward': ward});
       }
     }
 
-
-    final availableBeds =
-    allBeds.where((b) => b['status'] == 'AVAILABLE').toList();
+    final availableBeds = allBeds
+        .where((b) => b['status'] == 'AVAILABLE')
+        .toList();
 
     final currentBed = allBeds.firstWhere(
-          (b) => b['id'] == widget.admission['bedId'],
+      (b) => b['id'] == widget.admission['bedId'],
       orElse: () => {},
     );
 
@@ -61,7 +61,6 @@ class _AdmissionDetailPageState extends State<AdmissionDetailPage> {
       beds = availableBeds;
       bedId ??= widget.admission['bedId'];
     });
-
   }
 
   Future<void> saveChanges() async {
@@ -71,11 +70,12 @@ class _AdmissionDetailPageState extends State<AdmissionDetailPage> {
     try {
       final response = await http.patch(
         Uri.parse(
-            "$baseUrl/admissions/${widget.admission['id']}/$hospitalId/change-assignment"),
+          "$baseUrl/admissions/${widget.admission['id']}/$hospitalId/change-assignment",
+        ),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          if (changeBed && bedId != null &&
-              bedId != widget.admission['bedId']) 'newBedId': bedId,
+          if (changeBed && bedId != null && bedId != widget.admission['bedId'])
+            'newBedId': bedId,
         }),
       );
 
@@ -97,7 +97,9 @@ class _AdmissionDetailPageState extends State<AdmissionDetailPage> {
         final error = jsonDecode(response.body);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Failed to update: ${error['message'] ?? response.reasonPhrase}"),
+            content: Text(
+              "Failed to update: ${error['message'] ?? response.reasonPhrase}",
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -105,9 +107,32 @@ class _AdmissionDetailPageState extends State<AdmissionDetailPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Error: $e"),
-          backgroundColor: Colors.red,
+        SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  Future<void> dischargePatient() async {
+    final success = await ChargeService.dischargeAdmission(
+      widget.admission['id'],
+    );
+
+    if (!mounted) return;
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Patient discharged successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.pop(context, true); // refresh previous screen
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Discharge failed'),
+          backgroundColor: Colors.redAccent,
         ),
       );
     }
@@ -118,24 +143,26 @@ class _AdmissionDetailPageState extends State<AdmissionDetailPage> {
     final a = widget.admission;
     final p = a['patient'];
 
-    final admitTime =
-    DateTime.parse(a['admitTime']).toLocal().toString().substring(0, 16);
+    final admitTime = DateTime.parse(
+      a['admitTime'],
+    ).toLocal().toString().substring(0, 16);
 
-    final bedText =
-        "Bed ${a['bed']['bedNo']} • ${a['bed']['ward']['name']}";
+    final bedText = "Bed ${a['bed']['bedNo']} • ${a['bed']['ward']['name']}";
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: royal,
-        title: const Text("Admission Details", style: TextStyle(color: Colors.white)),
+        title: const Text(
+          "Admission Details",
+          style: TextStyle(color: Colors.white),
+        ),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-
             /// 🆔 ADMISSION CARD
             _infoCard(
               title: "Admission Info",
@@ -172,9 +199,7 @@ class _AdmissionDetailPageState extends State<AdmissionDetailPage> {
                   items: beds.map<DropdownMenuItem<int>>((b) {
                     return DropdownMenuItem(
                       value: b['id'],
-                      child: Text(
-                        "Bed ${b['bedNo']} • ${b['ward']['name']}",
-                      ),
+                      child: Text("Bed ${b['bedNo']} • ${b['ward']['name']}"),
                     );
                   }).toList(),
                   onChanged: (v) => setState(() => bedId = v),
@@ -186,33 +211,95 @@ class _AdmissionDetailPageState extends State<AdmissionDetailPage> {
                 child: CircularProgressIndicator(),
               ),
 
-
             const SizedBox(height: 30),
 
             /// 💾 SAVE
-            SizedBox(
-              width: 180,   // full width
-              height: 52,               // fixed height
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: royal,        // background
-                  foregroundColor: Colors.white, // text/icon color
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.save),
+                      label: const Text(
+                        "Save Changes",
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orangeAccent,
+                        foregroundColor: Colors.white,
+                        elevation: 3,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      onPressed: saveChanges,
+                    ),
                   ),
                 ),
-                onPressed: saveChanges,
-                child: const Text(
-                  "Save Changes",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                const SizedBox(width: 10),
+                Expanded(
+                  child: SizedBox(
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.logout),
+                      label: const Text(
+                        "Discharge",
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red.shade600,
+                        foregroundColor: Colors.white,
+                        elevation: 3,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      onPressed: () {
+                        // Optional confirmation dialog
+                        showDialog(
+                          context: context,
+                          builder: (_) => AlertDialog(
+                            title: const Text("Confirm Discharge"),
+                            content: const Text(
+                              "Are you sure you want to discharge this patient?",
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text(
+                                  "Cancel",
+                                  style: TextStyle(color: Colors.black),
+                                ),
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                ),
+                                onPressed: () {
+                                  // Navigator.pop(context);
+                                  dischargePatient();
+                                },
+                                child: const Text(
+                                  "Discharge",
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
-
           ],
         ),
       ),
@@ -222,19 +309,25 @@ class _AdmissionDetailPageState extends State<AdmissionDetailPage> {
   Widget _infoCard({required String title, required List<Widget> children}) {
     return Card(
       color: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14),side: BorderSide(color: royal)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: royal),
+      ),
       elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title,
-                style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: royal)),
-            const Divider(color: royal,),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: royal,
+              ),
+            ),
+            const Divider(color: royal),
             ...children,
           ],
         ),
@@ -252,7 +345,10 @@ class _AdmissionDetailPageState extends State<AdmissionDetailPage> {
     return Card(
       color: Colors.white,
       margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14),side: BorderSide(color: royal)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: royal),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -261,24 +357,28 @@ class _AdmissionDetailPageState extends State<AdmissionDetailPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(title,
-                    style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: royal)),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: royal,
+                  ),
+                ),
                 TextButton(
                   onPressed: onTap,
-                  child: Text(changing ? "Cancel" : "Change",style: TextStyle(color: royal),),
+                  child: Text(
+                    changing ? "Cancel" : "Change",
+                    style: TextStyle(color: royal),
+                  ),
                 ),
               ],
             ),
-            Text(value,
-                style:
-                const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
-            if (changing) ...[
-              const SizedBox(height: 12),
-              child,
-            ]
+            Text(
+              value,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+            ),
+            if (changing) ...[const SizedBox(height: 12), child],
           ],
         ),
       ),
@@ -296,11 +396,8 @@ class _AdmissionDetailPageState extends State<AdmissionDetailPage> {
       hint: Text(hint),
       items: items
           .map<DropdownMenuItem<int>>(
-            (i) => DropdownMenuItem(
-          value: i['id'],
-          child: Text(i['name']),
-        ),
-      )
+            (i) => DropdownMenuItem(value: i['id'], child: Text(i['name'])),
+          )
           .toList(),
       onChanged: onChanged,
     );
@@ -313,8 +410,7 @@ class _AdmissionDetailPageState extends State<AdmissionDetailPage> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(color: Colors.grey)),
-          Text(value,
-              style: const TextStyle(fontWeight: FontWeight.w600)),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
         ],
       ),
     );

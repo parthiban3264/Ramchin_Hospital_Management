@@ -26,7 +26,7 @@ class ScanningPageState extends State<ScanningPage> {
 
   String? _expandedScanName;
 
-  static final Map<String, Map<String, dynamic>> savedScans = {};
+  static Map<String, Map<String, dynamic>> savedScans = {};
   final Map<String, bool> showAllMap = {};
   final Map<String, TextEditingController> _descControllers = {};
 
@@ -84,53 +84,57 @@ class ScanningPageState extends State<ScanningPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: _buildAppBar(),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(strokeWidth: 3))
-          : filteredScans.isEmpty
-          ? const Center(
-              child: Text(
-                "No scans found.",
-                style: TextStyle(fontSize: 18, color: Colors.grey),
-              ),
-            )
-          : SingleChildScrollView(
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: TextField(
-                      onChanged: (v) => setState(() => searchQuery = v),
-                      decoration: InputDecoration(
-                        hintText: "Search test name. . .",
-                        prefixIcon: const Icon(Icons.search),
-                        filled: true,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (_, __) => _submitAllScans(),
+      child: Scaffold(
+        appBar: _buildAppBar(),
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator(strokeWidth: 3))
+            : filteredScans.isEmpty
+            ? const Center(
+                child: Text(
+                  "No scans found.",
+                  style: TextStyle(fontSize: 18, color: Colors.grey),
+                ),
+              )
+            : SingleChildScrollView(
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: TextField(
+                        onChanged: (v) => setState(() => searchQuery = v),
+                        decoration: InputDecoration(
+                          hintText: "Search test name. . .",
+                          prefixIcon: const Icon(Icons.search),
+                          filled: true,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  for (int i = 0; i < filteredScans.length; i++)
-                    _buildScanCard(filteredScans[i]),
-                  const SizedBox(height: 90),
-                ],
+                    for (int i = 0; i < filteredScans.length; i++)
+                      _buildScanCard(filteredScans[i]),
+                    const SizedBox(height: 90),
+                  ],
+                ),
               ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+        floatingActionButton: ElevatedButton.icon(
+          onPressed: _isSubmitting ? null : _submitAllScans,
+          icon: const Icon(Icons.cloud_upload),
+          label: _isSubmitting
+              ? const Text("Submitting...")
+              : const Text("Submit Scans"),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: primaryColor,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 45),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
             ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: ElevatedButton.icon(
-        onPressed: _isSubmitting ? null : _submitAllScans,
-        icon: const Icon(Icons.cloud_upload),
-        label: _isSubmitting
-            ? const Text("Submitting...")
-            : const Text("Submit Scans"),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: primaryColor,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 45),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
           ),
         ),
       ),
@@ -156,7 +160,7 @@ class ScanningPageState extends State<ScanningPage> {
               children: [
                 IconButton(
                   icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () => _submitAllScans(),
                 ),
                 const Text(
                   "View Scanning",

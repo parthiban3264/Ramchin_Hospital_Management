@@ -11,6 +11,7 @@ class AccountsReportPdf {
     required double income,
     required double drawingOut,
     required String hospitalName,
+    required double previousBalance,
     required String hospitalPlace,
     required DateTime reportDate,
     required DateFilter reportFilter,
@@ -104,7 +105,7 @@ class AccountsReportPdf {
         sugarOnline +
         emergencyOnline;
 
-    final balance = totalCash + income - expenses;
+    final balance = previousBalance + totalCash + income - expenses;
     final cashInHand = balance - drawingOut;
 
     /// ---------------- PDF PAGE (58mm) ----------------
@@ -119,7 +120,7 @@ class AccountsReportPdf {
             children: [
               _centerBold(hospitalName),
               _center(hospitalPlace),
-              pw.Divider(),
+              _dashDivider(),
 
               //_centerBold('Daily Report (${_today()})'),
               // _centerBold('Daily Report (${_formatDate(reportDate)})'),
@@ -147,7 +148,7 @@ class AccountsReportPdf {
                 (e) => _tripleRow(e.key, e.value['cash']!, e.value['online']!),
               ),
 
-              pw.Divider(),
+              _dashDivider(),
 
               /// ---------- REGISTRATION ----------
               _tripleRow(
@@ -162,14 +163,21 @@ class AccountsReportPdf {
               _tripleRow('Test & Scan', testScanCash, testScanOnline),
 
               /// ---------- OTHER INCOME ----------
-              pw.Divider(),
+              _dashDivider(),
+              _tripleRowBold('Sub Total', totalCash, totalOnline),
+
+              //pw.Divider(),
+              _dashDivider(),
               _row('Total Income (Cash)', totalCash),
               _row('Other Income', income),
               _row('Expenses', expenses),
-              pw.Divider(),
+              _dashDivider(),
+              _row('Previous Balance', previousBalance),
+
+              _dashDivider(),
               _row('Balance', balance),
               _row('Drawing Out', drawingOut),
-              pw.Divider(),
+              _dashDivider(),
               _rowBold('Cash in Hand', cashInHand),
             ],
           ),
@@ -178,6 +186,41 @@ class AccountsReportPdf {
     );
 
     await Printing.layoutPdf(onLayout: (_) => pdf.save());
+  }
+
+  static pw.Widget _tripleRowBold(String name, double cash, double online) {
+    final total = cash + online;
+    return pw.Row(
+      children: [
+        pw.Expanded(
+          child: pw.Text(
+            name,
+            style: pw.TextStyle(fontSize: 7, fontWeight: pw.FontWeight.bold),
+          ),
+        ),
+        pw.Expanded(
+          child: pw.Text(
+            cash.toInt().toString(),
+            textAlign: pw.TextAlign.end,
+            style: pw.TextStyle(fontSize: 7, fontWeight: pw.FontWeight.bold),
+          ),
+        ),
+        pw.Expanded(
+          child: pw.Text(
+            online.toInt().toString(),
+            textAlign: pw.TextAlign.end,
+            style: pw.TextStyle(fontSize: 7, fontWeight: pw.FontWeight.bold),
+          ),
+        ),
+        pw.Expanded(
+          child: pw.Text(
+            total.toInt().toString(),
+            textAlign: pw.TextAlign.end,
+            style: pw.TextStyle(fontSize: 7, fontWeight: pw.FontWeight.bold),
+          ),
+        ),
+      ],
+    );
   }
 
   // static String _formatDate(DateTime date) =>
@@ -322,4 +365,11 @@ class AccountsReportPdf {
 
     return name.length > 12 ? '${name.substring(0, 10)}...' : name;
   }
+
+  static pw.Widget _dashDivider() => pw.LayoutBuilder(
+    builder: (context, constraints) {
+      final dashCount = (constraints!.maxWidth / 4).floor();
+      return pw.Text('-' * dashCount, textAlign: pw.TextAlign.center);
+    },
+  );
 }

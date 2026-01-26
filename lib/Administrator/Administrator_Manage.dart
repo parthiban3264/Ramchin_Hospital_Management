@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'Administartor_EditHospital.dart';
 import 'Administrator_AddPage.dart';
 import 'Administrator_Block.dart';
+import 'Adminstrator_Payment_Histroy.dart';
 import 'Adminstrator_Tickets.dart';
 
 class AdministratorManagePage extends StatefulWidget {
@@ -136,6 +137,41 @@ class _AdministratorManagePageState extends State<AdministratorManagePage> {
                               ),
                             ),
                           ),
+                        ],
+                      ),
+                      const SizedBox(height: 25),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildActionItem(
+                            Icons.history,
+                            "Payment History",
+                            () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => TransactionHistoryPage(
+                                  hall: widget.hospitalData,
+                                  // onHospitalUpdated: () {
+                                  //   widget.onHospitalUpdated
+                                  //       ?.call(); // refresh top-level
+                                  //   setState(
+                                  //     () {},
+                                  //   ); // rebuild this intermediate page
+                                  // },
+                                ),
+                              ),
+                            ),
+                          ),
+                          // _buildActionItem(
+                          //   Icons.receipt_long_rounded,
+                          //   "Tickets",
+                          //   () => Navigator.push(
+                          //     context,
+                          //     MaterialPageRoute(
+                          //       builder: (_) => const AdministratorTickets(),
+                          //     ),
+                          //   ),
+                          // ),
                         ],
                       ),
                     ],

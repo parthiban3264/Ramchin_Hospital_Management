@@ -10,6 +10,7 @@ import '../../../../../Services/admin_service.dart';
 import '../../../../../Services/consultation_service.dart';
 import '../../../../../Services/socket_service.dart';
 import '../../widgets/doctor_description_edit.dart';
+import '../patient_description/patient_description_page.dart';
 import '../patient_description_page.dart';
 
 class DrOutPatientQueuePage extends StatefulWidget {
@@ -444,15 +445,88 @@ class _DrOutPatientQueuePageState extends State<DrOutPatientQueuePage> {
           ),
         ),
       ),
+      // body: isInitialLoad
+      //     ? const Center(child: CircularProgressIndicator())
+      //     : consultations.isEmpty
+      //     ? _buildEmptyState()
+      //     : Column(
+      //         children: [
+      //           const SizedBox(height: 2),
+      //           selectedIndex == 2
+      //               ? SizedBox() // <-- Show edit tab here
+      //               : Container(
+      //                   margin: const EdgeInsets.symmetric(
+      //                     horizontal: 20,
+      //                     vertical: 10,
+      //                   ),
+      //                   padding: const EdgeInsets.symmetric(
+      //                     horizontal: 16,
+      //                     vertical: 14,
+      //                   ),
+      //                   decoration: BoxDecoration(
+      //                     color: primaryColor.withValues(alpha: 0.1),
+      //                     borderRadius: BorderRadius.circular(14),
+      //                     border: Border.all(color: primaryColor),
+      //                   ),
+      //                   child: Row(
+      //                     mainAxisAlignment: MainAxisAlignment.center,
+      //                     children: [
+      //                       Icon(Icons.people_alt_rounded, color: primaryColor),
+      //                       const SizedBox(width: 8),
+      //                       Text(
+      //                         selectedIndex == 0
+      //                             ? "Pending Patients"
+      //                             : "Consulting Patients",
+      //                         style: TextStyle(
+      //                           fontSize: 17,
+      //                           fontWeight: FontWeight.bold,
+      //                           color: primaryColor,
+      //                         ),
+      //                       ),
+      //                       const SizedBox(width: 6),
+      //                       Text(
+      //                         "( ${_filteredConsultations().length} )",
+      //                         style: const TextStyle(
+      //                           color: Colors.black87,
+      //                           fontSize: 15,
+      //                         ),
+      //                       ),
+      //                     ],
+      //                   ),
+      //                 ),
+      //           Expanded(
+      //             child: RefreshIndicator(
+      //               color: primaryColor,
+      //               onRefresh: () => _fetchConsultations(showLoading: false),
+      //               child: selectedIndex == 2
+      //                   ? EditTestScanTab() // <-- Show edit tab here
+      //                   : ListView.builder(
+      //                       padding: const EdgeInsets.symmetric(
+      //                         horizontal: 16,
+      //                         vertical: 5,
+      //                       ),
+      //                       itemCount: _filteredConsultations().length,
+      //                       itemBuilder: (context, index) {
+      //                         final consultation =
+      //                             _filteredConsultations()[index];
+      //                         return _buildPatientCard(
+      //                           Map<String, dynamic>.from(consultation),
+      //                         );
+      //                       },
+      //                     ),
+      //             ),
+      //           ),
+      //         ],
+      //       ),
       body: isInitialLoad
           ? const Center(child: CircularProgressIndicator())
-          : consultations.isEmpty
-          ? _buildEmptyState()
           : Column(
               children: [
                 const SizedBox(height: 2),
+
+                // Header (only for Pending & Consulting)
                 selectedIndex == 2
-                    ? SizedBox() // <-- Show edit tab here
+                    ? const SizedBox()
                     : Container(
                         margin: const EdgeInsets.symmetric(
                           horizontal: 20,
@@ -493,12 +567,19 @@ class _DrOutPatientQueuePageState extends State<DrOutPatientQueuePage> {
                           ],
                         ),
                       ),
+
                 Expanded(
                   child: RefreshIndicator(
                     color: primaryColor,
                     onRefresh: () => _fetchConsultations(showLoading: false),
                     child: selectedIndex == 2
-                        ? EditTestScanTab() // <-- Show edit tab here
+                        ? EditTestScanTab() // ✅ ALWAYS visible
+                        : _filteredConsultations().isEmpty
+                        ? _buildEmptyState(
+                            message: selectedIndex == 0
+                                ? "No pending patients"
+                                : "No consulting patients",
+                          )
                         : ListView.builder(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 16,
@@ -517,6 +598,7 @@ class _DrOutPatientQueuePageState extends State<DrOutPatientQueuePage> {
                 ),
               ],
             ),
+
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: primaryColor,
         currentIndex: selectedIndex,

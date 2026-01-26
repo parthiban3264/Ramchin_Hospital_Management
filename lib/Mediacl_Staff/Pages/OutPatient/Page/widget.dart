@@ -40,18 +40,36 @@ Future<pw.Document> buildPdf({
   required TextEditingController addressController,
 }) async {
   final consultation = fee['Consultation'];
-  final temperature = consultation['temperature'].toString();
-  final bloodPressure = consultation['bp'] ?? '_';
-  final sugar = consultation['sugar'] ?? '_';
-  final height = consultation['height'].toString() ?? '_';
-  final weight = consultation['weight'].toString() ?? '_';
-  final BMI = consultation['BMI'].toString() ?? '_';
-  final PK = consultation['PK'].toString() ?? '_';
-  final SpO2 = consultation['SPO2'].toString() ?? '_';
+  // final temperature = consultation['temperature'].toString();
+  // final bloodPressure = consultation['bp'] ?? '_';
+  // final sugar = consultation['sugar'] ?? '_';
+  // final height = consultation['height'].toString() ?? '_';
+  // final weight = consultation['weight'].toString() ?? '_';
+  // final BMI = consultation['BMI'].toString() ?? '_';
+  // final PK = consultation['PK'].toString() ?? '_';
+  // final SpO2 = consultation['SPO2'].toString() ?? '_';
   final tokenNo = fee['Consultation']?['tokenNo'];
-  final bool isTestOnly = consultation['isTestOnly'] ?? false;
+  final bool isTestOnly = consultation?['isTestOnly'] ?? false;
   final referredDoctorName =
-      consultation['referredByDoctorName'].toString() ?? '-';
+      consultation?['referredByDoctorName'].toString() ?? '-';
+  // String admitId ;
+  // String bedNo ;
+  // String wardName ;
+  // String wardNo ;
+  // String admitDate ;
+  // final String dischargeDate ;
+
+  final admitId = fee['Admission']?['id'].toString() ?? '-';
+  final bedNo = fee['Admission']?['bed']['bedNo'].toString() ?? '-';
+  final wardName =
+      '${fee['Admission']?['bed']['ward']['name']} - '
+          '${fee['Admission']?['bed']['ward']['type']}' ??
+      '-';
+  final wardNo = fee['Admission']?['bed']['ward']['id'].toString() ?? '-';
+  final admitDate =
+      fee['Admission']?['admitTime'].toString().split('T').first ?? '-';
+  final dischargeDate =
+      fee['Admission']?['dischargeTime'].toString().split('T').first ?? '-';
 
   final tokenText =
       (tokenNo == null ||
@@ -59,6 +77,138 @@ Future<pw.Document> buildPdf({
           tokenNo.toString() == '0')
       ? '-'
       : tokenNo.toString();
+
+  pw.Widget _dashDivider() => pw.LayoutBuilder(
+    builder: (context, constraints) {
+      final dashCount = (constraints!.maxWidth / 4).floor();
+      return pw.Text('-' * dashCount, textAlign: pw.TextAlign.center);
+    },
+  );
+
+  ///===========================charges ------------------------------------
+  final admission = fee['Admission'];
+  final bed = admission?['bed'];
+  final ward = bed?['ward'];
+  final charges = (admission?['charges'] ?? [])
+      .where((c) => (c['status'] ?? '').toString().toUpperCase() == 'PAID')
+      .toList();
+  charges.sort((a, b) {
+    DateTime parse(dynamic c) {
+      final dateStr = c['chargeDate'] ?? c['createdAt'];
+      return DateTime.tryParse(dateStr?.toString() ?? '') ??
+          DateTime.fromMillisecondsSinceEpoch(0);
+    }
+
+    return parse(a).compareTo(parse(b));
+  });
+
+  String formatDate(DateTime d) =>
+      "${d.day.toString().padLeft(2, '0')} "
+      "${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][d.month - 1]} "
+      "${d.year}";
+
+  const knownCharges = {'ROOM RENT', 'DOCTOR FEE', 'NURSE FEE'};
+
+  Map<String, List<Map<String, dynamic>>> grouped = {
+    'Room Rent': [],
+    'Doctor Fee': [],
+    'Nurse Fee': [],
+    'Others': [],
+  };
+  String _normalize(String s) {
+    if (s == 'ROOM RENT') return 'Room Rent';
+    if (s == 'DOCTOR FEE') return 'Doctor Fee';
+    if (s == 'NURSE FEE') return 'Nurse Fee';
+    return s;
+  }
+
+  pw.Widget dateHeader(List charges, ttf, ttfBold) {
+    if (charges.isEmpty) return pw.SizedBox.shrink();
+
+    final dates = charges.map((c) => DateTime.parse(c['chargeDate'])).toList();
+
+    final from = dates.first;
+    final to = dates.last;
+
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(vertical: 8),
+      child: pw.Text(
+        from.day == to.day
+            ? formatDate(from)
+            : "${formatDate(from)} - ${formatDate(to)}",
+        style: pw.TextStyle(
+          fontWeight: pw.FontWeight.bold,
+          fontSize: 12,
+          color: PdfColors.black,
+          font: ttf,
+          fontBold: ttfBold,
+        ),
+      ),
+    );
+  }
+
+  for (final c in charges) {
+    final desc = (c['description'] ?? '').toString().toUpperCase();
+
+    // ⛔ Always skip advance fee
+    if (desc == 'INPATIENT ADVANCE FEE') {
+      continue;
+    }
+
+    if (knownCharges.contains(desc)) {
+      grouped[_normalize(desc)]!.add(c);
+    } else {
+      grouped['Others']!.add(c);
+    }
+  }
+  final num advanceAmount = (admission?['charges'] ?? [])
+      .where(
+        (c) =>
+            (c['status'] ?? '').toString().toUpperCase() == 'PAID' &&
+            (c['description'] ?? '').toString().toUpperCase() ==
+                'INPATIENT ADVANCE FEE' &&
+            c['admissionId'] == fee['Admission']['id'],
+      )
+      .fold<num>(
+        0,
+        (num sum, dynamic c) =>
+            sum + (num.tryParse(c['amount']?.toString() ?? '0') ?? 0),
+      );
+  final num chargePendingAmount = (admission?['charges'] ?? [])
+      .where(
+        (c) =>
+            (c['status'] ?? '').toString().toUpperCase() == 'PENDING' &&
+            c['admissionId'] == fee['Admission']['id'],
+      )
+      .fold<num>(
+        0,
+        (num sum, dynamic c) =>
+            sum + (num.tryParse(c['amount']?.toString() ?? '0') ?? 0),
+      );
+
+  final num chargePaidAmount = (admission?['charges'] ?? [])
+      .where(
+        (c) =>
+            (c['status'] ?? '').toString().toUpperCase() == 'PAID' &&
+            (c['description'] ?? '').toString().toUpperCase() !=
+                'INPATIENT ADVANCE FEE' &&
+            c['admissionId'] == fee['Admission']['id'],
+      )
+      .fold<num>(
+        0,
+        (num sum, dynamic c) =>
+            sum + (num.tryParse(c['amount']?.toString() ?? '0') ?? 0),
+      );
+  final bool isDischarge = fee['type'] == 'DISCHARGEFEE';
+  final num safeAdvance = advanceAmount ?? 0;
+
+  final num diff = chargePaidAmount - safeAdvance;
+
+  final String label = isDischarge && diff < 0 ? 'Return ' : 'Total';
+
+  final num displayAmount = isDischarge
+      ? diff.abs()
+      : FeesPaymentPageState.calculateTotal(fee['amount']);
 
   final pdf = pw.Document();
   final blue = PdfColor.fromHex("#0A3D91");
@@ -297,7 +447,8 @@ Future<pw.Document> buildPdf({
             // LOGO
 
             // HOSPITAL DETAILS
-            pw.Divider(),
+            //pw.Divider(),
+            _dashDivider(),
 
             // PATIENT INFO
             pw.Text(
@@ -425,6 +576,70 @@ Future<pw.Document> buildPdf({
                 ),
               ],
             ),
+
+            if (fee['type'] == 'ADVANCEFEE' ||
+                fee['type'] == 'DAILYTREATMENTFEE' ||
+                fee['type'] == 'DISCHARGEFEE') ...[
+              //pw.Divider(),
+              _dashDivider(),
+
+              pw.Text(
+                "ADMISSION INFO",
+                style: pw.TextStyle(
+                  fontSize: 9,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+              pw.SizedBox(height: 5),
+              pw.Table(
+                border: pw.TableBorder.all(color: PdfColors.white),
+                children: [
+                  pw.TableRow(
+                    children: [
+                      pw.Text("Admit Id :", style: pw.TextStyle(fontSize: 9)),
+                      pw.Text(admitId, style: pw.TextStyle(fontSize: 9)),
+                    ],
+                  ),
+                  pw.TableRow(
+                    children: [
+                      pw.Text("Ward Name :", style: pw.TextStyle(fontSize: 9)),
+                      pw.Text(wardName, style: pw.TextStyle(fontSize: 9)),
+                    ],
+                  ),
+                  pw.TableRow(
+                    children: [
+                      pw.Text("Ward No :", style: pw.TextStyle(fontSize: 9)),
+                      pw.Text(wardNo!, style: pw.TextStyle(fontSize: 9)),
+                    ],
+                  ),
+                  pw.TableRow(
+                    children: [
+                      pw.Text("Bed No : ", style: pw.TextStyle(fontSize: 9)),
+                      pw.Text(bedNo!, style: pw.TextStyle(fontSize: 9)),
+                    ],
+                  ),
+                  pw.TableRow(
+                    children: [
+                      pw.Text(
+                        "Admit date : ",
+                        style: pw.TextStyle(fontSize: 9),
+                      ),
+                      pw.Text(admitDate!, style: pw.TextStyle(fontSize: 9)),
+                    ],
+                  ),
+                  pw.TableRow(
+                    children: [
+                      pw.Text(
+                        "Discharge date : ",
+                        style: pw.TextStyle(fontSize: 9),
+                      ),
+                      pw.Text(dischargeDate, style: pw.TextStyle(fontSize: 9)),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+
             // if (fee['type'] == 'REGISTRATIONFEE')
             //   if (hasAnyVital(
             //     temperature: temperature,
@@ -446,7 +661,8 @@ Future<pw.Document> buildPdf({
             //       PK: PK,
             //       SpO2: SpO2,
             //     ),
-            pw.Divider(),
+            //pw.Divider(),
+            _dashDivider(),
 
             // HEADLINE
             pw.Text(
@@ -497,6 +713,35 @@ Future<pw.Document> buildPdf({
                   emergencyFee: fee['Consultation']?['emergencyFee'],
                   sugarTestFee: fee['Consultation']?['sugarTestFee'],
                 ),
+              ),
+            ],
+            if (fee['type'] == 'ADVANCEFEE') ...[
+              pw.Table(
+                columnWidths: {
+                  0: const pw.FlexColumnWidth(3),
+                  1: const pw.FlexColumnWidth(1),
+                },
+                children: buildAdvancedFeeRows(
+                  AdvancedFee: fee['amount'],
+                  // consultationFee:
+                  // fee['Consultation']?['consultationFee'] +
+                  //     fee['Consultation']?['registrationFee'],
+                  // emergencyFee: fee['Consultation']?['emergencyFee'],
+                  // sugarTestFee: fee['Consultation']?['sugarTestFee'],
+                ),
+              ),
+            ],
+            if (fee['type'] == 'DAILYTREATMENTFEE' ||
+                fee['type'] == 'DISCHARGEFEE') ...[
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.center,
+                children: [
+                  dateHeader(charges, ttf, ttfBold),
+
+                  for (final entry in grouped.entries)
+                    if (entry.value.isNotEmpty)
+                      _groupedFeeRow(entry.key, entry.value),
+                ],
               ),
             ],
 
@@ -658,7 +903,18 @@ Future<pw.Document> buildPdf({
                   children: rows,
                 );
               }).toList(),
-            pw.Divider(),
+            if (fee['type'] == 'DISCHARGEFEE')
+              pw.Column(
+                children: [
+                  if (advanceAmount > 0) ...[
+                    //pw.Divider(thickness: 1.5, height: 6),
+                    _dashDivider(),
+                    feeRowAdvance(title: 'Advance', amount: advanceAmount),
+                  ],
+                ],
+              ),
+            //pw.Divider(),
+            _dashDivider(),
 
             // TOTAL
             pw.Row(
@@ -666,9 +922,9 @@ Future<pw.Document> buildPdf({
                 pw.Expanded(
                   flex: 3,
                   child: pw.Text(
-                    "TOTAL",
+                    '$label :',
                     style: pw.TextStyle(
-                      fontSize: 10,
+                      fontSize: 12,
                       fontWeight: pw.FontWeight.bold,
                     ),
                   ),
@@ -676,10 +932,11 @@ Future<pw.Document> buildPdf({
                 pw.Expanded(
                   flex: 1,
                   child: pw.Text(
-                    "₹${FeesPaymentPageState.calculateTotal(fee['amount'])}",
+                    // "₹${FeesPaymentPageState.calculateTotal(fee['amount'])}",
+                    " ₹ $displayAmount",
                     textAlign: pw.TextAlign.right,
                     style: pw.TextStyle(
-                      fontSize: 10,
+                      fontSize: 12,
                       fontWeight: pw.FontWeight.bold,
                     ),
                   ),
@@ -700,6 +957,83 @@ Future<pw.Document> buildPdf({
   );
 
   return pdf;
+}
+
+pw.Widget feeRowAdvance({required String title, required num? amount}) {
+  if (amount == null || amount == 0) return pw.SizedBox.shrink();
+
+  return pw.Padding(
+    padding: const pw.EdgeInsets.symmetric(vertical: 0),
+    child: pw.Row(
+      crossAxisAlignment: pw.CrossAxisAlignment.center,
+      children: [
+        /// Amount Row (tap to edit)
+        pw.Expanded(child: feeRow(title, amount)),
+      ],
+    ),
+  );
+}
+
+pw.Widget _groupedFeeRow(String title, List<Map<String, dynamic>> items) {
+  final total = items.fold<num>(
+    0,
+    (sum, c) => sum + (num.tryParse(c['amount'].toString()) ?? 0),
+  );
+
+  final days = items.length;
+
+  final displayTitle = (title != 'Others' && days > 1)
+      ? "$title × ${days}d"
+      : title;
+
+  return feeRowWithRemove(title: displayTitle, amount: total);
+}
+
+pw.Widget feeRowWithRemove({required String title, required num? amount}) {
+  if (amount == null || amount == 0) {
+    return pw.SizedBox.shrink();
+  }
+
+  return pw.Padding(
+    padding: const pw.EdgeInsets.symmetric(vertical: 2),
+    child: pw.Row(
+      crossAxisAlignment: pw.CrossAxisAlignment.center,
+      children: [pw.Expanded(child: feeRow(title, amount))],
+    ),
+  );
+}
+
+pw.Widget feeRow(String title, num? amount, {bool isTotal = false}) {
+  if (amount == null || amount == 0) {
+    return pw.SizedBox.shrink();
+  }
+
+  return pw.Padding(
+    padding: const pw.EdgeInsets.symmetric(vertical: 6),
+    child: pw.Row(
+      crossAxisAlignment: pw.CrossAxisAlignment.center,
+      children: [
+        pw.Expanded(
+          child: pw.Text(
+            title,
+            style: pw.TextStyle(
+              fontSize: isTotal ? 11 : 12,
+              fontWeight: isTotal ? pw.FontWeight.bold : pw.FontWeight.normal,
+              color: isTotal ? PdfColors.black : PdfColors.grey800,
+            ),
+          ),
+        ),
+        pw.Text(
+          "₹ ${amount.toStringAsFixed(0)}",
+          style: pw.TextStyle(
+            fontSize: isTotal ? 11 : 12,
+            fontWeight: isTotal ? pw.FontWeight.bold : pw.FontWeight.bold,
+            color: isTotal ? PdfColors.green700 : PdfColors.black,
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 List<pw.TableRow> buildFeeRows({
@@ -724,7 +1058,6 @@ List<pw.TableRow> buildFeeRows({
       ],
     ),
   );
-
   void addRow(String title, num? amount) {
     if (amount == null || amount == 0) return;
 
@@ -761,6 +1094,48 @@ List<pw.TableRow> buildFeeRows({
   addRow("Consultation Fee", consultationFee);
   addRow("Emergency Fee", emergencyFee);
   addRow("Sugar Test Fee", sugarTestFee);
+
+  return rows;
+}
+
+List<pw.TableRow> buildAdvancedFeeRows({required num AdvancedFee}) {
+  final rows = <pw.TableRow>[];
+  // 🔹 Section Header
+  ;
+  void addRow(String title, num? amount) {
+    if (amount == null || amount == 0) return;
+
+    rows.add(
+      pw.TableRow(
+        children: [
+          pw.Padding(
+            padding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 5),
+            child: pw.Text(
+              title,
+              style: pw.TextStyle(fontSize: 12, color: PdfColors.grey900),
+            ),
+          ),
+          pw.Padding(
+            padding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+            child: pw.Align(
+              alignment: pw.Alignment.centerRight,
+              child: pw.Text(
+                "₹ ${amount.toStringAsFixed(0)}",
+                style: pw.TextStyle(
+                  fontSize: 11,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 🔹 Fee Rows
+  //addRow("Registration Fee", registrationFee);
+  addRow("Advance Fee", AdvancedFee);
 
   return rows;
 }

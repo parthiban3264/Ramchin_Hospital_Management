@@ -23,7 +23,7 @@ class TestingPageState extends State<TestingPage> {
   String searchQuery = "";
   int _expandedIndex = -1;
 
-  static final Map<String, Map<String, dynamic>> savedTests = {};
+  static Map<String, Map<String, dynamic>> savedTests = {};
   final Map<String, bool> showAllMap = {};
   final Map<String, TextEditingController> descControllers = {};
 
@@ -85,84 +85,91 @@ class TestingPageState extends State<TestingPage> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(100),
-        child: Container(
-          height: 100,
-          decoration: BoxDecoration(
-            color: primaryColor,
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(12),
-              bottomRight: Radius.circular(12),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (_, __) => _submitAllTests(),
+      child: Scaffold(
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(100),
+          child: Container(
+            height: 100,
+            decoration: BoxDecoration(
+              color: primaryColor,
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(12),
+                bottomRight: Radius.circular(12),
+              ),
             ),
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  const Text(
-                    "View Testing",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(
+                        Icons.arrow_back_ios,
+                        color: Colors.white,
+                      ),
+                      onPressed: () => _submitAllTests(),
                     ),
-                  ),
-                ],
+                    const Text(
+                      "View Testing",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         ),
-      ),
-      body: _isSubmitting
-          ? const Center(child: CircularProgressIndicator())
-          : filteredTests.isEmpty
-          ? Center(
-              child: Text(
-                "No tests found",
-                style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
-              ),
-            )
-          : SingleChildScrollView(
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: TextField(
-                      onChanged: (v) => setState(() => searchQuery = v),
-                      decoration: InputDecoration(
-                        hintText: "Search test name. . .",
-                        prefixIcon: const Icon(Icons.search),
-                        filled: true,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+        body: _isSubmitting
+            ? const Center(child: CircularProgressIndicator())
+            : filteredTests.isEmpty
+            ? Center(
+                child: Text(
+                  "No tests found",
+                  style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
+                ),
+              )
+            : SingleChildScrollView(
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: TextField(
+                        onChanged: (v) => setState(() => searchQuery = v),
+                        decoration: InputDecoration(
+                          hintText: "Search test name. . .",
+                          prefixIcon: const Icon(Icons.search),
+                          filled: true,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  for (int i = 0; i < filteredTests.length; i++)
-                    _buildTestCard(filteredTests[i], i),
-                  const SizedBox(height: 90),
-                ],
+                    for (int i = 0; i < filteredTests.length; i++)
+                      _buildTestCard(filteredTests[i], i),
+                    const SizedBox(height: 90),
+                  ],
+                ),
               ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+        floatingActionButton: ElevatedButton.icon(
+          onPressed: _isSubmitting ? null : _submitAllTests,
+          icon: const Icon(Icons.cloud_upload),
+          label: const Text("Submit Tests"),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: primaryColor,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 50),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
             ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: ElevatedButton.icon(
-        onPressed: _isSubmitting ? null : _submitAllTests,
-        icon: const Icon(Icons.cloud_upload),
-        label: const Text("Submit Tests"),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: primaryColor,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 50),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
           ),
         ),
       ),

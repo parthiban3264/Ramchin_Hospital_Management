@@ -1,7 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../Services/admin_service.dart';
+import '../../../utils/utils.dart';
 
 class ActiveStaffPage extends StatefulWidget {
   const ActiveStaffPage({super.key});
@@ -13,14 +17,38 @@ class ActiveStaffPage extends StatefulWidget {
 class _ActiveStaffPageState extends State<ActiveStaffPage> {
   final AdminService service = AdminService();
 
+  void _showMessage(String message, {bool success = false}) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: TextStyle(
+            color: success ? Colors.green[700] : Colors.red[700],
+            fontSize: 16,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 4,
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
   List<dynamic> staffList = [];
   List<dynamic> filteredList = [];
 
   String searchText = "";
   bool isLoadingPage = true;
+  bool _isLoading = false;
 
   // Track toggle loading for each staff ID
   Map<int, bool> toggleLoading = {};
+  // Track reset password loading per staff ID
+  Map<int, bool> resetLoading = {};
 
   @override
   void initState() {
@@ -31,11 +59,17 @@ class _ActiveStaffPageState extends State<ActiveStaffPage> {
   // ------------------------- LOAD STAFF ONLY ONCE ------------------------- //
   void loadStaff() async {
     setState(() => isLoadingPage = true);
+    final prefs = await SharedPreferences.getInstance();
+    final String userId = prefs.getString("userId") ?? "";
 
     final data = await service.getMedicalStaff();
 
     final nonAdmins = data
-        .where((s) => s["role"].toString().toLowerCase() != "admin")
+        .where(
+          (s) =>
+              s["role"].toString().toLowerCase() != "admin" &&
+              s["user_Id"] != userId,
+        )
         .toList();
 
     setState(() {
@@ -90,6 +124,166 @@ class _ActiveStaffPageState extends State<ActiveStaffPage> {
 
       toggleLoading[id] = false; // stop loader
     });
+  }
+
+  Future<void> resetPassword(int staffId) async {
+    print('work $staffId'); // ✅ should print now
+    setState(() {
+      resetLoading[staffId] = true; // show loader immediately
+    });
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String hospitalId = prefs.getString("hospitalId") ?? "";
+      final String userId = prefs.getString("userId") ?? "";
+
+      final response = await http.patch(
+        Uri.parse('$baseUrl/auth/admin/reset_password'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'hospitalId': hospitalId, 'userId': staffId}),
+      );
+      print('response ${response.body}');
+
+      if (!mounted) return;
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        _showMessage("✅ Password reset successful!", success: true);
+      } else {
+        _showMessage(data['message'] ?? "❌ Failed to reset password");
+      }
+    } catch (e) {
+      if (!mounted) return;
+      _showMessage("❌ Error: $e");
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        resetLoading[staffId] = false; // hide loader
+      });
+    }
+  }
+
+  void _confirmResetPassword(int staffId) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          elevation: 8,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 10),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 🔶 Icon
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFBF955E).withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.lock_reset_rounded,
+                  size: 34,
+                  color: Color(0xFFBF955E),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // 📝 Title
+              const Text(
+                "Reset Password?",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: 10),
+
+              // 📄 Description
+              const Text(
+                "Are you sure you want to reset this staff's password?",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: Colors.black87),
+              ),
+
+              const SizedBox(height: 12),
+
+              // 🔑 Password highlight
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Text(
+                  "New Password: abc123",
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          actions: [
+            Row(
+              children: [
+                // ❌ No button
+                Expanded(
+                  child: OutlinedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      elevation: 2,
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text(
+                      "No",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(width: 12),
+
+                // ✅ Yes button
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.redAccent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      elevation: 2,
+                    ),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      resetPassword(staffId);
+                    },
+                    child: const Text(
+                      "Yes, Reset",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -243,7 +437,7 @@ class _ActiveStaffPageState extends State<ActiveStaffPage> {
                               child: Text(
                                 staff["name"][0].toUpperCase(),
                                 style: const TextStyle(
-                                  fontSize: 22,
+                                  fontSize: 25,
                                   color: Color(0xFF8A6D3B),
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -261,7 +455,7 @@ class _ActiveStaffPageState extends State<ActiveStaffPage> {
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
-                                      fontSize: 17,
+                                      fontSize: 15,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -270,12 +464,68 @@ class _ActiveStaffPageState extends State<ActiveStaffPage> {
                                     "ID: ${staff['user_Id']}",
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontSize: 13),
                                   ),
                                   Text(
                                     "Role: ${staff['role']}",
 
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontSize: 13),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.lock_reset_rounded,
+                                        size: 16,
+                                        color: Color(0xFFBF955E),
+                                      ),
+
+                                      const SizedBox(width: 1),
+
+                                      // ✅ Reset Button / Loading
+                                      resetLoading[staff["id"]] == true
+                                          ? const Padding(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 4,
+                                              ),
+                                              child: Text(
+                                                "Loading...",
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Color(0xFFBF955E),
+                                                ),
+                                              ),
+                                            )
+                                          : GestureDetector(
+                                              onTap: () {
+                                                // Initialize map if null
+                                                if (resetLoading[staff["id"]] ==
+                                                    null) {
+                                                  resetLoading[staff["id"]] =
+                                                      false;
+                                                }
+                                                //resetPassword(staff["id"]);
+                                                _confirmResetPassword(
+                                                  staff["id"],
+                                                );
+                                              },
+                                              child: const Padding(
+                                                padding: EdgeInsets.all(4),
+                                                child: Text(
+                                                  "Reset Password",
+                                                  style: TextStyle(
+                                                    fontSize: 13,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Color(0xFFBF955E),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                    ],
                                   ),
                                 ],
                               ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:hospitrax/Pages/login/widget/forgot_password.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../Admin/Pages/Admin_App_Wrapper.dart';
@@ -183,12 +184,24 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
                                   ),
                                 ),
                               ),
-                              const SizedBox(height: 10),
+                              const SizedBox(height: 22),
                               GestureDetector(
-                                onTap: () {},
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const ForgotPasswordPage(),
+                                    ),
+                                  );
+                                },
                                 child: const Text(
                                   'Forgot Password?',
-                                  style: TextStyle(color: Color(0xFFBF955E)),
+                                  style: TextStyle(
+                                    color: Color(0xFFBF955E),
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -434,7 +447,8 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
     await prefs.setString('staffStatus', staffStatus);
 
     if (role.toUpperCase() != 'ADMIN' &&
-        role.toUpperCase() != 'ADMINISTRATOR') {
+        role.toUpperCase() != 'ADMINISTRATOR' &&
+        role.toUpperCase() != 'PATIENT') {
       if (staffStatus.toUpperCase() != 'ACTIVE') {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("staffStatus is not active")),

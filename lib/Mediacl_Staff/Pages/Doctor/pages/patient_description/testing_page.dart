@@ -123,8 +123,10 @@ class TestingPageState extends State<TestingPage> {
     }
 
     return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (_, __) => _submitAllTests(),
+      canPop: true,
+      onPopInvoked: (_) {
+        PatientDescriptionPageState.onSavedTests(savedTests);
+      },
       child: Scaffold(
         backgroundColor: Colors.grey.shade100,
 
@@ -207,43 +209,38 @@ class TestingPageState extends State<TestingPage> {
               ),
             ),
 
-            // 🔹 SELECTED TEST SUMMARY (FIXED HEIGHT – ¼ SCREEN)
-            if (savedTests.isNotEmpty)
-              SizedBox(
-                height: screenHeight * 0.20,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Material(
-                    elevation: 3,
-                    borderRadius: BorderRadius.circular(16),
-                    color: Colors.white,
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 12),
-                        Text(
-                          "🧪 Selected Test Summary",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: primaryColor,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-
-                        // 🔹 ONLY THIS SCROLLS
-                        Expanded(
-                          child: ScrollConfiguration(
-                            behavior: const ScrollBehavior().copyWith(
-                              overscroll: false,
-                            ),
-                            child: SingleChildScrollView(
-                              physics: const ClampingScrollPhysics(),
-                              child: Padding(
+            // 🔹 EVERYTHING BELOW SCROLLS TOGETHER
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Column(
+                  children: [
+                    // 🔹 SELECTED TEST SUMMARY
+                    if (savedTests.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Material(
+                          elevation: 3,
+                          borderRadius: BorderRadius.circular(16),
+                          color: Colors.white,
+                          child: Column(
+                            children: [
+                              const SizedBox(height: 12),
+                              Text(
+                                "🧪 Selected Test Summary",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: primaryColor,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Padding(
                                 padding: const EdgeInsets.all(12),
                                 child: Column(
                                   children: savedTests.entries.map((entry) {
-                                    final String testName = entry.key;
-                                    final Set<String> options =
+                                    final testName = entry.key;
+                                    final options =
                                         (entry.value['options'] ?? <String>{})
                                             as Set<String>;
 
@@ -305,41 +302,47 @@ class TestingPageState extends State<TestingPage> {
                                   }).toList(),
                                 ),
                               ),
-                            ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
-                  ),
+                      ),
+
+                    const SizedBox(height: 12),
+
+                    // 🔹 TEST LIST (PART OF SAME SCROLL)
+                    if (isSubmitting)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 40),
+                        child: CircularProgressIndicator(),
+                      )
+                    else if (filteredTests.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 40),
+                        child: Text(
+                          "No tests found",
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      )
+                    else
+                      ListView.builder(
+                        itemCount: filteredTests.length,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        padding: const EdgeInsets.only(
+                          left: 16,
+                          right: 16,
+                          bottom: 100,
+                        ),
+                        itemBuilder: (context, index) {
+                          return _buildTestCard(filteredTests[index], index);
+                        },
+                      ),
+                  ],
                 ),
               ),
-
-            // 🔹 TEST LIST (ONLY THIS SCROLLS PAGE)
-            Expanded(
-              child: isSubmitting
-                  ? const Center(child: CircularProgressIndicator())
-                  : filteredTests.isEmpty
-                  ? Center(
-                      child: Text(
-                        "No tests found",
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.only(
-                        left: 16,
-                        right: 16,
-                        bottom: 100,
-                      ),
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: filteredTests.length,
-                      itemBuilder: (context, index) {
-                        return _buildTestCard(filteredTests[index], index);
-                      },
-                    ),
             ),
           ],
         ),
