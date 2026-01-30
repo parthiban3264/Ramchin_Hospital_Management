@@ -265,7 +265,7 @@ class _AdmissionDetailPageState extends State<AdmissionDetailPage> {
             ),
 
             _editableCard(
-              title: "Nurse",
+              title: "Nurses",
               value: nurseText,
               changing: changeNurse,
               onTap: () => setState(() => changeNurse = !changeNurse),
