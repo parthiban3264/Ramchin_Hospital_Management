@@ -282,7 +282,7 @@ class _AdmissionDetailPageState extends State<AdmissionDetailPage> {
                 onChanged: (v) => setState(() => nurseId = v),
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
 
             /// 💾 SAVE
             Row(
