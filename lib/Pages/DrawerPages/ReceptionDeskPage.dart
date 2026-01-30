@@ -13,8 +13,8 @@ const Color customGold = Color(0xFFBF955E);
 const Color cardBackground = Color(0xFFF9F9F9);
 
 class ReceptionDeskPage extends StatefulWidget {
-  final String UserId;
-  const ReceptionDeskPage({super.key, required this.UserId});
+  final String userId;
+  const ReceptionDeskPage({super.key, required this.userId});
 
   @override
   State<ReceptionDeskPage> createState() => _ReceptionDeskPageState();
@@ -65,7 +65,7 @@ class _ReceptionDeskPageState extends State<ReceptionDeskPage> {
   @override
   void initState() {
     super.initState();
-    patientIdController.text = widget.UserId;
+    patientIdController.text = widget.userId;
     _fetchPatient();
     _fetchDoctors();
     bpFocus.addListener(() {
@@ -172,9 +172,11 @@ class _ReceptionDeskPageState extends State<ReceptionDeskPage> {
       );
 
       if (paymentResult == null) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Payment cancelled')));
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Payment cancelled')));
+        }
         return;
       }
 

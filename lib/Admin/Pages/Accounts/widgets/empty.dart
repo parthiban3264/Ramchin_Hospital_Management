@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart';
+// import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -89,8 +89,9 @@ class AccountsReportPdf {
             feeCounts['Consultation Fee']!['count'] += 1;
 
             if (isCash) feeCounts['Consultation Fee']!['cash'] += consultFee;
-            if (isOnline)
+            if (isOnline) {
               feeCounts['Consultation Fee']!['online'] += consultFee;
+            }
           }
 
           // Sugar Test Fee
@@ -164,8 +165,9 @@ class AccountsReportPdf {
         feeCounts['Medical / Injection / Tonic']!['count'] += 1;
 
         if (isCash) feeCounts['Medical / Injection / Tonic']!['cash'] += amount;
-        if (isOnline)
+        if (isOnline) {
           feeCounts['Medical / Injection / Tonic']!['online'] += amount;
+        }
 
         if (!medicalAmounts.containsKey(medName)) medicalAmounts[medName] = 0;
         medicalAmounts[medName] = medicalAmounts[medName]! + amount;
@@ -277,7 +279,7 @@ class AccountsReportPdf {
               style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14),
             ),
             pw.SizedBox(height: 6),
-            pw.Table.fromTextArray(
+            pw.TableHelper.fromTextArray(
               headers: ['Name', 'Amount'],
               data: medicalAmounts.entries
                   .map((e) => [e.key, "₹ ${e.value.toStringAsFixed(1)}"])
@@ -331,7 +333,7 @@ class AccountsReportPdf {
       "₹ ${totalAmount.toStringAsFixed(1)}",
     ]);
 
-    return pw.Table.fromTextArray(
+    return pw.TableHelper.fromTextArray(
       headers: ['Name', 'Count', 'Cash', 'Online', 'Amount'],
       data: rows,
       headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
@@ -377,7 +379,7 @@ class AccountsReportPdf {
       "₹ ${totalAmount.toStringAsFixed(1)}",
     ]);
 
-    return pw.Table.fromTextArray(
+    return pw.TableHelper.fromTextArray(
       headers: ['Fee Type', 'Count', 'Cash', 'Online', 'Amount'],
       data: rows,
       headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),

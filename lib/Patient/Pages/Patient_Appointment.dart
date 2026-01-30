@@ -83,7 +83,7 @@ class _PatientAppointmentHistoryState extends State<PatientAppointmentHistory> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.18),
+                color: Colors.black.withValues(alpha: 0.18),
                 blurRadius: 10,
                 offset: const Offset(0, 3),
               ),
@@ -178,7 +178,7 @@ class _PatientAppointmentHistoryState extends State<PatientAppointmentHistory> {
 
           boxShadow: [
             BoxShadow(
-              color: Colors.black12.withOpacity(0.08),
+              color: Colors.black12.withValues(alpha: 0.08),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -207,7 +207,7 @@ class _PatientAppointmentHistoryState extends State<PatientAppointmentHistory> {
                     horizontal: 12,
                   ),
                   decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.15),
+                    color: statusColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(25),
                   ),
                   child: Text(

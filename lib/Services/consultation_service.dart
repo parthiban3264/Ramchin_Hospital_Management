@@ -65,7 +65,7 @@ class ConsultationService {
       final response = await http.get(
         Uri.parse('$baseUrl/consultations/all/$hospitalId'),
       );
-      print('respose ${response.body}');
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         // ✅ Decode JSON response first
         final decoded = jsonDecode(response.body);
@@ -524,23 +524,18 @@ class ConsultationService {
         Uri.parse('$baseUrl/consultations/all/$hospitalId'),
       );
 
-      print('STATUS => ${response.statusCode}');
-      print('BODY => ${response.body}');
-
       if (response.statusCode == 200 || response.statusCode == 201) {
         final decoded = jsonDecode(response.body);
 
         if (decoded is Map && decoded['data'] is List) {
           return decoded['data'] as List<dynamic>;
         } else {
-          print('Unexpected JSON structure');
           return [];
         }
       } else {
         return [];
       }
     } catch (e) {
-      print("Error fetching data: $e");
       return [];
     }
   }

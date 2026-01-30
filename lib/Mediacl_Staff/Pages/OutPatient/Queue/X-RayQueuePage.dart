@@ -11,7 +11,7 @@ class XRayQueuePage extends StatefulWidget {
   const XRayQueuePage({super.key});
 
   @override
-  _XRayQueuePageState createState() => _XRayQueuePageState();
+  State<XRayQueuePage> createState() => _XRayQueuePageState();
 }
 
 class _XRayQueuePageState extends State<XRayQueuePage> {
@@ -114,7 +114,7 @@ class _XRayQueuePageState extends State<XRayQueuePage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -195,7 +195,7 @@ class _XRayQueuePageState extends State<XRayQueuePage> {
                   border: Border.all(color: primaryColor, width: 2),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
@@ -309,10 +309,10 @@ class _XRayQueuePageState extends State<XRayQueuePage> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: primaryColor.withOpacity(0.7)),
+              border: Border.all(color: primaryColor.withValues(alpha: 0.7)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black45.withOpacity(0.35),
+                  color: Colors.black45.withValues(alpha: 0.35),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),

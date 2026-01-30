@@ -16,8 +16,7 @@ class GynPage extends StatefulWidget {
   final int mode;
   // final Function(bool) onRefresh;
 
-  const GynPage({Key? key, required this.record, required this.mode})
-    : super(key: key);
+  const GynPage({super.key, required this.record, required this.mode});
 
   @override
   State<GynPage> createState() => _GynPageState();
@@ -186,26 +185,32 @@ class _GynPageState extends State<GynPage> with SingleTickerProviderStateMixin {
         'queueStatus': 'COMPLETED',
       });
 
-      // ✅ Show success snackbar
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('GYN marked as Completed ✅'),
-          backgroundColor: primaryColor,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('GYN marked as Completed ✅'),
+            backgroundColor: primaryColor,
+          ),
+        );
+      }
 
       // await widget.onRefresh(true);
       // ✅ Update the current record
       // xrayRefreshNotifier.value = true;
-      Navigator.pop(context, true);
+      if (mounted) Navigator.pop(context, true);
 
       setState(() {
         isCompleted = true;
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     } finally {
       setState(() => _isLoading = false); // <-- Stop loading
     }
@@ -231,20 +236,24 @@ class _GynPageState extends State<GynPage> with SingleTickerProviderStateMixin {
         });
       }
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('GYN Report Submitted ✅'),
-          backgroundColor: primaryColor,
-        ),
-      );
-      Navigator.pop(context, true);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('GYN Report Submitted ✅'),
+            backgroundColor: primaryColor,
+          ),
+        );
+      }
+      if (mounted) Navigator.pop(context, true);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('$e Error: failed to submit GYN Report'),
-          backgroundColor: primaryColor,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$e Error: failed to submit GYN Report'),
+            backgroundColor: primaryColor,
+          ),
+        );
+      }
     } finally {
       setState(() => _isLoading = false);
     }
@@ -287,12 +296,12 @@ class _GynPageState extends State<GynPage> with SingleTickerProviderStateMixin {
     // final doctorId = record['doctor_Id'] != null
     //     ? (record['doctor_Id'] as List).join(", ")
     //     : 'N/A';
-    final hospitalAdmins = record['Hospital']?['Admins'];
-    List<Map<String, dynamic>> adminList = [];
-    adminList = [];
-    if (hospitalAdmins is List) {
-      adminList = hospitalAdmins.whereType<Map<String, dynamic>>().toList();
-    }
+    // final hospitalAdmins = record['Hospital']?['Admins'];
+    // List<Map<String, dynamic>> adminList = [];
+    //
+    // if (hospitalAdmins is List) {
+    //   adminList = hospitalAdmins.whereType<Map<String, dynamic>>().toList();
+    // }
 
     final doctorIdList = patient['doctor']?['id'] ?? '-';
     String doctorId = '';
@@ -832,12 +841,14 @@ class _GynPageState extends State<GynPage> with SingleTickerProviderStateMixin {
                         );
                       });
 
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text("${picked.length} image(s) added"),
-                          backgroundColor: primaryColor,
-                        ),
-                      );
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text("${picked.length} image(s) added"),
+                            backgroundColor: primaryColor,
+                          ),
+                        );
+                      }
                     }
                   },
                   icon: const Icon(Icons.attach_file, color: Colors.white),
@@ -869,12 +880,14 @@ class _GynPageState extends State<GynPage> with SingleTickerProviderStateMixin {
 
                     if (picked != null) {
                       if (pickedImages.length + 1 > 6) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Maximum 6 images allowed!"),
-                            backgroundColor: Colors.redAccent,
-                          ),
-                        );
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Maximum 6 images allowed!"),
+                              backgroundColor: Colors.redAccent,
+                            ),
+                          );
+                        }
                         return;
                       }
 
@@ -882,12 +895,14 @@ class _GynPageState extends State<GynPage> with SingleTickerProviderStateMixin {
                         pickedImages.add(File(picked.path));
                       });
 
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text("1 image added from Camera"),
-                          backgroundColor: primaryColor,
-                        ),
-                      );
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text("1 image added from Camera"),
+                            backgroundColor: primaryColor,
+                          ),
+                        );
+                      }
                     }
                   },
                   icon: const Icon(Icons.camera_alt, color: Colors.white),

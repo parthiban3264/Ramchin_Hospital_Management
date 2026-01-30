@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../Admin/Colors/Colors.dart';
+import '../../Admin/Colors/custom_colors.dart';
 
 class PatientAppbarDesktop extends StatelessWidget {
   const PatientAppbarDesktop({

@@ -225,7 +225,7 @@ class _AssignFeesPageState extends State<AssignFeesPage> {
                                     () => isDeleteButtonLoading = true,
                                   );
                                   await service.deleteFee(fee["id"]);
-                                  Navigator.pop(context);
+                                  if (context.mounted) Navigator.pop(context);
                                   loadFees();
                                 },
                           child: isDeleteButtonLoading
@@ -285,7 +285,7 @@ class _AssignFeesPageState extends State<AssignFeesPage> {
                                   await service.updateFee(fee["id"], payload);
                                 }
 
-                                Navigator.pop(context);
+                                if (context.mounted) Navigator.pop(context);
                                 loadFees();
                               },
                         child: isFeeButtonLoading
@@ -404,7 +404,7 @@ class _AssignFeesPageState extends State<AssignFeesPage> {
                                 double.tryParse(inPatientAmountCtrl.text) ?? 0,
                           });
 
-                          Navigator.pop(context);
+                          if (context.mounted) Navigator.pop(context);
                           loadFees();
                         },
                   child: isDoctorButtonLoading
@@ -446,7 +446,7 @@ class _AssignFeesPageState extends State<AssignFeesPage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),
@@ -519,7 +519,9 @@ class _AssignFeesPageState extends State<AssignFeesPage> {
                       leading: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFBF955E).withOpacity(0.15),
+                          color: const Color(
+                            0xFFBF955E,
+                          ).withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: const Icon(
@@ -584,7 +586,9 @@ class _AssignFeesPageState extends State<AssignFeesPage> {
                         width: 48,
                         height: 48,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFBF955E).withOpacity(0.15),
+                          color: const Color(
+                            0xFFBF955E,
+                          ).withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         alignment: Alignment.center,

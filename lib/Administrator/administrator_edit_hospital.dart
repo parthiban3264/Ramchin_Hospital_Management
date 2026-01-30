@@ -136,15 +136,19 @@ class _AdministratorEditHospitalState extends State<AdministratorEditHospital> {
     if (success) {
       widget.onHospitalUpdated?.call();
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Hospital Updated!")));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Hospital Updated!")));
+      }
 
       // Navigator.pop(context, true);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Failed to Update Hospital")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Failed to Update Hospital")),
+        );
+      }
     }
   }
 
@@ -165,7 +169,7 @@ class _AdministratorEditHospitalState extends State<AdministratorEditHospital> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -227,7 +231,7 @@ class _AdministratorEditHospitalState extends State<AdministratorEditHospital> {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.15),
+                          color: Colors.black.withValues(alpha: 0.15),
                           blurRadius: 10,
                           offset: const Offset(0, 5),
                         ),
@@ -290,7 +294,7 @@ class _AdministratorEditHospitalState extends State<AdministratorEditHospital> {
                 borderRadius: BorderRadius.circular(18),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
+                    color: Colors.black.withValues(alpha: 0.08),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),
@@ -353,7 +357,7 @@ class _AdministratorEditHospitalState extends State<AdministratorEditHospital> {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),

@@ -102,7 +102,7 @@ class _PatientPaymentState extends State<PatientPayment> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -189,21 +189,21 @@ class _PatientPaymentState extends State<PatientPayment> {
             borderRadius: BorderRadius.circular(20),
             gradient: LinearGradient(
               colors: [
-                Colors.white.withOpacity(0.75),
-                Colors.white.withOpacity(0.55),
+                Colors.white.withValues(alpha: 0.75),
+                Colors.white.withValues(alpha: 0.55),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black26.withOpacity(0.08),
+                color: Colors.black26.withValues(alpha: 0.08),
                 blurRadius: 15,
                 offset: const Offset(0, 6),
               ),
             ],
             border: Border.all(
-              color: Colors.white.withOpacity(0.4),
+              color: Colors.white.withValues(alpha: 0.4),
               width: 1.2,
             ),
           ),
@@ -215,14 +215,17 @@ class _PatientPaymentState extends State<PatientPayment> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [feeC.withOpacity(0.85), feeC.withOpacity(0.55)],
+                    colors: [
+                      feeC.withValues(alpha: 0.85),
+                      feeC.withValues(alpha: 0.55),
+                    ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: feeC.withOpacity(0.35),
+                      color: feeC.withValues(alpha: 0.35),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -263,11 +266,11 @@ class _PatientPaymentState extends State<PatientPayment> {
                             vertical: 5,
                           ),
                           decoration: BoxDecoration(
-                            color: statusColor.withOpacity(0.12),
+                            color: statusColor.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
-                                color: statusColor.withOpacity(0.30),
+                                color: statusColor.withValues(alpha: 0.30),
                                 blurRadius: 2,
                                 spreadRadius: 0.6,
                               ),

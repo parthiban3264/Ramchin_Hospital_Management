@@ -262,18 +262,25 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
         _completedList[widget.currentIndex] = true;
       });
 
-      Navigator.pop(context, true);
+      if (mounted) {
+        Navigator.pop(context, true);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Test marked as Completed ✅'),
-          backgroundColor: primaryColor,
-        ),
-      );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Test marked as Completed ✅'),
+            backgroundColor: primaryColor,
+          ),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     } finally {
       setState(() => _isLoading = false);
     }
@@ -345,17 +352,25 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
           'updatedAt': _dateTime,
         });
       }
-      Navigator.pop(context, true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('All Lab Tests marked as Submitted ✅'),
-          backgroundColor: primaryColor,
-        ),
-      );
+
+      if (mounted) {
+        Navigator.pop(context, true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('All Lab Tests marked as Submitted ✅'),
+            backgroundColor: primaryColor,
+          ),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     } finally {
       setState(() => _isLoading = false);
     }
@@ -1141,7 +1156,7 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
                       ],
                     ),
                   );
-                }).toList(),
+                }),
 
                 if (selectedOptions.length > 2)
                   TextButton.icon(
@@ -1173,7 +1188,7 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
         SizedBox(
           width: 120,
           child: Text(
-            label + " :",
+            "$label :",
             style: TextStyle(
               color: Colors.grey[800],
               fontWeight: FontWeight.w600,

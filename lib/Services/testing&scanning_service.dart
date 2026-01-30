@@ -92,7 +92,6 @@ class TestingScanningService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final decoded = jsonDecode(response.body);
-        print('decoded ${decoded['data']}');
 
         if (decoded['status'] == 'success' && decoded['data'] != null) {
           // Filter only paymentStatus == false

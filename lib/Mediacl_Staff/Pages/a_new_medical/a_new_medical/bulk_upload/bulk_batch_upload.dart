@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:hospitrax/Admin/Pages/AdminEditProfilePage.dart';
+import 'package:hospitrax/Admin/Pages/admin_edit_profile_page.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../../../utils/utils.dart';

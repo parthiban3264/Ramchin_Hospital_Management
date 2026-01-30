@@ -13,7 +13,7 @@ class SymptomsPage extends StatefulWidget {
   final int index;
 
   const SymptomsPage({
-    Key? key,
+    super.key,
     required this.patient,
     required this.consultationId,
     required this.sugarData,
@@ -22,10 +22,10 @@ class SymptomsPage extends StatefulWidget {
     required this.mode,
     required this.history,
     required this.index,
-  }) : super(key: key);
+  });
 
   @override
-  _SymptomsPageState createState() => _SymptomsPageState();
+  State<SymptomsPage> createState() => _SymptomsPageState();
 }
 
 class _SymptomsPageState extends State<SymptomsPage> {
@@ -172,7 +172,7 @@ class _SymptomsPageState extends State<SymptomsPage> {
   }
 
   Future<void> _submitPatient() async {
-    final missingFields = <String>[];
+    // final missingFields = <String>[];
 
     // 🔹 If sugar test is required but not filled
     // if (widget.sugarData == true && sugarController.text.trim().isEmpty) {
@@ -220,19 +220,18 @@ class _SymptomsPageState extends State<SymptomsPage> {
       // });
       final Id = widget.consultationId;
 
-      print(Id);
       final UpdateResult = await ConsultationService().updateConsultation(Id, {
         "symptoms": true,
         "height": int.tryParse(heightController.text) ?? 0,
         "weight": int.tryParse(weightController.text) ?? 0,
-        "bp": bpController.text ?? "",
-        "sugar": sugarController.text ?? "",
+        "bp": bpController.text,
+        "sugar": sugarController.text,
         "SPO2": int.tryParse(SpO2Controller.text) ?? 0,
         "PK": int.tryParse(pkController.text) ?? 0,
-        "BMI": calculateBMI() ?? 0,
+        "BMI": calculateBMI(),
         "temperature": int.tryParse(tempController.text) ?? 0,
       });
-      print(UpdateResult);
+
       if (UpdateResult['status'] == 'success') {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -245,7 +244,6 @@ class _SymptomsPageState extends State<SymptomsPage> {
         if (mounted) Navigator.pop(context, true);
       }
     } catch (e) {
-      print(e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -261,7 +259,6 @@ class _SymptomsPageState extends State<SymptomsPage> {
 
   @override
   Widget build(BuildContext context) {
-    print('print ${widget.consultationData}');
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: PreferredSize(

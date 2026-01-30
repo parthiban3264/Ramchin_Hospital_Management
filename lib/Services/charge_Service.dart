@@ -16,7 +16,7 @@ class ChargeService {
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({"status": status, 'chargesId': chargesIds}),
     );
-    print('response: ${response.body}');
+
     if (response.statusCode == 200 || response.statusCode == 201) {
       return true;
     } else {
@@ -36,7 +36,7 @@ class ChargeService {
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({'chargesId': chargesIds, 'amount': amount}),
     );
-    print('response: ${response.body}');
+
     if (response.statusCode == 200 || response.statusCode == 201) {
       return true;
     } else {
@@ -58,7 +58,7 @@ class ChargeService {
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({"status": status}),
     );
-    print('response: ${response.body}');
+
     if (response.statusCode == 200 || response.statusCode == 201) {
       return true;
     } else {

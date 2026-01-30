@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../../Admin/Pages/AdminEditProfilePage.dart';
+import '../../../../../Admin/Pages/admin_edit_profile_page.dart';
 import '../../../../../Pages/NotificationsPage.dart';
 
 String formatDob(String? dob) {

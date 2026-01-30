@@ -74,14 +74,14 @@ class PatientDescriptionPageState extends State<PatientDescriptionPage>
 
   static void onSavedTests(Map<String, Map<String, dynamic>> savedTest) {
     savedTests = savedTest;
-    print(savedTests);
+
     //{Blood Test: {options: {Dengue, RBC Count, VDRL, WBC Count}, selectedOptionsAmount: {Dengue: 150, RBC Count: 100, VDRL: 1000, WBC Count: 200}, description: , totalAmount: 1450}, Vitamin B12: {options: {Serum B12}, selectedOptionsAmount: {Serum B12: 250}, description: , totalAmount: 250}}
     onUpdated?.call();
   }
 
   static void onSavedScans(Map<String, Map<String, dynamic>> savedScan) {
     savedScans = savedScan;
-    print(savedScans);
+
     //{CT-Scan: {options: {Brain, Chest}, selectedOptionsAmount: {Brain: 100, Chest: 150}, description: , totalAmount: 250}, ECG: {options: {E.C.G}, selectedOptionsAmount: {E.C.G: 200}, description: , totalAmount: 200}, OBSTETRICS: {options: {Detailed Anomaly Scan / TIFFA (20–24 Weeks), Fetal Echocardiography}, selectedOptionsAmount: {Detailed Anomaly Scan / TIFFA (20–24 Weeks): 100, Fetal Echocardiography: 108}, description: , totalAmount: 208}, X-Ray: {options: {Foot}, selectedOptionsAmount: {Foot: 150}, description: , totalAmount: 150}}
     onUpdated?.call();
   }
@@ -90,7 +90,7 @@ class PatientDescriptionPageState extends State<PatientDescriptionPage>
     required List<Map<String, dynamic>> submittedMedicine,
   }) {
     submittedMedicines = submittedMedicine;
-    print(submittedMedicines);
+
     //[{name: paracetamol , price: 1.96, qtyPerDose: 1.0, afterEat: true, morning: true, afternoon: false, night: true, days: 10, weeks: 0, months: 0, total: 39.2, medicineId: 4, route: Tablet, batch_No: 01, medicine_Id: 4, batch_Id: 01, dosage: 1 tablet, frequency: once, total_quantity: 20, after_food: true, instructions: , quantityNeeded: 20.0, quantity: 20}, {name: insulin, price: 382.0, qtyPerDose: 1.0, afterEat: true, morning: true, afternoon: false, night: true, days: 2, weeks: 0, months: 0, total: 1528.0, medicineId: 6, route: INJECTION, batch_No: 01, medicine_Id: 6, batch_Id: 01, dosage: 1 tablet, frequency: once, total_quantity: 4, after_food: true, instructions: , quantityNeeded: 4.0, quantity: 4}, {name: caugh 100 ml, price: 24.96, qtyPerDose: 1.0, afterEat: true, morning: true, afternoon: false, night: true, days: 20, weeks: 0, months: 0, total: 998.4000000000001, medicineId: 5, route: Syrup, batch_No: 01, medicine_Id: 5, batch_Id: 01, dosage: 1 tablet, frequency: once, total_quantity: 40, after_food:
 
     onUpdated?.call();
@@ -1308,13 +1308,15 @@ class PatientDescriptionPageState extends State<PatientDescriptionPage>
         'queueStatus': 'COMPLETED',
         'updatedAt': dateTime.toString(),
       });
-      Navigator.pop(context, true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Scan submitted!"),
-          backgroundColor: Colors.green,
-        ),
-      );
+      if (mounted) {
+        Navigator.pop(context, true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Scan submitted!"),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

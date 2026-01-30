@@ -196,7 +196,9 @@ class _TrackingPatientStatusState extends State<TrackingPatientStatus> {
                             ),
                             child: ListTile(
                               leading: CircleAvatar(
-                                backgroundColor: primaryColor.withOpacity(0.15),
+                                backgroundColor: primaryColor.withValues(
+                                  alpha: 0.15,
+                                ),
                                 child: Text(
                                   "${item['tokenNo'] ?? '-'}", // Show token number here
                                   style: const TextStyle(
@@ -245,7 +247,7 @@ class _TrackingPatientStatusState extends State<TrackingPatientStatus> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(

@@ -599,12 +599,7 @@ class _AddAdminPageState extends State<AddAdminPage> {
                 if (staff['user_Id'] != null &&
                     staff['user_Id'].toString().isNotEmpty)
                   Text('User Id: ${staff['user_Id']}'),
-                Text(
-                  'Role: ${staff['role']}',
-                  style: TextStyle(
-                    color: isInactive ? Colors.red.shade700 : Colors.black87,
-                  ),
-                ),
+
                 Text('Phone: ${staff['phone'] ?? '-'}'),
                 if (isInactive)
                   Padding(
@@ -652,7 +647,7 @@ class _AddAdminPageState extends State<AddAdminPage> {
       ),
     );
 
-    if (confirmed == true) {
+    if (confirmed == true && context.mounted) {
       _deleteStaff(context, staff['id']);
     }
   }
@@ -663,7 +658,7 @@ class _AddAdminPageState extends State<AddAdminPage> {
     if (res['status'] == 'success') {
       _adminLoad();
     } else {
-      _showDeleteFailedDialog(context, staffId);
+      if (context.mounted) _showDeleteFailedDialog(context, staffId);
     }
   }
 

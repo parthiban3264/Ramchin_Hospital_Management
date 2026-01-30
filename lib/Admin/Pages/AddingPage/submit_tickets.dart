@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:hospitrax/utils/utils.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../Mediacl_Staff/Pages/OutPatient/Page/InjectionPage.dart';
+import '../../../Mediacl_Staff/Pages/OutPatient/Page/injection_page.dart';
 import '../../../Pages/NotificationsPage.dart';
 
 class SubmitTicketPage extends StatefulWidget {

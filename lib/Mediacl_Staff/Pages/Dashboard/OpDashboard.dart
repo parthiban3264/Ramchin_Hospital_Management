@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../Services/admin_service.dart';
 import '../OutPatient/patient_registration/PatientRegistrationPage.dart';
 import '../OutPatient/Queue/InjectionQueuePage.dart';
-import '../OutPatient/Queue/OpQueuePage.dart';
+import '../OutPatient/Queue/op_queue_page.dart';
 import '../OutPatient/Queue/SymptomsQueuePage.dart';
 
 class OpDashboardPage extends StatefulWidget {
@@ -121,7 +121,7 @@ class _OpDashboardPageState extends State<OpDashboardPage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(22),
                     ),
-                    color: Colors.white.withOpacity(0.95),
+                    color: Colors.white.withValues(alpha: 0.95),
                     elevation: 8,
                     shadowColor: Colors.black26,
                     child: Padding(
@@ -261,7 +261,7 @@ class _OpDashboardPageState extends State<OpDashboardPage> {
             Color(0xFFEDBA77),
             Color(0xFFC59A62),
             // Color(0xFFEDBA77),
-          ], //customGold.withOpacity(0.8)
+          ], //customGold.withValues(alpha:0.8)
           begin: Alignment.topLeft,
           end: Alignment.bottomLeft,
         ),
@@ -342,7 +342,7 @@ class _OpDashboardPageState extends State<OpDashboardPage> {
               // ★ Smooth depth shadow
               boxShadow: [
                 BoxShadow(
-                  color: Colors.brown.withOpacity(0.15),
+                  color: Colors.brown.withValues(alpha: 0.15),
                   blurRadius: 10,
                   offset: const Offset(0, 5),
                 ),

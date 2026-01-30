@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import 'Administartor_EditHospital.dart';
-import 'Administrator_AddPage.dart';
-import 'Administrator_Block.dart';
-import 'Adminstrator_Payment_Histroy.dart';
+import 'administrator_edit_hospital.dart';
+import 'administrator_add_page.dart';
+import 'administrator_block.dart';
+
 import 'Adminstrator_Tickets.dart';
+import 'administrator_payment_history.dart';
 
 class AdministratorManagePage extends StatefulWidget {
   final Map<String, dynamic> hospitalData;
@@ -46,7 +47,7 @@ class _AdministratorManagePageState extends State<AdministratorManagePage> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(22),
                 ),
-                color: Colors.white.withOpacity(0.95),
+                color: Colors.white.withValues(alpha: 0.95),
                 elevation: 8,
                 shadowColor: Colors.black26,
                 child: Padding(
@@ -209,7 +210,7 @@ class _AdministratorManagePageState extends State<AdministratorManagePage> {
               border: Border.all(color: Color(0xFFBF955E), width: 1.4),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.brown.withOpacity(0.15),
+                  color: Colors.brown.withValues(alpha: 0.15),
                   blurRadius: 10,
                   offset: const Offset(0, 5),
                 ),

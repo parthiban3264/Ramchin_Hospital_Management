@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../Admin/Pages/AdminEditProfilePage.dart';
+import '../Admin/Pages/admin_edit_profile_page.dart';
 import '../Pages/NotificationsPage.dart';
 
 class AdministratorTickets extends StatefulWidget {
@@ -26,7 +26,7 @@ class _AdministratorTicketsState extends State<AdministratorTickets> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),

@@ -140,7 +140,7 @@ class _OtherCardState extends State<OtherCard> {
                 width: double.infinity,
                 child: Card(
                   elevation: 5,
-                  shadowColor: Colors.blue.withOpacity(0.15),
+                  shadowColor: Colors.blue.withValues(alpha: 0.15),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(22),
                   ),

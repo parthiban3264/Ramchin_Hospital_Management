@@ -6,7 +6,7 @@ import '../../../../Services/payment_service.dart';
 import '../Page/SymptomsPage.dart';
 
 class SymptomsQueuePage extends StatefulWidget {
-  const SymptomsQueuePage({Key? key}) : super(key: key);
+  const SymptomsQueuePage({super.key});
 
   @override
   State<SymptomsQueuePage> createState() => _SymptomsQueuePageState();

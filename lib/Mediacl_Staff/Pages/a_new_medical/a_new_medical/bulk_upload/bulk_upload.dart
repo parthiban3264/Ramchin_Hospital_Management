@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../../../Admin/Pages/AdminEditProfilePage.dart';
+import '../../../../../Admin/Pages/admin_edit_profile_page.dart';
 import '../../../../../Appbar/MobileAppbar.dart';
 import '../medicines/widget/widget.dart';
 import 'bulk_batch_upload.dart';

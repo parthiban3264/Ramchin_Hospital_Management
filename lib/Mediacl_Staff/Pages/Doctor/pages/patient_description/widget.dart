@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hospitrax/Mediacl_Staff/Pages/Doctor/pages/patient_description/patient_description_page.dart';
 
-import '../../../../../Admin/Pages/AdminEditProfilePage.dart';
+import '../../../../../Admin/Pages/admin_edit_profile_page.dart';
 import '../../../../../Services/admin_service.dart';
 import 'doctor_prescription_page.dart';
 import 'scanning_page.dart';

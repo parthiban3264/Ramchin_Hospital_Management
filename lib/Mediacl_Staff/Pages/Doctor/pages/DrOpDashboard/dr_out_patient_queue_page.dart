@@ -11,7 +11,6 @@ import '../../../../../Services/consultation_service.dart';
 import '../../../../../Services/socket_service.dart';
 import '../../widgets/doctor_description_edit.dart';
 import '../patient_description/patient_description_page.dart';
-import '../patient_description_page.dart';
 
 class DrOutPatientQueuePage extends StatefulWidget {
   final String role;

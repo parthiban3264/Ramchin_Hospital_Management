@@ -67,8 +67,8 @@ class _DoctorConsultationPageState extends State<DoctorConsultationPage> {
   List<Map<String, dynamic>> _staffList = [];
   Set<String> _selectedStaffIds = {};
 
-  List<Map<String, dynamic>> _medicines = [];
-  List<Map<String, dynamic>> _injections = [];
+  final List<Map<String, dynamic>> _medicines = [];
+  final List<Map<String, dynamic>> _injections = [];
 
   @override
   void initState() {
@@ -113,10 +113,11 @@ class _DoctorConsultationPageState extends State<DoctorConsultationPage> {
     );
     if (picked != null) {
       setState(() {
-        if (isStart)
+        if (isStart) {
           _startDate = picked;
-        else
+        } else {
           _endDate = picked;
+        }
       });
     }
   }
@@ -224,15 +225,19 @@ class _DoctorConsultationPageState extends State<DoctorConsultationPage> {
         });
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('✅ Consultation & Orders saved successfully'),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Consultation & Orders saved successfully'),
+          ),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('❌ Error saving: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('❌ Error saving: $e')));
+      }
     } finally {
       setState(() => _isSaving = false);
     }

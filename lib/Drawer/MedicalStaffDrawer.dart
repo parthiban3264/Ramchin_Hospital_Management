@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:hospitrax/Admin/Pages/AdminProfilePage.dart';
+import 'package:hospitrax/Admin/Pages/admin_profile_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../Admin/Colors/Colors.dart';
-import '../Admin/Pages/AdminEditProfilePage.dart';
-import '../Admin/Pages/changePasswordPage.dart';
-import '../Admin/Pages/globals.dart';
+import '../../Admin/Colors/custom_colors.dart';
+import '../Admin/Pages/admin_edit_profile_page.dart';
+import '../Admin/Pages/change_password_page.dart';
 import '../Pages/NotificationsPage.dart';
 import '../Pages/login/widget/HospitalLoginPage.dart';
 import '../Services/auth_service.dart';
@@ -95,8 +94,9 @@ class _MedicalStaffMobileDrawerState extends State<MedicalStaffMobileDrawer> {
 
   Future<void> userIdload() async {
     final prefs = await SharedPreferences.getInstance();
+    final storedUserId = prefs.getString('userId');
 
-    final storedUserId = await prefs.getString('userId');
+    if (!mounted) return;
 
     setState(() {
       userId = storedUserId;
@@ -107,14 +107,12 @@ class _MedicalStaffMobileDrawerState extends State<MedicalStaffMobileDrawer> {
     setState(() {
       selectedIndex = index;
     });
-    Navigator.pop(context); // Close the drawer
+
+    Navigator.pop(context); // Close drawer
+
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => drawerItems[index]["page"]),
-    ).then(
-      (_) => setState(() {
-        selectedIndex = 0;
-      }),
     );
   }
 
@@ -157,25 +155,19 @@ class _MedicalStaffMobileDrawerState extends State<MedicalStaffMobileDrawer> {
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             // 🔹 Reactive CircleAvatar
-                            ValueListenableBuilder<String>(
-                              valueListenable:
-                                  staffPhotoNotifier, // global ValueNotifier
-                              builder: (context, value, child) {
-                                return CircleAvatar(
-                                  radius: 30,
-                                  backgroundColor: CustomColors.customGold,
-                                  backgroundImage: (value.isNotEmpty)
-                                      ? NetworkImage(value)
-                                      : null,
-                                  child: (value.isEmpty)
-                                      ? const Icon(
-                                          Icons.local_hospital,
-                                          color: Colors.white,
-                                          size: 30,
-                                        )
-                                      : null,
-                                );
-                              },
+                            CircleAvatar(
+                              radius: 30,
+                              backgroundColor: CustomColors.customGold,
+                              backgroundImage: (widget.staffPhoto.isNotEmpty)
+                                  ? NetworkImage(widget.staffPhoto)
+                                  : null,
+                              child: (widget.staffPhoto.isEmpty)
+                                  ? const Icon(
+                                      Icons.local_hospital,
+                                      color: Colors.white,
+                                      size: 30,
+                                    )
+                                  : null,
                             ),
 
                             const SizedBox(width: 16),
@@ -233,7 +225,7 @@ class _MedicalStaffMobileDrawerState extends State<MedicalStaffMobileDrawer> {
                     ),
                     decoration: BoxDecoration(
                       color: selected
-                          ? Colors.white.withOpacity(0.3)
+                          ? Colors.white.withValues(alpha: 0.3)
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -286,17 +278,20 @@ class _MedicalStaffMobileDrawerState extends State<MedicalStaffMobileDrawer> {
 
                   await AuthService().logout(); // logout API call
                   await prefs.clear(); // clear all local storage
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const HospitalLoginPage(),
-                    ),
-                  );
+                  if (context.mounted) {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const HospitalLoginPage(),
+                      ),
+                    );
+                  }
                 } catch (e) {
-                  // Optional: show error message
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text('Logout failed: $e')));
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Logout failed: $e')),
+                    );
+                  }
                 }
               },
             ),

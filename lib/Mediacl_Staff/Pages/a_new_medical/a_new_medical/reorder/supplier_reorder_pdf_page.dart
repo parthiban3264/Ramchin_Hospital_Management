@@ -8,7 +8,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
-import '../../../../../Admin/Pages/AdminEditProfilePage.dart';
+import '../../../../../Admin/Pages/admin_edit_profile_page.dart';
 
 class SupplierReorderPdfPage extends StatefulWidget {
   final String? hospitalName;

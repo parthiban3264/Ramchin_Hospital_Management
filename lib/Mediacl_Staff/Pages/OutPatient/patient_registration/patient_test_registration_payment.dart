@@ -316,7 +316,7 @@ class TestRegistrationAndPaymentState
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  List<Map<String, dynamic>> _collectedTestScanItems = [];
+  final List<Map<String, dynamic>> _collectedTestScanItems = [];
   Map<String, dynamic>? _sharedPayment;
 
   Future<void> _submitTestsOrScans({
@@ -393,7 +393,7 @@ class TestRegistrationAndPaymentState
           _sharedPayment = latestPayment;
         }
       }
-      print('payment21: $_sharedPayment');
+
       if (_sharedPayment != null && mounted) {
         setState(() {
           paymentData = {
@@ -871,7 +871,7 @@ class TestRegistrationAndPaymentState
               );
             }
 
-            if (title == 'Tests') {
+            if (title == 'Tests' && context.mounted) {
               await showModalBottomSheet(
                 context: context,
                 isScrollControlled: true,

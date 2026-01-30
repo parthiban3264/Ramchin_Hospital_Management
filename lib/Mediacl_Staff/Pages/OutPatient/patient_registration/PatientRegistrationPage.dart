@@ -7,7 +7,7 @@ import 'package:hospitrax/Mediacl_Staff/Pages/OutPatient/patient_registration/wi
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../../Admin/Pages/AdminEditProfilePage.dart';
+import '../../../../Admin/Pages/admin_edit_profile_page.dart';
 import '../../../../Services/Doctor/doctor_service.dart';
 import '../../../../Services/consultation_service.dart';
 import '../../../../Services/patient_service.dart';
@@ -970,13 +970,30 @@ class _PatientRegistrationPagesState extends State<PatientRegistrationPages> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            p['name'] ?? '',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  p['name'] ?? '',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              Spacer(),
+                              Text(
+                                '# ${p['id'].toString() ?? ''}',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
                           ),
+
                           const SizedBox(height: 6),
                           Wrap(
                             spacing: 8,

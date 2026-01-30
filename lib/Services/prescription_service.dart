@@ -42,7 +42,7 @@ class PrescriptionService {
             body: jsonEncode(payload),
           )
           .timeout(const Duration(seconds: 15));
-      print('create medicinee ${response.body}');
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         return jsonDecode(response.body) as Map<String, dynamic>;
       }
@@ -69,7 +69,7 @@ class PrescriptionService {
       headers: headers,
       body: jsonEncode(payload),
     );
-    print('createPrescriptionDispense ${response.body}');
+
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body);
     }

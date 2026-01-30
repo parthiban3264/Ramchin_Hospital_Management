@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:month_picker_dialog/month_picker_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../Mediacl_Staff/Pages/OutPatient/Page/InjectionPage.dart';
+import '../../../Mediacl_Staff/Pages/OutPatient/Page/injection_page.dart';
 import '../../../Pages/NotificationsPage.dart';
 import '../../../Services/payment_service.dart';
 

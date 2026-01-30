@@ -97,9 +97,9 @@ class PaymentDetailsPage extends StatelessWidget {
     num sum = 0;
     for (var it in items) {
       final v = it[field];
-      if (v is num)
+      if (v is num) {
         sum += v;
-      else if (v is String) {
+      } else if (v is String) {
         final n = num.tryParse(v) ?? 0;
         sum += n;
       }
@@ -197,7 +197,7 @@ class PaymentDetailsPage extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.15),
+              color: Colors.black.withValues(alpha: 0.15),
               blurRadius: 6,
               offset: const Offset(0, 3),
             ),
@@ -257,11 +257,11 @@ class PaymentDetailsPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         gradient: LinearGradient(
           colors: [
-            Colors.white.withOpacity(0.95),
-            Colors.white.withOpacity(0.8),
+            Colors.white.withValues(alpha: 0.95),
+            Colors.white.withValues(alpha: 0.8),
           ],
         ),
-        border: Border.all(color: Colors.white.withOpacity(0.3)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
         boxShadow: [
           BoxShadow(
             color: Colors.black12,
@@ -295,7 +295,7 @@ class PaymentDetailsPage extends StatelessWidget {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.15),
+                  color: statusColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(30),
                 ),
                 child: Text(
@@ -387,7 +387,7 @@ class PaymentDetailsPage extends StatelessWidget {
             "Qty: $qty • Days: $days",
             "₹$total",
           );
-        }).toList(),
+        }),
       ],
     );
   }
@@ -404,7 +404,7 @@ class PaymentDetailsPage extends StatelessWidget {
           final qty = i["quantity"] ?? 1;
           final total = i["total"] ?? "-";
           return _itemTile(name.toString(), "Qty: $qty", "₹$total");
-        }).toList(),
+        }),
       ],
     );
   }
@@ -425,7 +425,7 @@ class PaymentDetailsPage extends StatelessWidget {
             "Qty: $qty • Dose: $dose",
             "₹$total",
           );
-        }).toList(),
+        }),
       ],
     );
   }
@@ -497,7 +497,7 @@ class PaymentDetailsPage extends StatelessWidget {
                       ],
                     ),
                   );
-                }).toList(),
+                }),
                 const SizedBox(height: 8),
               ],
               Text(

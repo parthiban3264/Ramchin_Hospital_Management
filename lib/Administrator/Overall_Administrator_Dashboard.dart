@@ -12,8 +12,10 @@ import '../Pages/NotificationsPage.dart';
 import '../Services/hospital_Service.dart';
 
 class OverallAdministratorDashPage extends StatefulWidget {
+  const OverallAdministratorDashPage({super.key});
+
   @override
-  _OverallAdministratorDashPageState createState() =>
+  State<OverallAdministratorDashPage> createState() =>
       _OverallAdministratorDashPageState();
 }
 
@@ -152,17 +154,21 @@ class _OverallAdministratorDashPageState
     setState(() => isLoading = false);
 
     if (result["status"] == "success") {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Hospital created successfully")));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Hospital created successfully")),
+        );
+      }
       expandForm = false;
       loadHospitals();
       resetForm();
       setState(() {});
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Failed: ${result['body']}")));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Failed: ${result['body']}")));
+      }
     }
   }
 
@@ -195,7 +201,7 @@ class _OverallAdministratorDashPageState
                   if (img != null) {
                     setState(() => pickedImage = img);
                   }
-                  Navigator.pop(context);
+                  if (mounted) Navigator.pop(context);
                 },
               ),
 
@@ -210,7 +216,7 @@ class _OverallAdministratorDashPageState
                   if (img != null) {
                     setState(() => pickedImage = img);
                   }
-                  Navigator.pop(context);
+                  if (mounted) Navigator.pop(context);
                 },
               ),
             ],
@@ -301,7 +307,7 @@ class _OverallAdministratorDashPageState
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 8,
             offset: Offset(0, 4),
           ),
@@ -438,7 +444,7 @@ class _OverallAdministratorDashPageState
                     border: Border.all(color: Color(0xFFC59A62), width: 1.3),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
+                        color: Colors.black.withValues(alpha: 0.08),
                         blurRadius: 10,
                         offset: Offset(0, 4),
                       ),
@@ -666,13 +672,13 @@ class _OverallAdministratorDashPageState
                                 end: Alignment.bottomCenter,
                               ),
                               border: Border.all(
-                                color: Colors.blueGrey.withOpacity(0.35),
+                                color: Colors.blueGrey.withValues(alpha: 0.35),
                                 width: 1.4,
                               ),
                               borderRadius: BorderRadius.circular(18),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.08),
+                                  color: Colors.black.withValues(alpha: 0.08),
                                   blurRadius: 8,
                                   offset: Offset(0, 4),
                                 ),
@@ -693,11 +699,11 @@ class _OverallAdministratorDashPageState
                                                 Colors.lightGreenAccent,
                                               ]
                                             : [
-                                                Colors.redAccent.withOpacity(
-                                                  0.8,
+                                                Colors.redAccent.withValues(
+                                                  alpha: 0.8,
                                                 ),
-                                                Colors.redAccent.withOpacity(
-                                                  0.7,
+                                                Colors.redAccent.withValues(
+                                                  alpha: 0.7,
                                                 ),
                                               ],
                                       ),

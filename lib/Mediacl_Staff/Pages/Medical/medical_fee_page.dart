@@ -5,10 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../Pages/NotificationsPage.dart';
 import '../../../Pages/payment_modal.dart';
-import '../../../Services/Injection_Service.dart';
 import '../../../Services/Medi_Tonic_Injection_service.dart';
 import '../../../Services/Medicine_Service.dart';
-import '../../../Services/Tonic_Service.dart';
 import '../../../Services/consultation_service.dart';
 import '../../../Services/payment_service.dart';
 import '../../../Services/socket_service.dart';
@@ -316,7 +314,6 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
         //await updateMedicationStatus();
       }
     } catch (e) {
-      print('Payment failed: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -336,8 +333,8 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
 
   @override
   Widget build(BuildContext context) {
-    final Prescription = consultation['Prescription'];
-    print('Prescription $Prescription');
+    // final Prescription = consultation['Prescription'];
+
     final patient = consultation['Patient'] ?? {};
     final doctor = consultation['Doctor'] ?? {};
     // final drAllocatedDays =
@@ -513,7 +510,6 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
         "Total",
       ],
       rows: medicines.map((med) {
-        print('med $med');
         final name = med['medicine']?['name'] ?? 'Medicine';
         // final dispenses = med['dispenses'] ?? [];
         // int totalQty = 0;
@@ -598,7 +594,7 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
       if (m['afternoon'] == true) sessionCount++;
       if (m['night'] == true) sessionCount++;
 
-      final qtyPerTime = (m['dosage']).toString() ?? 0;
+      final qtyPerTime = (m['dosage']).toString();
       final qtyPerTimes = double.parse(qtyPerTime.toString());
 
       final qtyPerDay = qtyPerTimes * sessionCount;
@@ -662,7 +658,7 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
       // final qtyPerTime = (med['dosage'] as num?)?.toDouble() ?? 0;
       //
       // final qtyPerDay = qtyPerTime * sessionCount;
-      final qtyPerTime = (med['dosage']).toString() ?? 0;
+      final qtyPerTime = (med['dosage']).toString();
       final qtyPerTimes = double.parse(qtyPerTime.toString());
 
       final qtyPerDay = qtyPerTimes * sessionCount;
@@ -842,7 +838,7 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
   // -------------------- BILL SUMMARY --------------------
 
   Widget _buildBillSummaryCard(Map patient) {
-    final allMeds = getAllPrescriptionMedicines();
+    // final allMeds = getAllPrescriptionMedicines();
     //final medicineTotal = calculateMedicineTotal(allMeds);
     final patientName = patient['name'] ?? '';
     final phoneNumber = patient['phone']?['mobile'] ?? '';

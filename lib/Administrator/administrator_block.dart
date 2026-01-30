@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hospitrax/Admin/Pages/AdminEditProfilePage.dart';
+import 'package:hospitrax/Admin/Pages/admin_edit_profile_page.dart';
 
 import '../Pages/NotificationsPage.dart';
 import '../Services/hospital_Service.dart';

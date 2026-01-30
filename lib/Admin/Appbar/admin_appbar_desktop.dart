@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../Admin/Colors/Colors.dart';
+import '../../Admin/Colors/custom_colors.dart';
 
 class AdminAppbarDesktop extends StatelessWidget {
   const AdminAppbarDesktop({

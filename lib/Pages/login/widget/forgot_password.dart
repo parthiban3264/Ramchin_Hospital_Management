@@ -4,7 +4,7 @@ import 'package:hospitrax/Pages/login/widget/HospitalLoginPage.dart';
 import 'package:hospitrax/utils/utils.dart';
 import 'package:http/http.dart' as http;
 
-import '../../../Admin/Pages/AdminEditProfilePage.dart';
+import '../../../Admin/Pages/admin_edit_profile_page.dart';
 import '../../NotificationsPage.dart';
 
 class ForgotPasswordPage extends StatefulWidget {

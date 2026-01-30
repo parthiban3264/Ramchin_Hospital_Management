@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/consultation_service.dart';
-import '../Page/InjectionPage.dart';
+import '../Page/injection_page.dart';
 
 class InjectionQueuePage extends StatefulWidget {
   const InjectionQueuePage({super.key});

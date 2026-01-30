@@ -63,8 +63,7 @@ Future<pw.Document> buildPdf({
   final bedNo = fee['Admission']?['bed']['bedNo'].toString() ?? '-';
   final wardName =
       '${fee['Admission']?['bed']['ward']['name']} - '
-          '${fee['Admission']?['bed']['ward']['type']}' ??
-      '-';
+      '${fee['Admission']?['bed']['ward']['type']}';
   final wardNo = fee['Admission']?['bed']['ward']['id'].toString() ?? '-';
   final admitDate =
       fee['Admission']?['admitTime'].toString().split('T').first ?? '-';
@@ -78,7 +77,7 @@ Future<pw.Document> buildPdf({
       ? '-'
       : tokenNo.toString();
 
-  pw.Widget _dashDivider() => pw.LayoutBuilder(
+  pw.Widget dashDivider() => pw.LayoutBuilder(
     builder: (context, constraints) {
       final dashCount = (constraints!.maxWidth / 4).floor();
       return pw.Text('-' * dashCount, textAlign: pw.TextAlign.center);
@@ -87,8 +86,8 @@ Future<pw.Document> buildPdf({
 
   ///===========================charges ------------------------------------
   final admission = fee['Admission'];
-  final bed = admission?['bed'];
-  final ward = bed?['ward'];
+  // final bed = admission?['bed'];
+  // final ward = bed?['ward'];
   final charges = (admission?['charges'] ?? [])
       .where((c) => (c['status'] ?? '').toString().toUpperCase() == 'PAID')
       .toList();
@@ -115,7 +114,7 @@ Future<pw.Document> buildPdf({
     'Nurse Fee': [],
     'Others': [],
   };
-  String _normalize(String s) {
+  String normalize(String s) {
     if (s == 'ROOM RENT') return 'Room Rent';
     if (s == 'DOCTOR FEE') return 'Doctor Fee';
     if (s == 'NURSE FEE') return 'Nurse Fee';
@@ -156,7 +155,7 @@ Future<pw.Document> buildPdf({
     }
 
     if (knownCharges.contains(desc)) {
-      grouped[_normalize(desc)]!.add(c);
+      grouped[normalize(desc)]!.add(c);
     } else {
       grouped['Others']!.add(c);
     }
@@ -174,17 +173,17 @@ Future<pw.Document> buildPdf({
         (num sum, dynamic c) =>
             sum + (num.tryParse(c['amount']?.toString() ?? '0') ?? 0),
       );
-  final num chargePendingAmount = (admission?['charges'] ?? [])
-      .where(
-        (c) =>
-            (c['status'] ?? '').toString().toUpperCase() == 'PENDING' &&
-            c['admissionId'] == fee['Admission']['id'],
-      )
-      .fold<num>(
-        0,
-        (num sum, dynamic c) =>
-            sum + (num.tryParse(c['amount']?.toString() ?? '0') ?? 0),
-      );
+  // final num chargePendingAmount = (admission?['charges'] ?? [])
+  //     .where(
+  //       (c) =>
+  //           (c['status'] ?? '').toString().toUpperCase() == 'PENDING' &&
+  //           c['admissionId'] == fee['Admission']['id'],
+  //     )
+  //     .fold<num>(
+  //       0,
+  //       (num sum, dynamic c) =>
+  //           sum + (num.tryParse(c['amount']?.toString() ?? '0') ?? 0),
+  //     );
 
   final num chargePaidAmount = (admission?['charges'] ?? [])
       .where(
@@ -200,7 +199,7 @@ Future<pw.Document> buildPdf({
             sum + (num.tryParse(c['amount']?.toString() ?? '0') ?? 0),
       );
   final bool isDischarge = fee['type'] == 'DISCHARGEFEE';
-  final num safeAdvance = advanceAmount ?? 0;
+  final num safeAdvance = advanceAmount;
 
   final num diff = chargePaidAmount - safeAdvance;
 
@@ -259,62 +258,62 @@ Future<pw.Document> buildPdf({
     }
   }
 
-  pw.Widget vitalTile({required String label, required String value}) {
-    return pw.Row(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.SizedBox(
-          width: 40,
-          child: pw.Text(
-            "$label :",
-            style: pw.TextStyle(fontSize: 9, color: PdfColors.black),
-          ),
-        ),
+  // pw.Widget vitalTile({required String label, required String value}) {
+  //   return pw.Row(
+  //     crossAxisAlignment: pw.CrossAxisAlignment.start,
+  //     children: [
+  //       pw.SizedBox(
+  //         width: 40,
+  //         child: pw.Text(
+  //           "$label :",
+  //           style: pw.TextStyle(fontSize: 9, color: PdfColors.black),
+  //         ),
+  //       ),
+  //
+  //       pw.Expanded(
+  //         child: pw.Text(
+  //           value,
+  //           style: pw.TextStyle(
+  //             fontSize: 9,
+  //             fontWeight: pw.FontWeight.bold,
+  //             color: PdfColors.grey800,
+  //           ),
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
 
-        pw.Expanded(
-          child: pw.Text(
-            value,
-            style: pw.TextStyle(
-              fontSize: 9,
-              fontWeight: pw.FontWeight.bold,
-              color: PdfColors.grey800,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+  // bool isValid(String? value) {
+  //   return value != null &&
+  //       value.trim() != 'null' &&
+  //       value.trim().isNotEmpty &&
+  //       value.trim() != '0' &&
+  //       value.trim() != 'N/A' &&
+  //       value.trim() != '-' &&
+  //       value.trim() != '_' &&
+  //       value.trim() != '-mg/dL';
+  // }
 
-  bool isValid(String? value) {
-    return value != null &&
-        value.trim() != 'null' &&
-        value.trim().isNotEmpty &&
-        value.trim() != '0' &&
-        value.trim() != 'N/A' &&
-        value.trim() != '-' &&
-        value.trim() != '_' &&
-        value.trim() != '-mg/dL';
-  }
-
-  bool hasAnyVital({
-    String? temperature,
-    String? bloodPressure,
-    String? sugar,
-    String? height,
-    String? weight,
-    String? BMI,
-    String? PK,
-    String? SpO2,
-  }) {
-    return isValid(temperature) ||
-        isValid(bloodPressure) ||
-        isValid(sugar) ||
-        isValid(height) ||
-        isValid(weight) ||
-        isValid(BMI) ||
-        isValid(PK) ||
-        isValid(SpO2);
-  }
+  // bool hasAnyVital({
+  //   String? temperature,
+  //   String? bloodPressure,
+  //   String? sugar,
+  //   String? height,
+  //   String? weight,
+  //   String? BMI,
+  //   String? PK,
+  //   String? SpO2,
+  // }) {
+  //   return isValid(temperature) ||
+  //       isValid(bloodPressure) ||
+  //       isValid(sugar) ||
+  //       isValid(height) ||
+  //       isValid(weight) ||
+  //       isValid(BMI) ||
+  //       isValid(PK) ||
+  //       isValid(SpO2);
+  // }
 
   // pw.Widget buildVitalsDetailsCards({
   //   String? temperature,
@@ -448,7 +447,7 @@ Future<pw.Document> buildPdf({
 
             // HOSPITAL DETAILS
             //pw.Divider(),
-            _dashDivider(),
+            dashDivider(),
 
             // PATIENT INFO
             pw.Text(
@@ -557,7 +556,7 @@ Future<pw.Document> buildPdf({
                         style: pw.TextStyle(fontSize: 9),
                       ),
                       pw.Text(
-                        referredDoctorName ?? '-',
+                        referredDoctorName,
                         style: pw.TextStyle(fontSize: 9),
                       ),
                     ],
@@ -581,7 +580,7 @@ Future<pw.Document> buildPdf({
                 fee['type'] == 'DAILYTREATMENTFEE' ||
                 fee['type'] == 'DISCHARGEFEE') ...[
               //pw.Divider(),
-              _dashDivider(),
+              dashDivider(),
 
               pw.Text(
                 "ADMISSION INFO",
@@ -609,13 +608,13 @@ Future<pw.Document> buildPdf({
                   pw.TableRow(
                     children: [
                       pw.Text("Ward No :", style: pw.TextStyle(fontSize: 9)),
-                      pw.Text(wardNo!, style: pw.TextStyle(fontSize: 9)),
+                      pw.Text(wardNo, style: pw.TextStyle(fontSize: 9)),
                     ],
                   ),
                   pw.TableRow(
                     children: [
                       pw.Text("Bed No : ", style: pw.TextStyle(fontSize: 9)),
-                      pw.Text(bedNo!, style: pw.TextStyle(fontSize: 9)),
+                      pw.Text(bedNo, style: pw.TextStyle(fontSize: 9)),
                     ],
                   ),
                   pw.TableRow(
@@ -624,7 +623,7 @@ Future<pw.Document> buildPdf({
                         "Admit date : ",
                         style: pw.TextStyle(fontSize: 9),
                       ),
-                      pw.Text(admitDate!, style: pw.TextStyle(fontSize: 9)),
+                      pw.Text(admitDate, style: pw.TextStyle(fontSize: 9)),
                     ],
                   ),
                   pw.TableRow(
@@ -662,7 +661,7 @@ Future<pw.Document> buildPdf({
             //       SpO2: SpO2,
             //     ),
             //pw.Divider(),
-            _dashDivider(),
+            dashDivider(),
 
             // HEADLINE
             pw.Text(
@@ -722,7 +721,7 @@ Future<pw.Document> buildPdf({
                   1: const pw.FlexColumnWidth(1),
                 },
                 children: buildAdvancedFeeRows(
-                  AdvancedFee: fee['amount'],
+                  advancedFee: fee['amount'],
                   // consultationFee:
                   // fee['Consultation']?['consultationFee'] +
                   //     fee['Consultation']?['registrationFee'],
@@ -908,13 +907,13 @@ Future<pw.Document> buildPdf({
                 children: [
                   if (advanceAmount > 0) ...[
                     //pw.Divider(thickness: 1.5, height: 6),
-                    _dashDivider(),
+                    dashDivider(),
                     feeRowAdvance(title: 'Advance', amount: advanceAmount),
                   ],
                 ],
               ),
             //pw.Divider(),
-            _dashDivider(),
+            dashDivider(),
 
             // TOTAL
             pw.Row(
@@ -1098,10 +1097,9 @@ List<pw.TableRow> buildFeeRows({
   return rows;
 }
 
-List<pw.TableRow> buildAdvancedFeeRows({required num AdvancedFee}) {
+List<pw.TableRow> buildAdvancedFeeRows({required num advancedFee}) {
   final rows = <pw.TableRow>[];
-  // 🔹 Section Header
-  ;
+
   void addRow(String title, num? amount) {
     if (amount == null || amount == 0) return;
 
@@ -1135,7 +1133,7 @@ List<pw.TableRow> buildAdvancedFeeRows({required num AdvancedFee}) {
 
   // 🔹 Fee Rows
   //addRow("Registration Fee", registrationFee);
-  addRow("Advance Fee", AdvancedFee);
+  addRow("Advance Fee", advancedFee);
 
   return rows;
 }

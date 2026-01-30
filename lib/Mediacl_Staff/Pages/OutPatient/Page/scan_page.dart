@@ -92,8 +92,6 @@ class _ScanPageState extends State<ScanPage>
   Map<String, String> resultMap = {};
 
   void _handleSubmit() async {
-    print(widget.record);
-
     noteControllers.forEach((key, controller) {
       resultMap[key] = controller.text.trim();
     });
@@ -162,13 +160,11 @@ class _ScanPageState extends State<ScanPage>
   }
 
   void handelSubmitReport() async {
-    print(widget.record);
     try {
       setState(() => _isLoading = true);
       final consultationId = (widget.record.isNotEmpty)
           ? widget.record['consulateId']
           : null;
-      print(consultationId);
 
       final id = widget.record['id'];
       // 🧾 Update Testing and Scanning record

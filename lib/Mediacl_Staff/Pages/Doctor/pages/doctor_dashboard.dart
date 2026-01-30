@@ -62,8 +62,11 @@ class DoctorDashboardState extends State<DoctorDashboard> {
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.sizeOf(context).width;
 
-    return WillPopScope(
-      onWillPop: _onWillPop,
+    return PopScope(
+      onPopInvokedWithResult: (_, __) {
+        _onWillPop();
+      },
+      // onWillPop: _onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
           preferredSize: Size(screenWidth, 100),

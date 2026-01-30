@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../Pages/NotificationsPage.dart';
-import '../MedicineAddPage.dart';
+import '../medicine_add_page.dart';
 import 'expiry_medicine_page.dart';
 import 'modify_medicine_page.dart';
 

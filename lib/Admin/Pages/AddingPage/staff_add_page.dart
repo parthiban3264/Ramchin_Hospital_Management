@@ -1029,7 +1029,7 @@ class _AddStaffPageState extends State<AddStaffPage> {
       ),
     );
 
-    if (confirmed == true) {
+    if (confirmed == true && context.mounted) {
       _deleteStaff(context, staff['id']);
     }
   }
@@ -1040,7 +1040,7 @@ class _AddStaffPageState extends State<AddStaffPage> {
     if (res['status'] == 'success') {
       fetchStaffs();
     } else {
-      _showDeleteFailedDialog(context, staffId);
+      if (context.mounted) _showDeleteFailedDialog(context, staffId);
     }
   }
 

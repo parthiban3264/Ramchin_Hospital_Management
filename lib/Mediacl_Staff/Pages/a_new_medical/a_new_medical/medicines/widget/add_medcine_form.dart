@@ -1072,7 +1072,7 @@ Widget addMedicineForm({
                                         final url = Uri.parse(
                                           "$baseUrl/suppliers/search/by-phone/$hospitalId?phone=$value",
                                         );
-                                        print(url);
+
                                         final response = await http.get(url);
 
                                         setPhoneState(() {

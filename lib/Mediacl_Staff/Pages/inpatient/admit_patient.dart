@@ -110,8 +110,9 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
       final patient = jsonDecode(res.body);
       if (patient != null) {
         String mobilePhone = patient["phone"]?["mobile"] ?? "";
-        if (mobilePhone.startsWith("+91"))
+        if (mobilePhone.startsWith("+91")) {
           mobilePhone = mobilePhone.substring(3).trim();
+        }
 
         setState(() {
           selectedPatientId = patient["id"];
@@ -143,8 +144,9 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
       if (data.isNotEmpty) {
         final patient = data[0]; // auto-select first match
         String mobilePhone = patient["phone"]?["mobile"] ?? "";
-        if (mobilePhone.startsWith("+91"))
+        if (mobilePhone.startsWith("+91")) {
           mobilePhone = mobilePhone.substring(3).trim();
+        }
 
         setState(() {
           selectedPatientId = patient["id"];
@@ -172,20 +174,20 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
     });
   }
 
-  void _refresh() {
-    final phone = phoneCtrl.text.trim();
-    if (phone.length == 10 && !_autoSearched) {
-      _autoSearched = true;
-      searchPatient();
-    }
-    if (phone.length < 10) {
-      _autoSearched = false;
-      patientsFound.clear();
-      selectedPatientId = null;
-    }
-
-    setState(() {});
-  }
+  // void _refresh() {
+  //   final phone = phoneCtrl.text.trim();
+  //   if (phone.length == 10 && !_autoSearched) {
+  //     _autoSearched = true;
+  //     searchPatient();
+  //   }
+  //   if (phone.length < 10) {
+  //     _autoSearched = false;
+  //     patientsFound.clear();
+  //     selectedPatientId = null;
+  //   }
+  //
+  //   setState(() {});
+  // }
 
   void resetForm() {
     _formKey.currentState?.reset();
@@ -220,9 +222,11 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
     if (await canLaunchUrl(Uri.parse(url))) {
       await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("WhatsApp not available")));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("WhatsApp not available")));
+      }
     }
   }
 
@@ -303,12 +307,14 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
       });
     } else {
       final error = jsonDecode(res.body);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error["message"] ?? "Admission failed"),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error["message"] ?? "Admission failed"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -663,8 +669,9 @@ Bed: ${p["bed"]?["bedNo"] ?? ""}
                             );
                             String mobilePhone =
                                 patient["phone"]?["mobile"] ?? "";
-                            if (mobilePhone.startsWith("+91"))
+                            if (mobilePhone.startsWith("+91")) {
                               mobilePhone = mobilePhone.substring(3).trim();
+                            }
 
                             setState(() {
                               selectedPatientId = v;

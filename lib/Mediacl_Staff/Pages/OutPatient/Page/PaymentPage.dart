@@ -331,8 +331,6 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
           .map((charge) => charge['id'] as int)
           .toList();
 
-      print('chargesIds $chargesIds');
-
       await ChargeService().updateChargesByAdmission(
         chargesIds: chargesIds,
         status: 'PAID',
@@ -347,8 +345,6 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
           .where((charge) => charge['admissionId'] == admissionId)
           .map((charge) => charge['id'] as int)
           .toList();
-
-      print('chargesIds $chargesIds');
 
       await ChargeService().updateChargesByAdmission(
         chargesIds: chargesIds,
@@ -504,16 +500,16 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
         isValid(SpO2);
   }
 
-  bool _isValid(String? value) {
-    return value != null &&
-        value.trim() != 'null' &&
-        value.trim().isNotEmpty &&
-        value.trim() != '0' &&
-        value.trim() != 'N/A' &&
-        value.trim() != '-' &&
-        value.trim() != '_' &&
-        value.trim() != '-mg/dL';
-  }
+  // bool _isValid(String? value) {
+  //   return value != null &&
+  //       value.trim() != 'null' &&
+  //       value.trim().isNotEmpty &&
+  //       value.trim() != '0' &&
+  //       value.trim() != 'N/A' &&
+  //       value.trim() != '-' &&
+  //       value.trim() != '_' &&
+  //       value.trim() != '-mg/dL';
+  // }
 
   Future<bool> _confirmRemove(String title) async {
     return await showDialog<bool>(
@@ -552,17 +548,16 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
 
   @override
   Widget build(BuildContext context) {
-    print('widget.: ${widget.fee}');
     final List tests = widget.fee["TestingAndScanningPatients"] ?? [];
     final consultation = widget.fee['Consultation'] ?? {};
     // final temperature = consultation['temperature'] ?? '';
     final bloodPressure = consultation['bp'] ?? {} ?? '_';
     final sugar = consultation['sugar'] ?? '_';
-    final height = consultation['height'].toString() ?? '_';
-    final weight = consultation['weight'].toString() ?? '_';
-    final BMI = consultation['BMI'].toString() ?? '_';
-    final PK = consultation['PK'].toString() ?? '_';
-    final SpO2 = consultation['SPO2'].toString() ?? '_';
+    final height = consultation['height'].toString();
+    final weight = consultation['weight'].toString();
+    final BMI = consultation['BMI'].toString();
+    final PK = consultation['PK'].toString();
+    final SpO2 = consultation['SPO2'].toString();
     // final bool isTestOnly = consultation['isTestOnly'] ?? false;
     // final referredDoctorName =
     //     consultation['referredByDoctorName'].toString() ?? '-';
@@ -604,8 +599,8 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
     final bed = admission?['bed'];
     final ward = bed?['ward'];
 
-    final String? roomName = ward?['name'];
-    final num roomRent = num.tryParse(ward?['rent']?.toString() ?? '0') ?? 0;
+    // final String? roomName = ward?['name'];
+    // final num roomRent = num.tryParse(ward?['rent']?.toString() ?? '0') ?? 0;
 
     List<MapEntry<String, num>> parseSelectedOption(dynamic selectedOption) {
       if (selectedOption is Map) {
@@ -636,7 +631,7 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
       return [];
     }
 
-    Future<void> _removeOption({
+    Future<void> removeOption({
       required int testIndex,
       required String optionKey,
       required num optionAmount,
@@ -681,14 +676,15 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
           widget.fee['amount'] = updatedTotal;
         });
       } catch (e) {
-        debugPrint("Error deleting option: $e");
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Failed to remove option")),
-        );
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Failed to remove option")),
+          );
+        }
       }
     }
 
-    Future<void> _removeTestAt(int index) async {
+    Future<void> removeTestAt(int index) async {
       final List tests = widget.fee['TestingAndScanningPatients'] ?? [];
 
       if (tests.length <= 1) {
@@ -726,10 +722,11 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
           widget.fee['TestingAndScanningPatients'] = tests;
         });
       } catch (e) {
-        debugPrint("Error deleting test: $e");
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("Failed to remove test")));
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Failed to remove test")),
+          );
+        }
       }
     }
 
@@ -829,7 +826,7 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                                   );
 
                               onSave(value);
-                              Navigator.pop(context);
+                              if (context.mounted) Navigator.pop(context);
                             } catch (e) {
                               setDialogState(() => isLoading = false);
                             }
@@ -987,7 +984,7 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
         : calculateTotal(widget.fee['amount']);
 
     final bool isDischarge = widget.fee['type'] == 'DISCHARGEFEE';
-    final num safeAdvance = advanceAmount ?? 0;
+    final num safeAdvance = advanceAmount;
 
     final num diff = widget.index != 1
         ? chargePendingAmount - safeAdvance
@@ -1639,7 +1636,7 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                           label: title,
                           value: testAmount.toStringAsFixed(0),
                           isDisabled: isLastTest,
-                          onRemove: () => _removeTestAt(testIndex),
+                          onRemove: () => removeTestAt(testIndex),
                         ),
 
                         // Sub-options
@@ -1653,7 +1650,7 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                               amount: option.value,
                               isDisabled: isLastOption,
                               onRemove: () {
-                                _removeOption(
+                                removeOption(
                                   testIndex: testIndex,
                                   optionKey: option.key,
                                   optionAmount: option.value,
@@ -2083,71 +2080,71 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
     );
   }
 
-  Widget _buildVitalsDetails({
-    String? temperature,
-    String? bloodPressure,
-    String? sugar,
-    String? height,
-    String? weight,
-    String? BMI,
-    String? PK,
-    String? SpO2,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        /// Header
-        const SizedBox(height: 8),
+  // Widget _buildVitalsDetails({
+  //   String? temperature,
+  //   String? bloodPressure,
+  //   String? sugar,
+  //   String? height,
+  //   String? weight,
+  //   String? BMI,
+  //   String? PK,
+  //   String? SpO2,
+  // }) {
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //       /// Header
+  //       const SizedBox(height: 8),
+  //
+  //       if (_isValid(temperature)) _vitalRow("Temperature", "$temperature °F"),
+  //
+  //       if (_isValid(bloodPressure)) _vitalRow("BP", bloodPressure!),
+  //
+  //       if (_isValid(sugar)) _vitalRow("Sugar", "$sugar mg/dL"),
+  //
+  //       if (_isValid(weight)) _vitalRow("Weight", "$weight kg"),
+  //
+  //       if (_isValid(height)) _vitalRow("Height", "$height cm"),
+  //
+  //       if (_isValid(BMI)) _vitalRow("BMI", BMI!),
+  //
+  //       if (_isValid(PK)) _vitalRow("PR", "$PK bpm"),
+  //
+  //       if (_isValid(SpO2)) _vitalRow("SpO₂", "$SpO2 %"),
+  //     ],
+  //   );
+  // }
 
-        if (_isValid(temperature)) _vitalRow("Temperature", "$temperature °F"),
-
-        if (_isValid(bloodPressure)) _vitalRow("BP", bloodPressure!),
-
-        if (_isValid(sugar)) _vitalRow("Sugar", "$sugar mg/dL"),
-
-        if (_isValid(weight)) _vitalRow("Weight", "$weight kg"),
-
-        if (_isValid(height)) _vitalRow("Height", "$height cm"),
-
-        if (_isValid(BMI)) _vitalRow("BMI", BMI!),
-
-        if (_isValid(PK)) _vitalRow("PR", "$PK bpm"),
-
-        if (_isValid(SpO2)) _vitalRow("SpO₂", "$SpO2 %"),
-      ],
-    );
-  }
-
-  Widget _vitalRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              "$label :",
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade700,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Widget _vitalRow(String label, String value) {
+  //   return Padding(
+  //     padding: const EdgeInsets.symmetric(vertical: 4),
+  //     child: Row(
+  //       children: [
+  //         SizedBox(
+  //           width: 120,
+  //           child: Text(
+  //             "$label :",
+  //             style: TextStyle(
+  //               fontSize: 14,
+  //               fontWeight: FontWeight.w600,
+  //               color: Colors.grey.shade700,
+  //             ),
+  //           ),
+  //         ),
+  //         Expanded(
+  //           child: Text(
+  //             value,
+  //             style: const TextStyle(
+  //               fontSize: 14,
+  //               fontWeight: FontWeight.bold,
+  //               color: Colors.black87,
+  //             ),
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   // Widget _buildGroupedFee(String title, List<Map<String, dynamic>> items) {
   //   final days = items.length;

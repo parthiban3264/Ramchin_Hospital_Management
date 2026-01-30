@@ -25,7 +25,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _loadProfile() async {
-    setState(() => _isLoading = true);
+    setState(() => _isLoading = false);
     final profile = await _adminService.getProfile();
     setState(() {
       _profile = profile;
@@ -157,7 +157,7 @@ class _ProfilePageState extends State<ProfilePage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: primaryColor))
           : _profile == null
-          ? const Center(child: Text("Profile not found"))
+          ? const Center(child: Text(""))
           : SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.all(16),

@@ -253,7 +253,7 @@ class TestRegistrationState extends State<TestRegistration> {
       setState(() {
         isSubmitting = false;
       });
-      Navigator.pop(context, true);
+      if (mounted) Navigator.pop(context, true);
     } catch (e) {
       _showSnack('Something went wrong. Please try again.');
       debugPrint('Submit patient error: $e');
@@ -912,7 +912,7 @@ class TestRegistrationState extends State<TestRegistration> {
       children: [
         GestureDetector(
           onTap: () async {
-            if (title == 'Scans') {
+            if (title == 'Scans' && mounted) {
               await showModalBottomSheet(
                 context: context,
                 isScrollControlled: true,
@@ -928,7 +928,7 @@ class TestRegistrationState extends State<TestRegistration> {
               );
             }
 
-            if (title == 'Tests') {
+            if (title == 'Tests' && context.mounted) {
               await showModalBottomSheet(
                 context: context,
                 isScrollControlled: true,

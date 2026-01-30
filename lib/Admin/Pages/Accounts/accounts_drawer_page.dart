@@ -4,10 +4,10 @@ import 'package:intl/intl.dart';
 import 'package:month_picker_dialog/month_picker_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../Mediacl_Staff/Pages/OutPatient/Page/InjectionPage.dart';
+import '../../../Mediacl_Staff/Pages/OutPatient/Page/injection_page.dart';
 import '../../../Pages/NotificationsPage.dart';
 import '../../../Services/drawer_Service.dart';
-import 'FinancePage.dart';
+import 'finance_page.dart';
 
 class AccountDrawerPage extends StatefulWidget {
   const AccountDrawerPage({super.key});
@@ -384,7 +384,7 @@ class _AccountDrawerPageState extends State<AccountDrawerPage> {
     });
     final prefs = await SharedPreferences.getInstance();
 
-    final admin_Id = prefs.getString('userId');
+    final adminId = prefs.getString('userId');
     final hospitalId = prefs.getString('hospitalId');
 
     final data = {
@@ -392,7 +392,7 @@ class _AccountDrawerPageState extends State<AccountDrawerPage> {
       'reason': reasonController.text.trim(),
       'amount': enteredAmount,
       'type': type,
-      'admin_Id': admin_Id,
+      'admin_Id': adminId,
       'createdAt': _dateTime,
     };
 
@@ -417,8 +417,6 @@ class _AccountDrawerPageState extends State<AccountDrawerPage> {
 
   @override
   Widget build(BuildContext context) {
-    print(_paymentService);
-
     return Scaffold(
       backgroundColor: const Color(0xFFF0F2F5),
       resizeToAvoidBottomInset: true,
@@ -481,7 +479,7 @@ class _AccountDrawerPageState extends State<AccountDrawerPage> {
                               borderRadius: BorderRadius.circular(18),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.08),
+                                  color: Colors.black.withValues(alpha: 0.08),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 ),
@@ -493,7 +491,7 @@ class _AccountDrawerPageState extends State<AccountDrawerPage> {
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    color: Colors.white.withOpacity(0.7),
+                                    color: Colors.white.withValues(alpha: 0.7),
                                   ),
                                   child: Text(
                                     typeLetter,
@@ -523,7 +521,9 @@ class _AccountDrawerPageState extends State<AccountDrawerPage> {
                                         drawer['admin_Id'] ?? '',
                                         style: TextStyle(
                                           fontSize: 14,
-                                          color: textColor.withOpacity(0.7),
+                                          color: textColor.withValues(
+                                            alpha: 0.7,
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -563,7 +563,7 @@ class _AccountDrawerPageState extends State<AccountDrawerPage> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.15),
+              color: Colors.black.withValues(alpha: 0.15),
               blurRadius: 6,
               offset: const Offset(0, 3),
             ),
@@ -718,7 +718,7 @@ class _AccountDrawerPageState extends State<AccountDrawerPage> {
             }
           }
 
-          if (key == DateFilter.month) {
+          if (key == DateFilter.month && mounted) {
             // final now = DateTime.now();
             final pickedMonth = await showMonthPicker(
               context: context,
@@ -736,7 +736,7 @@ class _AccountDrawerPageState extends State<AccountDrawerPage> {
             // setState(() => _selectedDate = DateTime(now.year, now.month, 1));
           }
 
-          if (key == DateFilter.year) {
+          if (key == DateFilter.year && mounted) {
             // final now = DateTime.now();
             // setState(() => _selectedDate = DateTime(now.year, 1, 1));
 
@@ -750,7 +750,7 @@ class _AccountDrawerPageState extends State<AccountDrawerPage> {
                   child: YearPicker(
                     firstDate: DateTime(2000),
                     lastDate: DateTime(2100),
-                    initialDate: _selectedDate,
+                    // initialDate: _selectedDate,
                     selectedDate: _selectedDate,
                     onChanged: (date) {
                       Navigator.pop(ctx, date.year);
@@ -788,7 +788,7 @@ class _AccountDrawerPageState extends State<AccountDrawerPage> {
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: Colors.brown.withOpacity(0.25),
+                      color: Colors.brown.withValues(alpha: 0.25),
                       blurRadius: 6,
                       offset: const Offset(0, 3),
                     ),
@@ -827,7 +827,7 @@ class _AccountDrawerPageState extends State<AccountDrawerPage> {
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: Colors.teal.withOpacity(0.15),
+              color: Colors.teal.withValues(alpha: 0.15),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -875,14 +875,14 @@ class _AccountDrawerPageState extends State<AccountDrawerPage> {
       child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.white, Colors.teal.shade50.withOpacity(0.4)],
+            colors: [Colors.white, Colors.teal.shade50.withValues(alpha: 0.4)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(22),
           boxShadow: [
             BoxShadow(
-              color: Colors.teal.shade200.withOpacity(0.25),
+              color: Colors.teal.shade200.withValues(alpha: 0.25),
               blurRadius: 18,
               offset: const Offset(0, 6),
             ),
@@ -1023,7 +1023,7 @@ class _AccountDrawerPageState extends State<AccountDrawerPage> {
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.teal.shade300.withOpacity(0.35),
+                      color: Colors.teal.shade300.withValues(alpha: 0.35),
                       blurRadius: 12,
                       offset: const Offset(0, 5),
                     ),
@@ -1090,7 +1090,7 @@ class _AccountDrawerPageState extends State<AccountDrawerPage> {
           border: Border.all(color: Colors.teal.shade200, width: 1.4),
           boxShadow: [
             BoxShadow(
-              color: Colors.teal.shade100.withOpacity(0.4),
+              color: Colors.teal.shade100.withValues(alpha: 0.4),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),

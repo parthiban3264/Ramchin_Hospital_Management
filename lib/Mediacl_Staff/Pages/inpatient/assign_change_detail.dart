@@ -184,7 +184,9 @@ class _AdmittedPatientsPageState extends State<AdmittedPatientsPage> {
                                               vertical: 4,
                                             ),
                                             decoration: BoxDecoration(
-                                              color: royal.withOpacity(0.15),
+                                              color: royal.withValues(
+                                                alpha: 0.15,
+                                              ),
                                               borderRadius:
                                                   BorderRadius.circular(20),
                                             ),

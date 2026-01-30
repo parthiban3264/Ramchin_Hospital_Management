@@ -98,14 +98,12 @@ class ScanningPageState extends State<ScanningPage> {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.sizeOf(context).height;
-
     if (_isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     return PopScope(
       canPop: true,
-      onPopInvoked: (_) {
+      onPopInvokedWithResult: (_, __) {
         PatientDescriptionPageState.onSavedScans(savedScans);
       },
 

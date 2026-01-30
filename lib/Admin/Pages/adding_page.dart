@@ -9,14 +9,14 @@ import '../../Mediacl_Staff/Pages/a_new_medical/a_new_medical/reorder/reorder_li
 import '../../Mediacl_Staff/Pages/a_new_medical/a_new_medical/stock/stock_management.dart';
 import '../../Mediacl_Staff/Pages/a_new_medical/a_new_medical/supplier/supplier.dart';
 import '../../Mediacl_Staff/Pages/inpatient/add_rooms.dart';
-import 'AddingPage/ActiveStaff.dart';
-import 'AddingPage/AddingScanData.dart';
-import 'AddingPage/AddingTestData.dart';
-import 'AddingPage/AdminAddPage.dart';
-import 'AddingPage/AssignFeesPage.dart';
-import 'AddingPage/AssignRoleButton.dart';
+import 'AddingPage/active_staff.dart';
+import 'AddingPage/adding_scan_data.dart';
+import 'AddingPage/adding_test_data.dart';
+import 'AddingPage/admin_add_page.dart';
+import 'AddingPage/assign_fees_page.dart';
+import 'AddingPage/assign_role_button.dart';
 
-import 'AddingPage/StaffAddPage.dart';
+import 'AddingPage/staff_add_page.dart';
 
 import 'AddingPage/create_test_scan/create_test_scan.dart';
 import 'AddingPage/submit_tickets.dart';

@@ -12,7 +12,7 @@ class OutpatientQueuePage extends StatefulWidget {
   const OutpatientQueuePage({super.key});
 
   @override
-  _OutpatientQueuePageState createState() => _OutpatientQueuePageState();
+  State<OutpatientQueuePage> createState() => _OutpatientQueuePageState();
 }
 
 class _OutpatientQueuePageState extends State<OutpatientQueuePage>
@@ -112,21 +112,21 @@ class _OutpatientQueuePageState extends State<OutpatientQueuePage>
     );
   }
 
-  bool _hasTodayConsulting(List<Map<String, dynamic>> consultations) {
-    final now = DateTime.now();
-
-    return consultations.any((c) {
-      final queueStatus = (c['queueStatus'] ?? '').toString().toLowerCase();
-      if (queueStatus != 'drqueue' && queueStatus != 'ongoing') return false;
-
-      final createdAt = DateTime.tryParse(c['createdAt'] ?? '');
-      if (createdAt == null) return false;
-
-      return createdAt.year == now.year &&
-          createdAt.month == now.month &&
-          createdAt.day == now.day;
-    });
-  }
+  // bool _hasTodayConsulting(List<Map<String, dynamic>> consultations) {
+  //   final now = DateTime.now();
+  //
+  //   return consultations.any((c) {
+  //     final queueStatus = (c['queueStatus'] ?? '').toString().toLowerCase();
+  //     if (queueStatus != 'drqueue' && queueStatus != 'ongoing') return false;
+  //
+  //     final createdAt = DateTime.tryParse(c['createdAt'] ?? '');
+  //     if (createdAt == null) return false;
+  //
+  //     return createdAt.year == now.year &&
+  //         createdAt.month == now.month &&
+  //         createdAt.day == now.day;
+  //   });
+  // }
 
   DateTime? _parseCreatedAt(String? dateStr) {
     if (dateStr == null) return null;
@@ -571,7 +571,6 @@ class _OutpatientQueuePageState extends State<OutpatientQueuePage>
     Color accentColor,
     List<Map<String, dynamic>> doctors,
   ) {
-    print('item: $item');
     final patient = item['Patient'] ?? {};
 
     final phone = patient['phone']?['mobile'] ?? '-';
@@ -582,7 +581,7 @@ class _OutpatientQueuePageState extends State<OutpatientQueuePage>
     );
 
     final drName = selectedDoctor['name'];
-    print(selectedDoctor);
+
     final specialist = selectedDoctor['department'];
 
     final address = patient['address']?['Address'] ?? '-';
@@ -598,10 +597,10 @@ class _OutpatientQueuePageState extends State<OutpatientQueuePage>
     final bool isEndProcessing = status == 'endprocessing';
 
     final Color pendingBgColor = Colors.orange.shade50;
-    final Color pendingTextColor = Colors.orange.shade700;
+    // final Color pendingTextColor = Colors.orange.shade700;
 
     final Color endProcessingBgColor = Colors.green.shade50;
-    final Color endProcessingTextColor = Colors.green.shade700;
+    // final Color endProcessingTextColor = Colors.green.shade700;
 
     final cancelReason = item['cancelReason'] ?? 'No reason provided';
     final tokenNo = (item['tokenNo'] == null || item['tokenNo'] == 0)
@@ -809,7 +808,7 @@ class _OutpatientQueuePageState extends State<OutpatientQueuePage>
                           onTap: () async {
                             final sugarData = item['sugerTest'] ?? false;
                             final sugarValue = item['sugar']?.toString() ?? '';
-                            final result = await Navigator.push(
+                            await Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (_) => SymptomsPage(
@@ -1014,7 +1013,6 @@ class _OutpatientQueuePageState extends State<OutpatientQueuePage>
 
   @override
   Widget build(BuildContext context) {
-    print('consultations.l $allConsultations');
     final allPatientsColor = primaryColor;
 
     return Scaffold(
@@ -1165,8 +1163,8 @@ class _OutpatientQueuePageState extends State<OutpatientQueuePage>
               (isPendingTab && hasPreviousPending) ||
               (isConsultingTab && hasPreviousConsulting);
 
-          final bool showConsultingTabs =
-              isConsultingTab && hasPreviousConsulting;
+          // final bool showConsultingTabs =
+          //     isConsultingTab && hasPreviousConsulting;
 
           // final List<Map<String, dynamic>> filteredQueue = showConsultingTabs
           //     ? _filterConsultingByDate(
@@ -1219,15 +1217,14 @@ class _OutpatientQueuePageState extends State<OutpatientQueuePage>
                   ),
                   itemBuilder: (context, index) {
                     final doc = doctors[index];
-                    print('doc $doc');
+
                     final doctorId = doc['id'].toString();
                     final color = doctorColors[index % doctorColors.length];
                     final isSelected = selectedDoctorId == doctorId;
                     final hasBehind = _doctorHasOngoing(doctorId)
                         ? false
                         : _doctorHasBehind(doctorId);
-                    final status = doc['status'];
-                    print('docstatus $status');
+
                     final hasPending = _doctorHasPending(doctorId);
                     final hasOngoing = _doctorHasOngoing(doctorId);
 

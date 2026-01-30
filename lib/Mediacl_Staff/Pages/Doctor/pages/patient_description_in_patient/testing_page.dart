@@ -122,7 +122,7 @@ class TestingPageState extends State<TestingPage> {
 
     return PopScope(
       canPop: true,
-      onPopInvoked: (_) {
+      onPopInvokedWithResult: (_, __) {
         PatientDescriptionInState.onSavedTests(savedTests);
       },
       child: Scaffold(

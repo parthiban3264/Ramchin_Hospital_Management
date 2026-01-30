@@ -37,7 +37,7 @@ class _PatientManageState extends State<PatientManage> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(22),
                 ),
-                color: Colors.white.withOpacity(0.95),
+                color: Colors.white.withValues(alpha: 0.95),
                 elevation: 8,
                 shadowColor: Colors.black26,
                 child: Padding(
@@ -115,7 +115,7 @@ class _PatientManageState extends State<PatientManage> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(22),
                 ),
-                color: Colors.white.withOpacity(0.95),
+                color: Colors.white.withValues(alpha: 0.95),
                 elevation: 8,
                 shadowColor: Colors.black26,
                 child: Padding(
@@ -230,7 +230,7 @@ class _PatientManageState extends State<PatientManage> {
               border: Border.all(color: Color(0xFFBF955E), width: 1.4),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.brown.withOpacity(0.15),
+                  color: Colors.brown.withValues(alpha: 0.15),
                   blurRadius: 10,
                   offset: const Offset(0, 5),
                 ),

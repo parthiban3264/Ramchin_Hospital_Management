@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../Pages/NotificationsPage.dart';
 import '../../../services/consultation_service.dart';
-import 'medicalFeePage.dart';
+import 'medical_fee_page.dart';
 
 class MedicalQueuePage extends StatefulWidget {
   const MedicalQueuePage({super.key});
@@ -47,7 +47,6 @@ class _MedicalQueuePageState extends State<MedicalQueuePage>
   Future<List<dynamic>> _loadData() async {
     final data = await ConsultationService.getAllConsultationByMedical(0);
     consultationsCache = data;
-    print('consultationsCache $consultationsCache');
     return data;
   }
 
@@ -352,97 +351,97 @@ class _MedicalQueuePageState extends State<MedicalQueuePage>
     );
   }
 
-  Widget _buildBottomTabs({required bool isToday}) {
-    return Column(
-      children: [
-        // 🔻 BOTTOM TABS
-        Material(
-          color: Colors.white,
-          elevation: 1,
-          child: TabBar(
-            controller: bottomTabController,
-            labelColor: primaryColor,
-            unselectedLabelColor: Colors.grey,
-            indicatorColor: primaryColor,
-            tabs: const [
-              Tab(text: "Queue"),
-              Tab(text: "Paid"),
-              Tab(text: "History"),
-            ],
-          ),
-        ),
+  // Widget _buildBottomTabs({required bool isToday}) {
+  //   return Column(
+  //     children: [
+  //       // 🔻 BOTTOM TABS
+  //       Material(
+  //         color: Colors.white,
+  //         elevation: 1,
+  //         child: TabBar(
+  //           controller: bottomTabController,
+  //           labelColor: primaryColor,
+  //           unselectedLabelColor: Colors.grey,
+  //           indicatorColor: primaryColor,
+  //           tabs: const [
+  //             Tab(text: "Queue"),
+  //             Tab(text: "Paid"),
+  //             Tab(text: "History"),
+  //           ],
+  //         ),
+  //       ),
+  //
+  //       // 🔻 CONTENT
+  //       Expanded(
+  //         child: TabBarView(
+  //           controller: bottomTabController,
+  //           children: [
+  //             _queueView(isToday),
+  //             _paidView(isToday),
+  //             _historyView(isToday),
+  //           ],
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
 
-        // 🔻 CONTENT
-        Expanded(
-          child: TabBarView(
-            controller: bottomTabController,
-            children: [
-              _queueView(isToday),
-              _paidView(isToday),
-              _historyView(isToday),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _queueView(bool isToday) {
-    return firstLoad
-        ? FutureBuilder<List<dynamic>>(
-            future: consultationsFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
-                  child: CircularProgressIndicator(color: Color(0xFFBF955E)),
-                );
-              }
-
-              if (snapshot.hasError) {
-                return Center(
-                  child: Text(
-                    'Error: ${snapshot.error}',
-                    style: const TextStyle(color: Colors.red, fontSize: 16),
-                  ),
-                );
-              }
-
-              firstLoad = false;
-              return _buildList(snapshot.data ?? []);
-            },
-          )
-        : _buildList(consultationsCache);
-  }
-
-  Widget _paidView(bool isToday) {
-    final paidList = consultationsCache.where((c) {
-      final meds = c['MedicinePatient'] ?? [];
-      final tonics = c['TonicPatient'] ?? [];
-      final injections = c['InjectionPatient'] ?? [];
-
-      return meds.any((m) => m['paymentStatus'] == true) ||
-          tonics.any((t) => t['paymentStatus'] == true) ||
-          injections.any((i) => i['paymentStatus'] == true);
-    }).toList();
-
-    if (paidList.isEmpty) {
-      return const Center(child: Text("No Paid Records"));
-    }
-
-    return _buildList(paidList);
-  }
-
-  Widget _historyView(bool isToday) {
-    final historyList = consultationsCache
-        .where((c) => c['status'] == 'COMPLETED')
-        .toList();
-
-    if (historyList.isEmpty) {
-      return const Center(child: Text("No History Records"));
-    }
-
-    return _buildList(historyList);
-  }
+  // Widget _queueView(bool isToday) {
+  //   return firstLoad
+  //       ? FutureBuilder<List<dynamic>>(
+  //           future: consultationsFuture,
+  //           builder: (context, snapshot) {
+  //             if (snapshot.connectionState == ConnectionState.waiting) {
+  //               return const Center(
+  //                 child: CircularProgressIndicator(color: Color(0xFFBF955E)),
+  //               );
+  //             }
+  //
+  //             if (snapshot.hasError) {
+  //               return Center(
+  //                 child: Text(
+  //                   'Error: ${snapshot.error}',
+  //                   style: const TextStyle(color: Colors.red, fontSize: 16),
+  //                 ),
+  //               );
+  //             }
+  //
+  //             firstLoad = false;
+  //             return _buildList(snapshot.data ?? []);
+  //           },
+  //         )
+  //       : _buildList(consultationsCache);
+  // }
+  //
+  // Widget _paidView(bool isToday) {
+  //   final paidList = consultationsCache.where((c) {
+  //     final meds = c['MedicinePatient'] ?? [];
+  //     final tonics = c['TonicPatient'] ?? [];
+  //     final injections = c['InjectionPatient'] ?? [];
+  //
+  //     return meds.any((m) => m['paymentStatus'] == true) ||
+  //         tonics.any((t) => t['paymentStatus'] == true) ||
+  //         injections.any((i) => i['paymentStatus'] == true);
+  //   }).toList();
+  //
+  //   if (paidList.isEmpty) {
+  //     return const Center(child: Text("No Paid Records"));
+  //   }
+  //
+  //   return _buildList(paidList);
+  // }
+  //
+  // Widget _historyView(bool isToday) {
+  //   final historyList = consultationsCache
+  //       .where((c) => c['status'] == 'COMPLETED')
+  //       .toList();
+  //
+  //   if (historyList.isEmpty) {
+  //     return const Center(child: Text("No History Records"));
+  //   }
+  //
+  //   return _buildList(historyList);
+  // }
 
   /// 🔹 UI LIST (unchanged)
   Widget _buildList(List<dynamic> consultations) {

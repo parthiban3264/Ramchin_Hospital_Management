@@ -51,7 +51,7 @@ class ScanReportCard extends StatelessWidget {
     // 1️⃣ Collect only scan details (skip type == tests)
     /// 1️⃣ Merge all scan sources (testDetails + TeatingAndScanningPatient)
     // ----------------- helper -----------------
-    bool _isValidSelectedOption(dynamic val) {
+    bool isValidSelectedOption(dynamic val) {
       if (val == null) return false;
 
       // normalize: remove common separators and whitespace, then uppercase
@@ -110,7 +110,7 @@ class ScanReportCard extends StatelessWidget {
       if (item['options'] is List) {
         for (var opt in item['options']) {
           final dynamic selRaw = opt['selectedOption'];
-          if (_isValidSelectedOption(selRaw)) {
+          if (isValidSelectedOption(selRaw)) {
             final name = (opt['name'] ?? '').toString();
             final sel = opt['selectedOption'].toString();
             final key = '$name|$sel';
@@ -126,7 +126,7 @@ class ScanReportCard extends StatelessWidget {
       if (item['selectedOptions'] is List) {
         for (var opt in item['selectedOptions']) {
           final dynamic selRaw = opt['selectedOption'];
-          if (_isValidSelectedOption(selRaw)) {
+          if (isValidSelectedOption(selRaw)) {
             final name = (opt['name'] ?? '').toString();
             final sel = opt['selectedOption'].toString();
             final key = '$name|$sel';
@@ -198,7 +198,7 @@ class ScanReportCard extends StatelessWidget {
           _buildSectionTitle("SCAN RESULT DETAILS"),
           _buildGroupedScanResults(
             groupedScans,
-            _isValidSelectedOption, // <-- REQUIRED
+            isValidSelectedOption, // <-- REQUIRED
           ),
 
           const SizedBox(height: 20),
@@ -497,10 +497,10 @@ class ScanReportCard extends StatelessWidget {
                       ),
                     ],
                   );
-                }).toList(),
+                }),
               ],
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -640,7 +640,7 @@ class ScanReportCard extends StatelessWidget {
         return GestureDetector(
           onTap: () => Navigator.pop(context),
           child: Container(
-            color: Colors.black.withOpacity(0.9),
+            color: Colors.black.withValues(alpha: 0.9),
             child: PageView.builder(
               controller: controller,
               itemCount: images.length,
@@ -1117,7 +1117,7 @@ class ScanReportCard extends StatelessWidget {
           ),
         ),
         pw.SizedBox(height: 8),
-        pw.Table.fromTextArray(
+        pw.TableHelper.fromTextArray(
           headers: headers,
           data: data
               .map((row) => row.map((cell) => cell.toString()).toList())

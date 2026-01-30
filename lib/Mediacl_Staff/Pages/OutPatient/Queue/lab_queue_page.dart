@@ -199,8 +199,6 @@ class _LabQueuePageState extends State<LabQueuePage>
 
   @override
   Widget build(BuildContext context) {
-    print('allCon $futureSugarQueue');
-    print('selected index $_selectedTabIndex');
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: PreferredSize(
@@ -215,7 +213,7 @@ class _LabQueuePageState extends State<LabQueuePage>
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -317,11 +315,11 @@ class _LabQueuePageState extends State<LabQueuePage>
         final records = snapshot.data ?? [];
         _groupRecordsByPatient(records);
         final filteredRecords = _getFilteredRecords();
-        int _getCurrentCount() {
+        int getCurrentCount() {
           return _getFilteredRecords().values.expand((e) => e).length;
         }
 
-        String _getCounterTitle() {
+        String getCounterTitle() {
           if (_selectedTabIndex == 0) return "Lab Test Patients";
           if (_selectedTabIndex == 1) return "Tested Patients";
           return "History Patients";
@@ -371,7 +369,7 @@ class _LabQueuePageState extends State<LabQueuePage>
                       //   ),
                       // ),
                       Text(
-                        "${_getCounterTitle()} ( ${_getCurrentCount()} )",
+                        "${getCounterTitle()} ( ${getCurrentCount()} )",
                         style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -413,7 +411,7 @@ class _LabQueuePageState extends State<LabQueuePage>
       itemBuilder: (context, index) {
         String patientId = records.keys.elementAt(index);
         List<dynamic> tests = records[patientId]!;
-        print('test $tests');
+
         final patient = tests.first['Patient'] ?? {};
         final gender = (patient['gender'] ?? 'other').toString();
         final tokenNo =
@@ -441,114 +439,114 @@ class _LabQueuePageState extends State<LabQueuePage>
     );
   }
 
-  Widget _buildSugarQueue() {
-    print('work $futureSugarQueue');
-
-    return FutureBuilder<List<dynamic>>(
-      future: futureSugarQueue,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return _emptyView("Failed to load sugar tests");
-        }
-
-        final records = snapshot.data ?? [];
-        print('recordss $records');
-
-        final sugarRecords = records.where((item) {
-          print('itemss $item');
-          return item['paymentStatus'] == true &&
-              item['symptoms'] == true &&
-              item['status'] == 'PENDING' &&
-              item['sugerTestQueue'] == true &&
-              item['sugerTest'] == true;
-        }).toList();
-        for (var r in records) {
-          debugPrint(
-            'SugarCheck → id:${r['id']} '
-            'pay:${r['paymentStatus']} '
-            'sym:${r['symptoms']} '
-            'stat:${r['status']} '
-            'queue:${r['sugerTestQueue']} '
-            'test:${r['sugerTest']}',
-          );
-        }
-
-        final int sugarCount = sugarRecords.length;
-
-        return Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(10),
-              child: Container(
-                height: 60,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: primaryColor, width: 2),
-                  color: Colors.white,
-                ),
-                child: Center(
-                  child: Text(
-                    "Sugar Test Patients ( $sugarCount )",
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.6,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            if (sugarRecords.isEmpty)
-              Expanded(child: _emptyView("No Sugar Test patients"))
-            else
-              Expanded(
-                child: RefreshIndicator(
-                  color: primaryColor,
-                  onRefresh: () async {
-                    setState(() {
-                      futureSugarQueue = ConsultationService()
-                          .getAllSugarConsultation();
-                    });
-                    await futureSugarQueue;
-                  },
-                  child: ListView.builder(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(16),
-                    itemCount: sugarRecords.length,
-                    itemBuilder: (context, index) {
-                      final record = sugarRecords[index];
-                      final patient = record['Patient'] ?? {};
-                      final gender = (patient['gender'] ?? 'other').toString();
-                      final tokenNo =
-                          (record['tokenNo'] == null || record['tokenNo'] == 0)
-                          ? '-'
-                          : record['tokenNo'].toString();
-
-                      return _SugarPatientCard(
-                        patient: patient,
-                        consultationId: record['id'].toString(),
-                        tokenNo: tokenNo,
-                        genderColor: _genderColor(gender),
-                        genderIcon: _genderIcon(gender),
-                        onRefresh: () {
-                          setState(() {
-                            futureSugarQueue = ConsultationService()
-                                .getAllSugarConsultation();
-                          });
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ),
-          ],
-        );
-      },
-    );
-  }
+  // Widget _buildSugarQueue() {
+  //   print('work $futureSugarQueue');
+  //
+  //   return FutureBuilder<List<dynamic>>(
+  //     future: futureSugarQueue,
+  //     builder: (context, snapshot) {
+  //       if (snapshot.connectionState == ConnectionState.waiting) {
+  //         return const Center(child: CircularProgressIndicator());
+  //       }
+  //       if (snapshot.hasError) {
+  //         return _emptyView("Failed to load sugar tests");
+  //       }
+  //
+  //       final records = snapshot.data ?? [];
+  //       print('recordss $records');
+  //
+  //       final sugarRecords = records.where((item) {
+  //         print('itemss $item');
+  //         return item['paymentStatus'] == true &&
+  //             item['symptoms'] == true &&
+  //             item['status'] == 'PENDING' &&
+  //             item['sugerTestQueue'] == true &&
+  //             item['sugerTest'] == true;
+  //       }).toList();
+  //       for (var r in records) {
+  //         debugPrint(
+  //           'SugarCheck → id:${r['id']} '
+  //           'pay:${r['paymentStatus']} '
+  //           'sym:${r['symptoms']} '
+  //           'stat:${r['status']} '
+  //           'queue:${r['sugerTestQueue']} '
+  //           'test:${r['sugerTest']}',
+  //         );
+  //       }
+  //
+  //       final int sugarCount = sugarRecords.length;
+  //
+  //       return Column(
+  //         children: [
+  //           Padding(
+  //             padding: const EdgeInsets.all(10),
+  //             child: Container(
+  //               height: 60,
+  //               decoration: BoxDecoration(
+  //                 borderRadius: BorderRadius.circular(18),
+  //                 border: Border.all(color: primaryColor, width: 2),
+  //                 color: Colors.white,
+  //               ),
+  //               child: Center(
+  //                 child: Text(
+  //                   "Sugar Test Patients ( $sugarCount )",
+  //                   style: const TextStyle(
+  //                     fontSize: 20,
+  //                     fontWeight: FontWeight.bold,
+  //                     letterSpacing: 0.6,
+  //                   ),
+  //                 ),
+  //               ),
+  //             ),
+  //           ),
+  //           if (sugarRecords.isEmpty)
+  //             Expanded(child: _emptyView("No Sugar Test patients"))
+  //           else
+  //             Expanded(
+  //               child: RefreshIndicator(
+  //                 color: primaryColor,
+  //                 onRefresh: () async {
+  //                   setState(() {
+  //                     futureSugarQueue = ConsultationService()
+  //                         .getAllSugarConsultation();
+  //                   });
+  //                   await futureSugarQueue;
+  //                 },
+  //                 child: ListView.builder(
+  //                   physics: const AlwaysScrollableScrollPhysics(),
+  //                   padding: const EdgeInsets.all(16),
+  //                   itemCount: sugarRecords.length,
+  //                   itemBuilder: (context, index) {
+  //                     final record = sugarRecords[index];
+  //                     final patient = record['Patient'] ?? {};
+  //                     final gender = (patient['gender'] ?? 'other').toString();
+  //                     final tokenNo =
+  //                         (record['tokenNo'] == null || record['tokenNo'] == 0)
+  //                         ? '-'
+  //                         : record['tokenNo'].toString();
+  //
+  //                     return _SugarPatientCard(
+  //                       patient: patient,
+  //                       consultationId: record['id'].toString(),
+  //                       tokenNo: tokenNo,
+  //                       genderColor: _genderColor(gender),
+  //                       genderIcon: _genderIcon(gender),
+  //                       onRefresh: () {
+  //                         setState(() {
+  //                           futureSugarQueue = ConsultationService()
+  //                               .getAllSugarConsultation();
+  //                         });
+  //                       },
+  //                     );
+  //                   },
+  //                 ),
+  //               ),
+  //             ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
 
   Widget _emptyView(String message) {
     return Center(
@@ -574,7 +572,7 @@ class PatientTestCard extends StatefulWidget {
   final int selectedIndex;
 
   const PatientTestCard({
-    Key? key,
+    super.key,
     required this.patient,
     required this.tests,
     required this.genderColor,
@@ -582,7 +580,7 @@ class PatientTestCard extends StatefulWidget {
     required this.onRefresh,
     required this.tokenNo,
     required this.selectedIndex,
-  }) : super(key: key);
+  });
 
   @override
   State<PatientTestCard> createState() => _PatientTestCardState();
@@ -601,7 +599,6 @@ class _PatientTestCardState extends State<PatientTestCard> {
 
   @override
   Widget build(BuildContext context) {
-    print(widget.patient);
     String patientName = widget.patient['name'] ?? 'Unknown';
     String patientId = widget.patient['id']?.toString() ?? 'N/A';
 
@@ -792,10 +789,10 @@ class _PatientTestCardState extends State<PatientTestCard> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: widget.genderColor.withOpacity(0.7)),
+          border: Border.all(color: widget.genderColor.withValues(alpha: 0.7)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black45.withOpacity(0.35),
+              color: Colors.black45.withValues(alpha: 0.35),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
@@ -829,265 +826,265 @@ class _PatientTestCardState extends State<PatientTestCard> {
   }
 }
 
-class _SugarPatientCard extends StatelessWidget {
-  final Map<String, dynamic> patient;
-  final String consultationId;
-  final String tokenNo;
-  final Color genderColor;
-
-  final IconData genderIcon;
-  final VoidCallback onRefresh;
-
-  const _SugarPatientCard({
-    required this.patient,
-    required this.consultationId,
-    required this.genderColor,
-    required this.genderIcon,
-    required this.onRefresh,
-    required this.tokenNo,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final String name = patient['name'] ?? 'Unknown';
-    final String id = patient['id']?.toString() ?? 'N/A';
-    String phone = 'N/A';
-    if (patient['phone'] is Map) {
-      phone = patient['phone']['mobile']?.toString() ?? 'N/A';
-    } else if (patient['phone'] is String) {
-      phone = patient['phone'];
-    }
-
-    String address = 'N/A';
-    if (patient['address'] is Map) {
-      address = patient['address']['Address'] ?? 'N/A';
-    } else if (patient['address'] is String) {
-      address = patient['address'];
-    }
-
-    return GestureDetector(
-      onTap: () => _openSugarDialog(context),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: genderColor),
-          boxShadow: const [BoxShadow(blurRadius: 6, color: Colors.black12)],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            /// Header
-            Row(
-              children: [
-                Icon(genderIcon, color: genderColor, size: 28),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    name,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: genderColor,
-                    ),
-                  ),
-                ),
-                const Chip(
-                  label: Text("Sugar Test"),
-                  backgroundColor: Color(0xFFE8F5E9),
-                ),
-              ],
-            ),
-            Row(
-              //crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Token No: ',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.grey[700],
-                  ),
-                ),
-                Text(
-                  tokenNo,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 10),
-            _infoRow("Patient ID", id),
-            _infoRow("Phone", phone),
-            _infoRow("Address", address),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _infoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 4),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 90,
-            child: Text(
-              "$label:",
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-          Expanded(child: Text(value, overflow: TextOverflow.ellipsis)),
-        ],
-      ),
-    );
-  }
-
-  /// 👇 Dialog
-  void _openSugarDialog(BuildContext context) {
-    final TextEditingController sugarController = TextEditingController();
-    bool isLoading = false;
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            final bool isValidInput = sugarController.text.trim().isNotEmpty;
-
-            return Dialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(15),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    /// Header
-                    Row(
-                      children: [
-                        Icon(Icons.bloodtype, color: genderColor, size: 26),
-                        const SizedBox(width: 8),
-                        const Text(
-                          "Sugar Test",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 12),
-                    const Text(
-                      "Enter Sugar Level (mg/dL)",
-                      style: TextStyle(fontSize: 14, color: Colors.black54),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    /// Input Field
-                    TextField(
-                      controller: sugarController,
-                      keyboardType: TextInputType.number,
-                      onChanged: (_) => setState(() {}),
-                      decoration: InputDecoration(
-                        hintText: "e.g. 110",
-                        prefixIcon: const Icon(Icons.monitor_heart_outlined),
-                        filled: true,
-                        fillColor: Colors.grey.shade100,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    /// Buttons
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: isLoading
-                                ? null
-                                : () => Navigator.pop(context),
-                            style: OutlinedButton.styleFrom(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: const Text(
-                              "Cancel",
-                              style: TextStyle(color: Colors.black),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: isValidInput
-                                  ? genderColor
-                                  : Colors.grey,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            onPressed: (!isValidInput || isLoading)
-                                ? null
-                                : () async {
-                                    setState(() => isLoading = true);
-
-                                    await ConsultationService()
-                                        .updateConsultation(
-                                          int.parse(consultationId),
-                                          {
-                                            "sugerTestQueue": false,
-                                            "sugar": sugarController.text
-                                                .trim(),
-                                          },
-                                        );
-
-                                    Navigator.pop(context);
-                                    onRefresh();
-                                  },
-                            child: isLoading
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : const Text(
-                                    "Submit",
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-}
+// class _SugarPatientCard extends StatelessWidget {
+//   final Map<String, dynamic> patient;
+//   final String consultationId;
+//   final String tokenNo;
+//   final Color genderColor;
+//
+//   final IconData genderIcon;
+//   final VoidCallback onRefresh;
+//
+//   const _SugarPatientCard({
+//     required this.patient,
+//     required this.consultationId,
+//     required this.genderColor,
+//     required this.genderIcon,
+//     required this.onRefresh,
+//     required this.tokenNo,
+//   });
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     final String name = patient['name'] ?? 'Unknown';
+//     final String id = patient['id']?.toString() ?? 'N/A';
+//     String phone = 'N/A';
+//     if (patient['phone'] is Map) {
+//       phone = patient['phone']['mobile']?.toString() ?? 'N/A';
+//     } else if (patient['phone'] is String) {
+//       phone = patient['phone'];
+//     }
+//
+//     String address = 'N/A';
+//     if (patient['address'] is Map) {
+//       address = patient['address']['Address'] ?? 'N/A';
+//     } else if (patient['address'] is String) {
+//       address = patient['address'];
+//     }
+//
+//     return GestureDetector(
+//       onTap: () => _openSugarDialog(context),
+//       child: Container(
+//         margin: const EdgeInsets.only(bottom: 16),
+//         padding: const EdgeInsets.all(16),
+//         decoration: BoxDecoration(
+//           color: Colors.white,
+//           borderRadius: BorderRadius.circular(16),
+//           border: Border.all(color: genderColor),
+//           boxShadow: const [BoxShadow(blurRadius: 6, color: Colors.black12)],
+//         ),
+//         child: Column(
+//           crossAxisAlignment: CrossAxisAlignment.start,
+//           children: [
+//             /// Header
+//             Row(
+//               children: [
+//                 Icon(genderIcon, color: genderColor, size: 28),
+//                 const SizedBox(width: 10),
+//                 Expanded(
+//                   child: Text(
+//                     name,
+//                     style: TextStyle(
+//                       fontSize: 18,
+//                       fontWeight: FontWeight.bold,
+//                       color: genderColor,
+//                     ),
+//                   ),
+//                 ),
+//                 const Chip(
+//                   label: Text("Sugar Test"),
+//                   backgroundColor: Color(0xFFE8F5E9),
+//                 ),
+//               ],
+//             ),
+//             Row(
+//               //crossAxisAlignment: CrossAxisAlignment.center,
+//               mainAxisAlignment: MainAxisAlignment.center,
+//               children: [
+//                 Text(
+//                   'Token No: ',
+//                   style: TextStyle(
+//                     fontSize: 16,
+//                     fontWeight: FontWeight.w500,
+//                     color: Colors.grey[700],
+//                   ),
+//                 ),
+//                 Text(
+//                   tokenNo,
+//                   style: const TextStyle(
+//                     fontSize: 18,
+//                     fontWeight: FontWeight.bold,
+//                     color: Colors.black,
+//                   ),
+//                 ),
+//               ],
+//             ),
+//
+//             const SizedBox(height: 10),
+//             _infoRow("Patient ID", id),
+//             _infoRow("Phone", phone),
+//             _infoRow("Address", address),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+//
+//   Widget _infoRow(String label, String value) {
+//     return Padding(
+//       padding: const EdgeInsets.only(top: 4),
+//       child: Row(
+//         children: [
+//           SizedBox(
+//             width: 90,
+//             child: Text(
+//               "$label:",
+//               style: const TextStyle(fontWeight: FontWeight.w600),
+//             ),
+//           ),
+//           Expanded(child: Text(value, overflow: TextOverflow.ellipsis)),
+//         ],
+//       ),
+//     );
+//   }
+//
+//   /// 👇 Dialog
+//   void _openSugarDialog(BuildContext context) {
+//     final TextEditingController sugarController = TextEditingController();
+//     bool isLoading = false;
+//
+//     showDialog(
+//       context: context,
+//       barrierDismissible: false,
+//       builder: (_) {
+//         return StatefulBuilder(
+//           builder: (context, setState) {
+//             final bool isValidInput = sugarController.text.trim().isNotEmpty;
+//
+//             return Dialog(
+//               shape: RoundedRectangleBorder(
+//                 borderRadius: BorderRadius.circular(18),
+//               ),
+//               child: Padding(
+//                 padding: const EdgeInsets.all(15),
+//                 child: Column(
+//                   mainAxisSize: MainAxisSize.min,
+//                   crossAxisAlignment: CrossAxisAlignment.start,
+//                   children: [
+//                     /// Header
+//                     Row(
+//                       children: [
+//                         Icon(Icons.bloodtype, color: genderColor, size: 26),
+//                         const SizedBox(width: 8),
+//                         const Text(
+//                           "Sugar Test",
+//                           style: TextStyle(
+//                             fontSize: 18,
+//                             fontWeight: FontWeight.bold,
+//                           ),
+//                         ),
+//                       ],
+//                     ),
+//
+//                     const SizedBox(height: 12),
+//                     const Text(
+//                       "Enter Sugar Level (mg/dL)",
+//                       style: TextStyle(fontSize: 14, color: Colors.black54),
+//                     ),
+//
+//                     const SizedBox(height: 12),
+//
+//                     /// Input Field
+//                     TextField(
+//                       controller: sugarController,
+//                       keyboardType: TextInputType.number,
+//                       onChanged: (_) => setState(() {}),
+//                       decoration: InputDecoration(
+//                         hintText: "e.g. 110",
+//                         prefixIcon: const Icon(Icons.monitor_heart_outlined),
+//                         filled: true,
+//                         fillColor: Colors.grey.shade100,
+//                         border: OutlineInputBorder(
+//                           borderRadius: BorderRadius.circular(12),
+//                           borderSide: BorderSide.none,
+//                         ),
+//                       ),
+//                     ),
+//
+//                     const SizedBox(height: 20),
+//
+//                     /// Buttons
+//                     Row(
+//                       children: [
+//                         Expanded(
+//                           child: OutlinedButton(
+//                             onPressed: isLoading
+//                                 ? null
+//                                 : () => Navigator.pop(context),
+//                             style: OutlinedButton.styleFrom(
+//                               shape: RoundedRectangleBorder(
+//                                 borderRadius: BorderRadius.circular(12),
+//                               ),
+//                             ),
+//                             child: const Text(
+//                               "Cancel",
+//                               style: TextStyle(color: Colors.black),
+//                             ),
+//                           ),
+//                         ),
+//                         const SizedBox(width: 12),
+//                         Expanded(
+//                           child: ElevatedButton(
+//                             style: ElevatedButton.styleFrom(
+//                               backgroundColor: isValidInput
+//                                   ? genderColor
+//                                   : Colors.grey,
+//                               shape: RoundedRectangleBorder(
+//                                 borderRadius: BorderRadius.circular(12),
+//                               ),
+//                             ),
+//                             onPressed: (!isValidInput || isLoading)
+//                                 ? null
+//                                 : () async {
+//                                     setState(() => isLoading = true);
+//
+//                                     await ConsultationService()
+//                                         .updateConsultation(
+//                                           int.parse(consultationId),
+//                                           {
+//                                             "sugerTestQueue": false,
+//                                             "sugar": sugarController.text
+//                                                 .trim(),
+//                                           },
+//                                         );
+//
+//                                     Navigator.pop(context);
+//                                     onRefresh();
+//                                   },
+//                             child: isLoading
+//                                 ? const SizedBox(
+//                                     height: 20,
+//                                     width: 20,
+//                                     child: CircularProgressIndicator(
+//                                       strokeWidth: 2,
+//                                       color: Colors.white,
+//                                     ),
+//                                   )
+//                                 : const Text(
+//                                     "Submit",
+//                                     style: TextStyle(color: Colors.white),
+//                                   ),
+//                           ),
+//                         ),
+//                       ],
+//                     ),
+//                   ],
+//                 ),
+//               ),
+//             );
+//           },
+//         );
+//       },
+//     );
+//   }
+// }

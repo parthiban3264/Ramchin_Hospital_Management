@@ -107,11 +107,13 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
     if (newPasswordController.text == oldPasswordController.text) {
       setState(() => isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("New password cannot be same as old password"),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("New password cannot be same as old password"),
+          ),
+        );
+      }
       return;
     }
 
@@ -131,9 +133,11 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     setState(() => isLoading = false);
 
     if (changed) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Password changed successfully")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Password changed successfully")),
+        );
+      }
       oldPasswordController.clear();
       newPasswordController.clear();
       reNewPasswordController.clear();
@@ -142,9 +146,11 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         isRePasswordMismatch = false;
       });
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Failed to change password")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Failed to change password")),
+        );
+      }
     }
   }
 

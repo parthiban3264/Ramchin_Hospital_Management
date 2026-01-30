@@ -178,10 +178,10 @@ class _MedicineCardState extends State<MedicineCard>
 
       return countB - countA;
     });
-    DateTime parseDate(dynamic value) {
-      if (value == null) return DateTime.now();
-      return DateTime.parse(value.toString()).toLocal();
-    }
+    // DateTime parseDate(dynamic value) {
+    //   if (value == null) return DateTime.now();
+    //   return DateTime.parse(value.toString()).toLocal();
+    // }
 
     final results = filtered.take(5).toList();
 
@@ -388,22 +388,22 @@ class _MedicineCardState extends State<MedicineCard>
   int _totalDays(Map<String, dynamic> med) =>
       (med['days'] ?? 0) + (med['weeks'] ?? 0) * 7 + (med['months'] ?? 0) * 30;
 
-  bool _isCardValid(_MedicineEntry entry) {
-    final med = entry.currentMedicine;
-    final name = (med['name'] ?? '').toString().trim();
-    final price = (med['price'] ?? 0.0) as double;
-    final afterEat = med['afterEat'];
-    final hasDose =
-        med['morning'] == true ||
-        med['afternoon'] == true ||
-        med['night'] == true;
-    final days = (med['days'] ?? 0) as int;
-    return name.isNotEmpty &&
-        price > 0 &&
-        afterEat != null &&
-        hasDose &&
-        days > 0;
-  }
+  // bool _isCardValid(_MedicineEntry entry) {
+  //   final med = entry.currentMedicine;
+  //   final name = (med['name'] ?? '').toString().trim();
+  //   final price = (med['price'] ?? 0.0) as double;
+  //   final afterEat = med['afterEat'];
+  //   final hasDose =
+  //       med['morning'] == true ||
+  //       med['afternoon'] == true ||
+  //       med['night'] == true;
+  //   final days = (med['days'] ?? 0) as int;
+  //   return name.isNotEmpty &&
+  //       price > 0 &&
+  //       afterEat != null &&
+  //       hasDose &&
+  //       days > 0;
+  // }
 
   // Map<String, dynamic>? _buildIfValid(_MedicineEntry entry) {
   //   if (!_isCardValid(entry)) return null;
@@ -426,7 +426,7 @@ class _MedicineCardState extends State<MedicineCard>
   // }
   Map<String, dynamic>? _buildIfValid(_MedicineEntry entry) {
     final med = entry.currentMedicine;
-    print('currentMedicine $med');
+
     final name = (med['name'] ?? '').toString().trim();
     final price = (med['price'] ?? 0.0) as double;
     final afterEat = med['afterEat'];
@@ -705,7 +705,6 @@ class _MedicineCardState extends State<MedicineCard>
 
   @override
   Widget build(BuildContext context) {
-    print('medicine _ : ${widget.allMedicines}');
     super.build(context);
     return Card(
       elevation: 5,

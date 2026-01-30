@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:hospitrax/Pages/login/widget/forgot_password.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../Admin/Pages/Admin_App_Wrapper.dart';
+import '../../../Admin/Pages/admin_app_wrapper.dart';
 import '../../../Admin/Pages/admin_dashboard.dart';
 import '../../../Administrator/Overall_Administrator_Dashboard.dart';
 import '../../../Services/auth_service.dart';
@@ -122,7 +122,7 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
+                                color: Colors.black.withValues(alpha: 0.1),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
                               ),
@@ -326,11 +326,13 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
     //   return;
     // }
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
-    );
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+    }
 
     final result = await userService.login(
       hospitalId: hospitalId,
@@ -339,16 +341,18 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
       deviceId: deviceId,
     );
 
-    Navigator.pop(context); // hide loading
+    if (mounted) Navigator.pop(context); // hide loading
 
     if (result["success"]) {
       final token = result["data"]["access_token"];
       final user = result["data"]["user"];
 
       if (token == null || user == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Invalid response from server")),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Invalid response from server")),
+          );
+        }
         return;
       }
 
@@ -420,9 +424,11 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
         staffPhoto,
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result["message"] ?? "Login failed")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result["message"] ?? "Login failed")),
+        );
+      }
     }
   }
 
@@ -450,9 +456,11 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
         role.toUpperCase() != 'ADMINISTRATOR' &&
         role.toUpperCase() != 'PATIENT') {
       if (staffStatus.toUpperCase() != 'ACTIVE') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("staffStatus is not active")),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("staffStatus is not active")),
+          );
+        }
         return;
       }
     }
@@ -568,6 +576,11 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
         return;
     }
 
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => page));
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => page),
+      );
+    }
   }
 }

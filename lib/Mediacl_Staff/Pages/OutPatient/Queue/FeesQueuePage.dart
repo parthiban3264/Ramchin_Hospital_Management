@@ -23,7 +23,7 @@ class _FeesQueuePageState extends State<FeesQueuePage> {
   String queueFilter = 'Today'; // Today | Before
   String historyFilter = 'Today';
 
-  final ScrollController _scrollController = ScrollController();
+  // final ScrollController _scrollController = ScrollController();
 
   int _currentIndex = 0; // 0 = Queue, 1 = History
 
@@ -311,8 +311,6 @@ class _FeesQueuePageState extends State<FeesQueuePage> {
     setState(() {
       _cancelledFees = filtered;
     });
-
-    print("✅ Cancelled fees count: ${_cancelledFees.length}");
   }
 
   @override
@@ -358,7 +356,7 @@ class _FeesQueuePageState extends State<FeesQueuePage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -608,11 +606,11 @@ class _FeesQueuePageState extends State<FeesQueuePage> {
                     itemCount: data.length,
                     itemBuilder: (context, index) {
                       final item = data[index];
-                      print('item $item');
+
                       final patient = item['Patient'] ?? {};
                       final admission = item['Admission'];
-                      final bed = admission?['bed'];
-                      final ward = bed?['ward'];
+                      // final bed = admission?['bed'];
+                      // final ward = bed?['ward'];
 
                       final num advanceAmount = (admission?['charges'] ?? [])
                           .where(
@@ -668,7 +666,7 @@ class _FeesQueuePageState extends State<FeesQueuePage> {
                           );
                       final bool isDischarge = item['type'] == 'DISCHARGEFEE';
 
-                      final num safeAdvance = advanceAmount ?? 0;
+                      final num safeAdvance = advanceAmount;
 
                       //final num diff = chargePendingAmount - advanceAmount;
                       final num diff = _currentIndex != 1
@@ -850,7 +848,7 @@ class _FeesQueuePageState extends State<FeesQueuePage> {
                                     children: [
                                       Center(
                                         child: Text(
-                                          '${getFormattedDate(item['updatedAt'])}',
+                                          getFormattedDate(item['updatedAt']),
                                           style: TextStyle(
                                             fontSize: 12,
                                             color: Colors.grey.shade800,

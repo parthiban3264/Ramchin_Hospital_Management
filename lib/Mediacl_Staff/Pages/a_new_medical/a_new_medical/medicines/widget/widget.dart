@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../../../../../Admin/Pages/AdminEditProfilePage.dart';
+import '../../../../../../Admin/Pages/admin_edit_profile_page.dart';
 import '../add_medicines.dart';
 
 Widget buildHospitalCard({

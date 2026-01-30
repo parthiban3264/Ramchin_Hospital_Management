@@ -4,7 +4,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
-import '../patient_list_reportpage.dart';
+import '../patient_list_report_page.dart';
 
 class AccountListReportPdf {
   static Future<void> generate({
@@ -201,7 +201,7 @@ class AccountListReportPdf {
       ],
     ];
 
-    return pw.Table.fromTextArray(
+    return pw.TableHelper.fromTextArray(
       headers: headers,
       data: data,
       headerStyle: pw.TextStyle(

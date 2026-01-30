@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../Admin/Pages/AdminEditProfilePage.dart';
+import '../Admin/Pages/admin_edit_profile_page.dart';
 import '../Pages/NotificationsPage.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {

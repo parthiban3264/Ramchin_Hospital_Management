@@ -61,7 +61,7 @@ class _AdminAppWrapperState extends State<AdminAppWrapper> {
         final status = currentStaff["status"].toString().toUpperCase();
 
         if (status == "ACTIVE") {
-          if (dialogOpen) {
+          if (dialogOpen && mounted) {
             Navigator.of(navigatorKey.currentState!.overlay!.context).pop();
           }
 
@@ -99,8 +99,9 @@ class _AdminAppWrapperState extends State<AdminAppWrapper> {
       context: ctx,
       barrierDismissible: false,
       builder: (_) {
-        return WillPopScope(
-          onWillPop: () async => false,
+        return PopScope(
+          canPop: false,
+          // onWillPop: () async => false,
           child: StatefulBuilder(
             builder: (context, setDialogState) {
               countdownTimer ??= Timer.periodic(const Duration(seconds: 1), (

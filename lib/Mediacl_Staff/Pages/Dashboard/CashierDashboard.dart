@@ -2,16 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../Admin/Pages/Accounts/AccountsDrawerPage.dart';
-import '../../../Admin/Pages/Accounts/ExpensePage.dart';
-import '../../../Admin/Pages/Accounts/FinancePage.dart';
-import '../../../Admin/Pages/Accounts/IncomeExpensePage.dart';
+import '../../../Admin/Pages/Accounts/accounts_drawer_page.dart';
+import '../../../Admin/Pages/Accounts/expense_page.dart';
+import '../../../Admin/Pages/Accounts/finance_page.dart';
+import '../../../Admin/Pages/Accounts/income_expense_page.dart';
 import '../../../Admin/Pages/Accounts/accounts_report.dart';
-import '../../../Admin/Pages/Accounts/patient_list_reportpage.dart';
+import '../../../Admin/Pages/Accounts/patient_list_report_page.dart';
 import '../../../Services/admin_service.dart';
 import '../OutPatient/Queue/FeesQueuePage.dart';
-import '../OutPatient/Queue/outer_testPayment_queue.dart';
-import '../OutPatient/patient_registration/PatientRegistrationPage.dart';
+
 import '../OutPatient/patient_registration/patient_registration_payment_page.dart';
 
 class CashierDashboardPage extends StatefulWidget {
@@ -120,7 +119,7 @@ class _CashierDashboardPageState extends State<CashierDashboardPage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(22),
                     ),
-                    color: Colors.white.withOpacity(0.95),
+                    color: Colors.white.withValues(alpha: 0.95),
                     elevation: 8,
                     shadowColor: Colors.black26,
                     child: Padding(
@@ -246,7 +245,7 @@ class _CashierDashboardPageState extends State<CashierDashboardPage> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(22),
                       ),
-                      color: Colors.white.withOpacity(0.95),
+                      color: Colors.white.withValues(alpha: 0.95),
                       elevation: 8,
                       shadowColor: Colors.black26,
                       child: Padding(
@@ -529,7 +528,7 @@ class _CashierDashboardPageState extends State<CashierDashboardPage> {
 
               boxShadow: [
                 BoxShadow(
-                  color: Colors.brown.withOpacity(0.15),
+                  color: Colors.brown.withValues(alpha: 0.15),
                   blurRadius: 10,
                   offset: const Offset(0, 5),
                 ),

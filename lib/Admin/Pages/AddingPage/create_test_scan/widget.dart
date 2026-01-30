@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../Mediacl_Staff/Pages/OutPatient/Page/InjectionPage.dart';
+import '../../../../Mediacl_Staff/Pages/OutPatient/Page/injection_page.dart';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // COLOR THEME

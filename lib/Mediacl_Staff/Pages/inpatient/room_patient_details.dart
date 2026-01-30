@@ -135,7 +135,7 @@ class _WardsAndBedsPageState extends State<WardsAndBedsPage> {
                       hintStyle: TextStyle(color: royal),
                       prefixIcon: const Icon(Icons.search, color: royal),
                       filled: true,
-                      fillColor: royal.withOpacity(0.05),
+                      fillColor: royal.withValues(alpha: 0.05),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: const BorderSide(color: royal),
@@ -207,7 +207,9 @@ class _WardsAndBedsPageState extends State<WardsAndBedsPage> {
                                               borderRadius:
                                                   BorderRadius.circular(14),
                                               side: BorderSide(
-                                                color: royal.withOpacity(0.4),
+                                                color: royal.withValues(
+                                                  alpha: 0.4,
+                                                ),
                                               ),
                                             ),
                                             child: Padding(
@@ -253,8 +255,9 @@ class _WardsAndBedsPageState extends State<WardsAndBedsPage> {
                                                             vertical: 5,
                                                           ),
                                                       decoration: BoxDecoration(
-                                                        color: royal
-                                                            .withOpacity(0.15),
+                                                        color: royal.withValues(
+                                                          alpha: 0.15,
+                                                        ),
                                                         borderRadius:
                                                             BorderRadius.circular(
                                                               20,
@@ -277,7 +280,7 @@ class _WardsAndBedsPageState extends State<WardsAndBedsPage> {
                                           ),
                                         );
                                       }).toList();
-                                    }).toList(),
+                                    }),
                                   ],
                                 ),
                               ),
@@ -320,7 +323,7 @@ class _WardsAndBedsPageState extends State<WardsAndBedsPage> {
                         ],
                       ),
                     );
-                  }).toList(),
+                  }),
                 ],
               ),
             ),

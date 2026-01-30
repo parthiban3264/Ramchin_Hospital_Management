@@ -46,9 +46,15 @@ class _PatientMedicationState extends State<PatientMedication> {
       grouped[cid][type] += 1;
     }
 
-    for (var i in med) addItem(i, "Medicine");
-    for (var i in tonic) addItem(i, "Tonic");
-    for (var i in inj) addItem(i, "Injection");
+    for (var i in med) {
+      addItem(i, "Medicine");
+    }
+    for (var i in tonic) {
+      addItem(i, "Tonic");
+    }
+    for (var i in inj) {
+      addItem(i, "Injection");
+    }
 
     setState(() {});
   }
@@ -145,7 +151,7 @@ class _PatientMedicationState extends State<PatientMedication> {
           border: Border.all(color: Colors.grey.shade200),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 8,
               offset: const Offset(0, 3),
             ),
@@ -243,7 +249,7 @@ class _PatientMedicationState extends State<PatientMedication> {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 14),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -252,7 +258,7 @@ class _PatientMedicationState extends State<PatientMedication> {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              "$label",
+              label,
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey.shade800,
@@ -297,7 +303,7 @@ class _PatientMedicationState extends State<PatientMedication> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
@@ -321,7 +327,7 @@ class _PatientMedicationState extends State<PatientMedication> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.15),
+              color: Colors.black.withValues(alpha: 0.15),
               blurRadius: 6,
               offset: const Offset(0, 3),
             ),

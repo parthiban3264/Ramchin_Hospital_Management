@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../Mediacl_Staff/Pages/OutPatient/Page/InjectionPage.dart';
+import '../../../Mediacl_Staff/Pages/OutPatient/Page/injection_page.dart';
 import '../../../Pages/NotificationsPage.dart';
 import '../../../Services/IncomeExpence_Service.dart';
 
@@ -14,7 +14,7 @@ class AccountIncomePage extends StatefulWidget {
 }
 
 class _AccountIncomePageState extends State<AccountIncomePage> {
-  final IncomeExpenseService _incexpService = IncomeExpenseService();
+  final IncomeExpenseService _incExpService = IncomeExpenseService();
 
   bool showForm = false;
   bool _loading = false;
@@ -67,7 +67,7 @@ class _AccountIncomePageState extends State<AccountIncomePage> {
       _error = null;
     });
     try {
-      final fetchedDrawers = await _incexpService.getIncomeExpenseService();
+      final fetchedDrawers = await _incExpService.getIncomeExpenseService();
       setState(() {
         drawers = fetchedDrawers
             .map((e) => e as Map<String, dynamic>)
@@ -106,7 +106,7 @@ class _AccountIncomePageState extends State<AccountIncomePage> {
       'createdAt': _dateTime,
     };
     try {
-      await _incexpService.createIncomeExpenseService(data);
+      await _incExpService.createIncomeExpenseService(data);
       reasonController.clear();
       amountController.clear();
       setState(() {

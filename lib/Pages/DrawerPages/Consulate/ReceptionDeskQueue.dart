@@ -225,7 +225,7 @@ class _ReceptionQueuePageState extends State<ReceptionQueuePage>
                           vertical: 5,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.25),
+                          color: Colors.white.withValues(alpha: 0.25),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: buildStatusWidget(status),
@@ -273,7 +273,7 @@ class _ReceptionQueuePageState extends State<ReceptionQueuePage>
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),

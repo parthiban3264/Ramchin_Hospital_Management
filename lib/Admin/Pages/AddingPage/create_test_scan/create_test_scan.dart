@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../../Mediacl_Staff/Pages/OutPatient/Page/InjectionPage.dart';
+import '../../../../Mediacl_Staff/Pages/OutPatient/Page/injection_page.dart';
 import 'service.dart';
 import 'widget.dart';
 

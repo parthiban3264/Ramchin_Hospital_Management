@@ -53,7 +53,7 @@ class _ReportFilterWidgetState extends State<ReportFilterWidget> {
                         boxShadow: isSelected
                             ? [
                                 BoxShadow(
-                                  color: Colors.blue.withOpacity(0.3),
+                                  color: Colors.blue.withValues(alpha: 0.3),
                                   blurRadius: 6,
                                   offset: const Offset(0, 3),
                                 ),

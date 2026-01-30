@@ -451,7 +451,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../Services/admin_service.dart';
 
-import '../Medical/MedicalQueuePage.dart';
+import '../Medical/medical_queue_page.dart';
 import '../a_new_medical/a_new_medical/bulk_upload/bulk_upload.dart';
 import '../a_new_medical/a_new_medical/medicines/add_medicines.dart';
 import '../a_new_medical/a_new_medical/reorder/reorder_list.dart';

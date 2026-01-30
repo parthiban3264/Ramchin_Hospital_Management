@@ -246,7 +246,7 @@ class PatientTrackingDetailsPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 6,
             offset: const Offset(0, 3),
           ),
@@ -256,7 +256,7 @@ class PatientTrackingDetailsPage extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 30,
-            backgroundColor: primaryColor.withOpacity(0.15),
+            backgroundColor: primaryColor.withValues(alpha: 0.15),
             child: const Icon(Icons.person, color: primaryColor, size: 28),
           ),
           const SizedBox(width: 16),
@@ -286,7 +286,7 @@ class PatientTrackingDetailsPage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: statusColor(status).withOpacity(0.15),
+        color: statusColor(status).withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
@@ -310,7 +310,7 @@ class PatientTrackingDetailsPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 6,
             offset: const Offset(0, 3),
           ),
@@ -500,7 +500,7 @@ class PatientTrackingDetailsPage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.red.withOpacity(0.1),
+        color: Colors.red.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(

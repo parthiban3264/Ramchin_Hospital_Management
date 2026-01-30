@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
-import '../../../../Admin/Pages/AdminEditProfilePage.dart';
+import '../../../../Admin/Pages/admin_edit_profile_page.dart';
 import '../../../../Services/consultation_service.dart';
 
 class PatientHistoryInDoctor extends StatefulWidget {
@@ -50,10 +49,10 @@ class _PatientHistoryInDoctorState extends State<PatientHistoryInDoctor> {
     return DateTime.tryParse(v?.toString() ?? '') ?? DateTime(2000);
   }
 
-  String _formatDateTime(dynamic v) {
-    final d = _parseDate(v);
-    return DateFormat('dd MMM yyyy, hh:mm a').format(d);
-  }
+  // String _formatDateTime(dynamic v) {
+  //   final d = _parseDate(v);
+  //   return DateFormat('dd MMM yyyy, hh:mm a').format(d);
+  // }
 
   int? _calculateAge(dynamic dob) {
     if (dob == null) return null;
@@ -382,7 +381,7 @@ class _PatientHistoryInDoctorState extends State<PatientHistoryInDoctor> {
 
     return Chip(
       label: Text(status ?? '–'),
-      backgroundColor: color.withOpacity(0.15),
+      backgroundColor: color.withValues(alpha: 0.15),
       labelStyle: TextStyle(color: color, fontSize: 12),
     );
   }
@@ -433,7 +432,7 @@ class _PatientHistoryInDoctorState extends State<PatientHistoryInDoctor> {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.15),
+                  color: statusColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(

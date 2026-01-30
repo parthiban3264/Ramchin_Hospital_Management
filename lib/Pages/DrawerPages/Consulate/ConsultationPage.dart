@@ -10,7 +10,7 @@ import 'doctor_consultation_page.dart';
 const Color customGold = Color(0xFFBF955E);
 
 class ConsultationQueuePage extends StatefulWidget {
-  const ConsultationQueuePage({Key? key}) : super(key: key);
+  const ConsultationQueuePage({super.key});
 
   @override
   State<ConsultationQueuePage> createState() => _ConsultationQueuePageState();
@@ -100,10 +100,11 @@ class _ConsultationQueuePageState extends State<ConsultationQueuePage>
         };
       }).toList();
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('❌ Error fetching consultations: $e')),
         );
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -126,34 +127,44 @@ class _ConsultationQueuePageState extends State<ConsultationQueuePage>
         if (response['status'] == 'success' ||
             response['message']?.toString().toLowerCase().contains('updated') ==
                 true) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("✅ Status updated to ONGOING")),
-          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("✅ Status updated to ONGOING")),
+            );
+          }
           await _fetchAllConsultations(); // Refresh page
           consultation = consultations.firstWhere(
             (c) => c['id'] == consultation['id'],
             orElse: () => consultation,
           );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("⚠️ Update failed: ${response['message']}")),
-          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text("⚠️ Update failed: ${response['message']}"),
+              ),
+            );
+          }
           return;
         }
       } catch (e) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("❌ Error updating status: $e")));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("❌ Error updating status: $e")),
+          );
+        }
         return;
       }
     }
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => DoctorConsultationPage(consultation: consultation),
-      ),
-    );
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DoctorConsultationPage(consultation: consultation),
+        ),
+      );
+    }
   }
 
   Color _getStatusColor(String status) {
@@ -274,7 +285,7 @@ class _ConsultationQueuePageState extends State<ConsultationQueuePage>
                       children: [
                         CircleAvatar(
                           radius: 26,
-                          backgroundColor: customGold.withOpacity(0.2),
+                          backgroundColor: customGold.withValues(alpha: 0.2),
                           child: const Icon(Icons.person, color: customGold),
                         ),
                         const SizedBox(width: 10),
@@ -390,7 +401,7 @@ class _ConsultationQueuePageState extends State<ConsultationQueuePage>
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../../../Admin/Pages/AdminEditProfilePage.dart';
+import '../../../../../Admin/Pages/admin_edit_profile_page.dart';
 import '../../../../../Appbar/MobileAppbar.dart';
 import '../../../../../utils/utils.dart';
 

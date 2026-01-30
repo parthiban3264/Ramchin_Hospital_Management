@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../Admin/Appbar/admin_appbar_desktop.dart';
-import '../../Admin/Pages/AddingPage.dart';
-import '../../Admin/Pages/AdminDashboardPage.dart';
+import '../../Admin/Pages/adding_page.dart';
+import '../../Admin/Pages/admin_dashboard_page.dart';
 import '../../Drawer/MedicalStaffDrawer.dart';
 import '../../Mediacl_Staff/Appbar/MedicalStaffAppbarMobile.dart';
 import '../../Mediacl_Staff/Pages/Dashboard/CashierDashboard.dart';
@@ -142,8 +142,11 @@ class _MedicalStaffDashboardPageState extends State<MedicalStaffDashboardPage> {
     final isMobile = width < 600;
     final isSmallDesktop = width >= 600 && width < 800;
 
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      onPopInvokedWithResult: (_, __) {
+        onWillPop();
+      },
+      // onWillPop: onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
           preferredSize: Size(width, 100),

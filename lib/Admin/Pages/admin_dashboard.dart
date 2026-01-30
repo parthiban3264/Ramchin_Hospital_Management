@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../Drawer/AdminDrawer.dart';
 import '../Appbar/admin_appbar_mobile.dart';
-import 'AddingPage.dart';
-import 'AdminDashboardPage.dart';
-import 'AdminOverviewPage.dart';
+import 'adding_page.dart';
+import 'admin_dashboard_page.dart';
+import 'admin_overview_page.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
@@ -24,8 +24,11 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     double screenWidth = MediaQuery.sizeOf(context).width;
     bool isMobile = screenWidth < 600;
     bool isSmallDesktop = screenWidth >= 600 && screenWidth < 800;
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      onPopInvokedWithResult: (_, __) {
+        onWillPop();
+      },
+      // onWillPop: onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
           preferredSize: Size(screenWidth, 100),

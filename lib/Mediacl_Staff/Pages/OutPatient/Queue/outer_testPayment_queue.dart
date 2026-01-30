@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/payment_service.dart';
-import '../Page/PaymentPage.dart';
+
 import '../Page/outer_testPayment_page.dart';
 
 class FeesTestQueuePage extends StatefulWidget {
@@ -237,8 +237,6 @@ class _FeesTestQueuePageState extends State<FeesTestQueuePage> {
     setState(() {
       _cancelledFees = filtered;
     });
-
-    print("✅ Cancelled fees count: ${_cancelledFees.length}");
   }
 
   @override
@@ -284,7 +282,7 @@ class _FeesTestQueuePageState extends State<FeesTestQueuePage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -702,7 +700,7 @@ class _FeesTestQueuePageState extends State<FeesTestQueuePage> {
                                     children: [
                                       Center(
                                         child: Text(
-                                          '${getFormattedDate(item['updatedAt'])}',
+                                          getFormattedDate(item['updatedAt']),
                                           style: TextStyle(
                                             fontSize: 12,
                                             color: Colors.grey.shade800,

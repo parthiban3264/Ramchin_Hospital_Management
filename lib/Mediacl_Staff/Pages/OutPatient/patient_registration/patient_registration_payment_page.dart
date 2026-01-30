@@ -7,7 +7,7 @@ import 'package:hospitrax/Mediacl_Staff/Pages/OutPatient/patient_registration/te
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../../Admin/Pages/AdminEditProfilePage.dart';
+import '../../../../Admin/Pages/admin_edit_profile_page.dart';
 import '../../../../Services/Doctor/doctor_service.dart';
 import '../../../../Services/consultation_service.dart';
 import '../../../../Services/patient_service.dart';
@@ -1534,10 +1534,12 @@ class _PatientRegistrationAndPaymentPagesState
         //   );
         //   Navigator.pop(context, true);
         // }
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('New Appointment created')),
-        );
-        print('payment ${result['data']['payment']}');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('New Appointment created')),
+          );
+        }
+
         // final payment = result['payment'];
         //
         // if (payment == null) {
@@ -1555,7 +1557,7 @@ class _PatientRegistrationAndPaymentPagesState
           });
         } else {
           // Optional UX feedback
-          showSnackBar('No payment required', context);
+          if (mounted) showSnackBar('No payment required', context);
         }
       } else {
         // New user: create patient then create consultation
@@ -1596,10 +1598,9 @@ class _PatientRegistrationAndPaymentPagesState
         //   );
         //   Navigator.pop(context, true);
         // }
-        ;
+
         final payment = result['data']['payment'];
-        print('resulttt : $result');
-        print('payment21: $payment');
+
         if (payment != null) {
           setState(() {
             paymentData = payment;
@@ -1608,7 +1609,7 @@ class _PatientRegistrationAndPaymentPagesState
           });
         } else {
           // Optional UX feedback
-          showSnackBar('No payment required', context);
+          if (mounted) showSnackBar('No payment required', context);
         }
       }
     } catch (e) {

@@ -371,9 +371,7 @@ class _PatientHomeState extends State<PatientHome> {
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ...upcoming.map((it) => _medRow(it, false)).toList(),
-                  ],
+                  children: [...upcoming.map((it) => _medRow(it, false))],
                 ),
               ),
             if (over.isNotEmpty)
@@ -384,7 +382,7 @@ class _PatientHomeState extends State<PatientHome> {
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [...over.map((it) => _medRow(it, true)).toList()],
+                  children: [...over.map((it) => _medRow(it, true))],
                 ),
               ),
             const SizedBox(height: 8),

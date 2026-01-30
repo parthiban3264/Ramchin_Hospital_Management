@@ -49,7 +49,7 @@ class _PatientTestsState extends State<PatientTests> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -149,7 +149,7 @@ class _PatientTestsState extends State<PatientTests> {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withValues(alpha: 0.08),
               blurRadius: 12,
               spreadRadius: 2,
               offset: const Offset(0, 4),
@@ -223,8 +223,8 @@ class _PatientTestsState extends State<PatientTests> {
                         ),
                         decoration: BoxDecoration(
                           color: (t["status"] == "COMPLETED")
-                              ? Colors.green.withOpacity(0.15)
-                              : Colors.orange.withOpacity(0.15),
+                              ? Colors.green.withValues(alpha: 0.15)
+                              : Colors.orange.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -277,8 +277,9 @@ class _PatientTestsState extends State<PatientTests> {
         if (result == "N/A" ||
             selected == "N/A" ||
             result.isEmpty ||
-            selected.isEmpty)
+            selected.isEmpty) {
           continue;
+        }
 
         results[opt["name"].toString()] = result;
       }
@@ -304,8 +305,9 @@ class _PatientTestsState extends State<PatientTests> {
         if (name.isEmpty ||
             result.isEmpty ||
             selected == "N/A" ||
-            result == "N/A")
+            result == "N/A") {
           continue;
+        }
 
         rows.add({
           "Test": name,

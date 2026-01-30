@@ -29,20 +29,13 @@ class PaymentTotals {
   double totalScan = 0;
   double totalScanCash = 0;
   double totalScanOnline = 0;
-  DateFilter? _currentFilter;
-  DateTime? _reportFromDate;
-  DateTime? _reportToDate;
 
-  // ---------------- Count Fields ----------------
   int totalRegistrationFeeCount = 0;
   int totalSugarFeeCount = 0;
   int totalEmergencyFeeCount = 0;
 
-  // ---------------- Sub-Test/Scan Maps ----------------
-  Map<String, int> testCounts = {}; // e.g., {"Blood Test": 3, "Sugar Test": 2}
-  Map<String, int> scanCounts = {}; // e.g., {"X-ray": 2, "MRI": 1}
-
-  // ---------------- Grand Total ----------------
+  Map<String, int> testCounts = {};
+  Map<String, int> scanCounts = {};
   double get grandTotal => totalRegister + totalMedical + totalTest + totalScan;
 }
 
@@ -72,7 +65,7 @@ class _AccountsReportState extends State<AccountsReport> {
   double _totalDrawing = 0;
   double _cashInHand = 0;
   DateTime? _reportFromDate;
-  DateTime? _reportToDate;
+  DateTime? reportToDate;
   DateFilter? _currentFilter;
 
   bool _isGeneratingPdf = false;
@@ -218,7 +211,7 @@ class _AccountsReportState extends State<AccountsReport> {
     // after switch(reportType)
     _currentFilter = reportType;
     _reportFromDate = from;
-    _reportToDate = to;
+    reportToDate = to;
 
     // ---------------- Filter Payments ----------------
     final filtered = _allPayments.where((p) {
@@ -317,11 +310,11 @@ class _AccountsReportState extends State<AccountsReport> {
         totals.totalMedicalCash +
         _totalIncomes; // other income (cash)
 
-    final totalOnlinePayments =
-        totals.totalRegisterOnline +
-        totals.totalTestOnline +
-        totals.totalScanOnline +
-        totals.totalMedicalOnline;
+    // final totalOnlinePayments =
+    //     totals.totalRegisterOnline +
+    //     totals.totalTestOnline +
+    //     totals.totalScanOnline +
+    //     totals.totalMedicalOnline;
 
     final balance = totalCashPayments - _totalExpenses;
 
@@ -535,7 +528,7 @@ class _AccountsReportState extends State<AccountsReport> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 6,
             offset: const Offset(0, 4),
           ),

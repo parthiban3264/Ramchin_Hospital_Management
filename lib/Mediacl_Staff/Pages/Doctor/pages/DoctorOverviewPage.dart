@@ -121,7 +121,6 @@ class _DrOverviewPageState extends State<DrOverviewPage> {
   // ───────────────────── UI ─────────────────────
   @override
   Widget build(BuildContext context) {
-    print(hospitalPhoto);
     return Scaffold(
       backgroundColor: backgroundColor,
       body: FutureBuilder(

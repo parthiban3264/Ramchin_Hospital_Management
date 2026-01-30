@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hospitrax/Pages/NotificationsPage.dart';
 import 'package:hospitrax/Pages/SettingPage.dart';
-import '../../Admin/Colors/Colors.dart';
+import '../../Admin/Colors/custom_colors.dart';
 
 class MedicalStaffAppbarMobile extends StatelessWidget {
   const MedicalStaffAppbarMobile({

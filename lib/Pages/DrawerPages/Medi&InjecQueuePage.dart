@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../Admin/Colors/Colors.dart';
+import '../../Admin/Colors/custom_colors.dart';
 import '../../Services/Medicine&Injection_service.dart';
 import '../NotificationsPage.dart';
 import 'Medi&InjecPage.dart';
@@ -11,7 +11,7 @@ import 'Medi&InjecPage.dart';
 const Color customGold = Color(0xFFBF955E);
 
 class MedicineQueuePage extends StatefulWidget {
-  const MedicineQueuePage({Key? key}) : super(key: key);
+  const MedicineQueuePage({super.key});
 
   @override
   State<MedicineQueuePage> createState() => _MedicineQueuePageState();
@@ -69,19 +69,25 @@ class _MedicineQueuePageState extends State<MedicineQueuePage> {
       final payload = {'status': 'ONGOING'};
       final res = await _service.updateMedicineAndInjection(id, payload);
       if (res['status'] == 'success') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Status updated to ONGOING')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Status updated to ONGOING')),
+          );
+        }
         await _refresh();
       } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed: ${res['message']}')));
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Failed: ${res['message']}')));
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
     }
   }
 
@@ -145,8 +151,8 @@ class _MedicineQueuePageState extends State<MedicineQueuePage> {
                     ),
                     decoration: BoxDecoration(
                       color: status == 'PENDING'
-                          ? Colors.orange.withOpacity(0.2)
-                          : Colors.green.withOpacity(0.2),
+                          ? Colors.orange.withValues(alpha: 0.2)
+                          : Colors.green.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(

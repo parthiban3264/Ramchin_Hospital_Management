@@ -30,7 +30,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late TextEditingController _addressController;
   late TextEditingController _photoController;
 
-  bool _isLoading = true;
+  bool _isLoading = false;
   bool _isSaving = false;
   File? _selectedImage;
   bool _hasChanges = false;
@@ -105,14 +105,18 @@ class _EditProfilePageState extends State<EditProfilePage> {
           _hasChanges = false;
         });
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("⚠️ Failed to fetch admin profile")),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("⚠️ Failed to fetch admin profile")),
+          );
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Error fetching data: $e")));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Error fetching data: $e")));
+      }
     } finally {
       setState(() => _isLoading = false);
     }
@@ -229,20 +233,26 @@ class _EditProfilePageState extends State<EditProfilePage> {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString("staffPhoto", photoUrl);
         staffPhotoNotifier.value = photoUrl;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text(" Profile updated !")));
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text(" Profile updated !")));
+        }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("⚠️ ${response['message'] ?? 'Update failed'}"),
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("⚠️ ${response['message'] ?? 'Update failed'}"),
+            ),
+          );
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Error updating profile: $e")));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Error updating profile: $e")));
+      }
     } finally {
       setState(() => _isSaving = false);
     }

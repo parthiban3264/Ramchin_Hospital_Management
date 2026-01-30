@@ -9,7 +9,7 @@ class BuildHospitalProfile extends StatelessWidget {
       padding: const EdgeInsets.all(8.0),
       child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        color: Colors.white.withOpacity(0.95),
+        color: Colors.white.withValues(alpha: 0.95),
         elevation: 8,
         shadowColor: Colors.black26,
         child: Padding(

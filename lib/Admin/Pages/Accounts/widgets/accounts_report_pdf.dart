@@ -86,10 +86,10 @@ class AccountsReportPdf {
 
     /// ---------------- CALCULATIONS ----------------
     double doctorCash = 0, doctorOnline = 0;
-    doctorTotals.values.forEach((v) {
+    for (var v in doctorTotals.values) {
       doctorCash += v['cash']!;
       doctorOnline += v['online']!;
-    });
+    }
     final totalCash =
         registrationCash +
         doctorCash +
@@ -340,10 +340,10 @@ class AccountsReportPdf {
     ),
   );
 
-  static String _today() =>
-      '${DateTime.now().day.toString().padLeft(2, '0')}.'
-      '${DateTime.now().month.toString().padLeft(2, '0')}.'
-      '${DateTime.now().year}';
+  // static String _today() =>
+  //     '${DateTime.now().day.toString().padLeft(2, '0')}.'
+  //     '${DateTime.now().month.toString().padLeft(2, '0')}.'
+  //     '${DateTime.now().year}';
 
   static String _doctorName(Map p) {
     final admins = p['Hospital']?['Admins'];

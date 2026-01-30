@@ -6,7 +6,7 @@ import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 
-import '../../../Mediacl_Staff/Pages/OutPatient/Page/InjectionPage.dart';
+import '../../../Mediacl_Staff/Pages/OutPatient/Page/injection_page.dart';
 import '../../../Pages/NotificationsPage.dart';
 
 class AppPaymentPage extends StatefulWidget {
@@ -765,6 +765,5 @@ class _AppPaymentPageState extends State<AppPaymentPage> {
         ),
       ),
     );
-    ;
   }
 }

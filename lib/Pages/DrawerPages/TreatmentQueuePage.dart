@@ -59,9 +59,11 @@ class _TreatmentQueuePageState extends State<TreatmentQueuePage>
 
       setState(() => _treatments = filtered);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error fetching treatment queue: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error fetching treatment queue: $e')),
+        );
+      }
     } finally {
       setState(() => _isLoading = false);
     }
@@ -97,7 +99,7 @@ class _TreatmentQueuePageState extends State<TreatmentQueuePage>
                   radius: 4,
                   backgroundColor: index < dotCount
                       ? _statusColor(status)
-                      : _statusColor(status).withOpacity(0.3),
+                      : _statusColor(status).withValues(alpha: 0.3),
                 ),
               ),
             ),
@@ -209,7 +211,7 @@ class _TreatmentQueuePageState extends State<TreatmentQueuePage>
                       borderRadius: BorderRadius.circular(16),
                     ),
                     elevation: 3,
-                    shadowColor: primaryColor.withOpacity(0.3),
+                    shadowColor: primaryColor.withValues(alpha: 0.3),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(16),
                       onTap: () async {
@@ -272,8 +274,8 @@ class _TreatmentQueuePageState extends State<TreatmentQueuePage>
                               children: [
                                 CircleAvatar(
                                   radius: 28,
-                                  backgroundColor: primaryColor.withOpacity(
-                                    0.15,
+                                  backgroundColor: primaryColor.withValues(
+                                    alpha: 0.15,
                                   ),
                                   child: const Icon(
                                     Icons.medical_services_rounded,
@@ -313,7 +315,7 @@ class _TreatmentQueuePageState extends State<TreatmentQueuePage>
                                   decoration: BoxDecoration(
                                     color: _statusColor(
                                       status,
-                                    ).withOpacity(0.2),
+                                    ).withValues(alpha: 0.2),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: _statusWidget(status),

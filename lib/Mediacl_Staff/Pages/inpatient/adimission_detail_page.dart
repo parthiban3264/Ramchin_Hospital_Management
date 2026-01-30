@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import '../../../../../../utils/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../Services/admin_service.dart';
 import '../../../Services/charge_Service.dart';
 
 const Color royal = Color(0xFFBF955E);
@@ -19,12 +20,20 @@ class AdmissionDetailPage extends StatefulWidget {
 class _AdmissionDetailPageState extends State<AdmissionDetailPage> {
   int? bedId;
   bool changeBed = false;
+  bool changeDoctor = false;
+  bool changeNurse = false;
+  List<dynamic> nurseList = [];
+  List<dynamic> doctorList = [];
+  bool isLoadingPage = true;
   List beds = [];
+  int? doctorId = 123;
+  int? nurseId = 1234567895;
 
   @override
   void initState() {
     super.initState();
     loadBeds();
+    loadStaff();
   }
 
   Future<void> loadBeds() async {
@@ -60,6 +69,29 @@ class _AdmissionDetailPageState extends State<AdmissionDetailPage> {
     setState(() {
       beds = availableBeds;
       bedId ??= widget.admission['bedId'];
+    });
+  }
+
+  void loadStaff() async {
+    setState(() => isLoadingPage = true);
+    final prefs = await SharedPreferences.getInstance();
+    final String userId = prefs.getString("userId") ?? "";
+
+    final data = await AdminService().getMedicalStaff();
+
+    final nurse = data
+        .where((s) => s["role"].toString().toLowerCase() == "nurse")
+        .toList();
+    final doctors = data
+        .where((s) => s["role"].toString().toLowerCase() == "doctor")
+        .toList();
+    print('nurse $nurse');
+    print('doctor $doctors');
+    setState(() {
+      nurseList = nurse;
+      doctorList = doctors;
+      //filteredList = nonAdmins;
+      isLoadingPage = false;
     });
   }
 
@@ -148,6 +180,8 @@ class _AdmissionDetailPageState extends State<AdmissionDetailPage> {
     ).toLocal().toString().substring(0, 16);
 
     final bedText = "Bed ${a['bed']['bedNo']} • ${a['bed']['ward']['name']}";
+    final doctorText = "1";
+    final nurseText = "2";
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -211,7 +245,44 @@ class _AdmissionDetailPageState extends State<AdmissionDetailPage> {
                 child: CircularProgressIndicator(),
               ),
 
-            const SizedBox(height: 30),
+            _editableCard(
+              title: "Doctor",
+              value: doctorText,
+              changing: changeDoctor,
+              onTap: () => setState(() => changeDoctor = !changeDoctor),
+              child: DropdownButtonFormField<int>(
+                key: ValueKey(doctorList.length), // 🔥 FORCE REBUILD
+                value: changeDoctor ? doctorId : null,
+                hint: const Text("Select Doctor"),
+                items: doctorList.map<DropdownMenuItem<int>>((b) {
+                  return DropdownMenuItem(
+                    value: int.parse(b['user_Id']),
+                    child: Text("${b['name']} • ${b['specialist']}"),
+                  );
+                }).toList(),
+                onChanged: (v) => setState(() => doctorId = v),
+              ),
+            ),
+
+            _editableCard(
+              title: "Nurse",
+              value: nurseText,
+              changing: changeNurse,
+              onTap: () => setState(() => changeNurse = !changeNurse),
+              child: DropdownButtonFormField<int>(
+                key: ValueKey(nurseList.length), // 🔥 FORCE REBUILD
+                value: changeNurse ? nurseId : null,
+                hint: const Text("Select Nurse"),
+                items: nurseList.map<DropdownMenuItem<int>>((b) {
+                  return DropdownMenuItem(
+                    value: int.parse(b['user_Id'].toString()),
+                    child: Text(b['name'].toString()),
+                  );
+                }).toList(),
+                onChanged: (v) => setState(() => nurseId = v),
+              ),
+            ),
+            const SizedBox(height: 10),
 
             /// 💾 SAVE
             Row(
@@ -240,64 +311,7 @@ class _AdmissionDetailPageState extends State<AdmissionDetailPage> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: SizedBox(
-                    height: 52,
-                    child: ElevatedButton.icon(
-                      icon: const Icon(Icons.logout),
-                      label: const Text(
-                        "Discharge",
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red.shade600,
-                        foregroundColor: Colors.white,
-                        elevation: 3,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      onPressed: () {
-                        // Optional confirmation dialog
-                        showDialog(
-                          context: context,
-                          builder: (_) => AlertDialog(
-                            title: const Text("Confirm Discharge"),
-                            content: const Text(
-                              "Are you sure you want to discharge this patient?",
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: const Text(
-                                  "Cancel",
-                                  style: TextStyle(color: Colors.black),
-                                ),
-                              ),
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red,
-                                ),
-                                onPressed: () {
-                                  // Navigator.pop(context);
-                                  dischargePatient();
-                                },
-                                child: const Text(
-                                  "Discharge",
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
+                //const SizedBox(width: 10),
               ],
             ),
           ],
@@ -385,23 +399,23 @@ class _AdmissionDetailPageState extends State<AdmissionDetailPage> {
     );
   }
 
-  Widget _dropdown({
-    required String hint,
-    required List items,
-    required int? value,
-    required Function(int?) onChanged,
-  }) {
-    return DropdownButtonFormField<int>(
-      value: value,
-      hint: Text(hint),
-      items: items
-          .map<DropdownMenuItem<int>>(
-            (i) => DropdownMenuItem(value: i['id'], child: Text(i['name'])),
-          )
-          .toList(),
-      onChanged: onChanged,
-    );
-  }
+  // Widget _dropdown({
+  //   required String hint,
+  //   required List items,
+  //   required int? value,
+  //   required Function(int?) onChanged,
+  // }) {
+  //   return DropdownButtonFormField<int>(
+  //     value: value,
+  //     hint: Text(hint),
+  //     items: items
+  //         .map<DropdownMenuItem<int>>(
+  //           (i) => DropdownMenuItem(value: i['id'], child: Text(i['name'])),
+  //         )
+  //         .toList(),
+  //     onChanged: onChanged,
+  //   );
+  // }
 
   Widget _row(String label, String value) {
     return Padding(

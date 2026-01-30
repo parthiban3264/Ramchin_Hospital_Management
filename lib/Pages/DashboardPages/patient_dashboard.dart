@@ -12,14 +12,14 @@ class PatientDashboardPage extends StatefulWidget {
   const PatientDashboardPage({super.key});
 
   @override
-  State<PatientDashboardPage> createState() => _PatientDashboardPageState();
+  State<PatientDashboardPage> createState() => PatientDashboardPageState();
 
   // 🔥 Allow children (PatientHome) to call refresh
-  static _PatientDashboardPageState? of(BuildContext context) =>
-      context.findAncestorStateOfType<_PatientDashboardPageState>();
+  static PatientDashboardPageState? of(BuildContext context) =>
+      context.findAncestorStateOfType<PatientDashboardPageState>();
 }
 
-class _PatientDashboardPageState extends State<PatientDashboardPage> {
+class PatientDashboardPageState extends State<PatientDashboardPage> {
   final HospitalService hospitalService = HospitalService();
 
   static int selectedIndex = 0;
@@ -62,8 +62,11 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
     bool isMobile = screenWidth < 600;
     bool isSmallDesktop = screenWidth >= 600 && screenWidth < 800;
 
-    return WillPopScope(
-      onWillPop: onWillPop,
+    return PopScope(
+      onPopInvokedWithResult: (_, __) {
+        onWillPop();
+      },
+      // onWillPop: onWillPop,
       child: Scaffold(
         appBar: PreferredSize(
           preferredSize: Size(screenWidth, 100),

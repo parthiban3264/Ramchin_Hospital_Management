@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../Admin/Pages/AdminEditProfilePage.dart';
+import '../../../../../Admin/Pages/admin_edit_profile_page.dart';
 import './supplier_reorder_pdf_page.dart';
 
 const Color royal = Color(0xFF875C3F);

@@ -137,7 +137,7 @@ class TreatmentSection extends StatelessWidget {
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? primaryColor.withOpacity(0.8)
+                              ? primaryColor.withValues(alpha: 0.8)
                               : Colors.white,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: primaryColor),

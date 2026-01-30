@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../Admin/Colors/Colors.dart';
-import '../Admin/Pages/AdminEditProfilePage.dart';
-import '../Admin/Pages/AdminProfilePage.dart';
-import '../Admin/Pages/changePasswordPage.dart';
+import '../../Admin/Colors/custom_colors.dart';
+import '../Admin/Pages/admin_edit_profile_page.dart';
+import '../Admin/Pages/admin_profile_page.dart';
+import '../Admin/Pages/change_password_page.dart';
 import '../Pages/NotificationsPage.dart';
 import '../Pages/login/widget/HospitalLoginPage.dart';
 import '../Services/auth_service.dart';
@@ -96,7 +96,7 @@ class AdminMobileDrawer extends StatelessWidget {
           children: [
             DrawerHeader(
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withValues(alpha: 0.9),
                 borderRadius: const BorderRadius.only(
                   bottomRight: Radius.circular(20),
                   bottomLeft: Radius.circular(20),
@@ -159,7 +159,7 @@ class AdminMobileDrawer extends StatelessWidget {
                     ),
                     // decoration: BoxDecoration(
                     //   color: selected
-                    //       ? Colors.white.withOpacity(0.3)
+                    //       ? Colors.white.withValues(alpha:0.3)
                     //       : Colors.transparent,
                     //   borderRadius: BorderRadius.circular(10),
                     // ),
@@ -217,17 +217,20 @@ class AdminMobileDrawer extends StatelessWidget {
 
                   await AuthService().logout(); // logout API call
                   await prefs.clear(); // clear all local storage
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const HospitalLoginPage(),
-                    ),
-                  );
+                  if (context.mounted) {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const HospitalLoginPage(),
+                      ),
+                    );
+                  }
                 } catch (e) {
-                  // Optional: show error message
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text('Logout failed: $e')));
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Logout failed: $e')),
+                    );
+                  }
                 }
               },
             ),

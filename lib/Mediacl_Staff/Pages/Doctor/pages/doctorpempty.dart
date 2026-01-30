@@ -7,10 +7,10 @@ import '../../../../Services/Medicine_Service.dart';
 import '../../../../Services/Tonic_service.dart';
 import '../../../../Services/consultation_service.dart';
 import '../../../../Services/socket_service.dart';
-import '../widgets/injection_card.dart';
+// import '../widgets/injection_card.dart';
 import '../widgets/medicine_card.dart';
-import '../widgets/other_card.dart';
-import '../widgets/tonic_card.dart';
+// import '../widgets/other_card.dart';
+// import '../widgets/tonic_card.dart';
 
 class DoctorsPrescriptionPage extends StatefulWidget {
   final Map<String, dynamic> consultation;
@@ -154,12 +154,12 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
   //     }
   //   });
   // }
-  void _onAddTonic(List<Map<String, dynamic>> tonics) {
-    setState(() {
-      // Replace entire summary list with the latest from MedicineCard
-      submittedTonics = List<Map<String, dynamic>>.from(tonics);
-    });
-  }
+  // void _onAddTonic(List<Map<String, dynamic>> tonics) {
+  //   setState(() {
+  //     // Replace entire summary list with the latest from MedicineCard
+  //     submittedTonics = List<Map<String, dynamic>>.from(tonics);
+  //   });
+  // }
 
   // void _onAddInjection(List<Map<String, dynamic>> injections) {
   //   setState(() {
@@ -178,12 +178,12 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
   //     }
   //   });
   // }
-  void _onAddInjection(List<Map<String, dynamic>> injections) {
-    setState(() {
-      // Replace entire summary list with the latest from MedicineCard
-      submittedInjections = List<Map<String, dynamic>>.from(injections);
-    });
-  }
+  // void _onAddInjection(List<Map<String, dynamic>> injections) {
+  //   setState(() {
+  //     // Replace entire summary list with the latest from MedicineCard
+  //     submittedInjections = List<Map<String, dynamic>>.from(injections);
+  //   });
+  // }
 
   Future<void> _handleSubmitPrescription() async {
     if (submittedMedicines.isEmpty &&
@@ -472,71 +472,71 @@ class _DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
     );
   }
 
-  Widget _buildTonicTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(4),
-      child: Column(
-        children: [
-          TonicCard(
-            primaryColor: primaryColor,
-            tonicService: tonicService,
-            allTonics: allTonics,
-            tonicsLoaded: tonicsLoaded,
-            onAdd: _onAddTonic,
-            expanded: true,
-            onExpandToggle: () {},
-            initialSavedTonics: persistentTonicsEntries,
-          ),
-          const SizedBox(height: 16),
-          if (submittedMedicines.isNotEmpty ||
-              submittedTonics.isNotEmpty ||
-              submittedInjections.isNotEmpty)
-            _buildCombinedSummaryCard(),
-          const SizedBox(height: 80),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInjectionTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(4),
-      child: Column(
-        children: [
-          InjectionCard(
-            primaryColor: primaryColor,
-            injectionService: injectionService,
-            allInjection: allInjection,
-            injectionsLoaded: injectionsLoaded,
-            onAdd: _onAddInjection,
-            expanded: true,
-            onExpandToggle: () {},
-            initialSavedInjection: persistentInjectionEntries,
-          ),
-          const SizedBox(height: 16),
-          if (submittedMedicines.isNotEmpty ||
-              submittedTonics.isNotEmpty ||
-              submittedInjections.isNotEmpty)
-            _buildCombinedSummaryCard(),
-          const SizedBox(height: 80),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOthersTab() {
-    return Column(
-      children: [
-        // 🟢 Takes available height
-        Expanded(child: OtherCard(onAdd: (othersList) {})),
-
-        // 🔽 Summary Card (Fixed at bottom)
-        _buildCombinedSummaryCard(),
-
-        const SizedBox(height: 80),
-      ],
-    );
-  }
+  // Widget _buildTonicTab() {
+  //   return SingleChildScrollView(
+  //     padding: const EdgeInsets.all(4),
+  //     child: Column(
+  //       children: [
+  //         TonicCard(
+  //           primaryColor: primaryColor,
+  //           tonicService: tonicService,
+  //           allTonics: allTonics,
+  //           tonicsLoaded: tonicsLoaded,
+  //           onAdd: _onAddTonic,
+  //           expanded: true,
+  //           onExpandToggle: () {},
+  //           initialSavedTonics: persistentTonicsEntries,
+  //         ),
+  //         const SizedBox(height: 16),
+  //         if (submittedMedicines.isNotEmpty ||
+  //             submittedTonics.isNotEmpty ||
+  //             submittedInjections.isNotEmpty)
+  //           _buildCombinedSummaryCard(),
+  //         const SizedBox(height: 80),
+  //       ],
+  //     ),
+  //   );
+  // }
+  //
+  // Widget _buildInjectionTab() {
+  //   return SingleChildScrollView(
+  //     padding: const EdgeInsets.all(4),
+  //     child: Column(
+  //       children: [
+  //         InjectionCard(
+  //           primaryColor: primaryColor,
+  //           injectionService: injectionService,
+  //           allInjection: allInjection,
+  //           injectionsLoaded: injectionsLoaded,
+  //           onAdd: _onAddInjection,
+  //           expanded: true,
+  //           onExpandToggle: () {},
+  //           initialSavedInjection: persistentInjectionEntries,
+  //         ),
+  //         const SizedBox(height: 16),
+  //         if (submittedMedicines.isNotEmpty ||
+  //             submittedTonics.isNotEmpty ||
+  //             submittedInjections.isNotEmpty)
+  //           _buildCombinedSummaryCard(),
+  //         const SizedBox(height: 80),
+  //       ],
+  //     ),
+  //   );
+  // }
+  //
+  // Widget _buildOthersTab() {
+  //   return Column(
+  //     children: [
+  //       // 🟢 Takes available height
+  //       Expanded(child: OtherCard(onAdd: (othersList) {})),
+  //
+  //       // 🔽 Summary Card (Fixed at bottom)
+  //       _buildCombinedSummaryCard(),
+  //
+  //       const SizedBox(height: 80),
+  //     ],
+  //   );
+  // }
 
   Widget _buildCombinedSummaryCard() {
     if (submittedMedicines.isEmpty &&

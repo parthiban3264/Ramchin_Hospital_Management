@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../../Services/admin_service.dart';
 import 'DrInPatientQueuePage.dart';
-import 'DrOutPatientQueuePage.dart';
+import 'dr_out_patient_queue_page.dart';
 
 class DrOpDashboardPage extends StatefulWidget {
   const DrOpDashboardPage({super.key});
@@ -86,7 +86,7 @@ class _DrOpDashboardPageState extends State<DrOpDashboardPage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    color: Colors.white.withOpacity(0.95),
+                    color: Colors.white.withValues(alpha: 0.95),
                     elevation: 8,
                     shadowColor: Colors.black26,
                     child: Padding(
@@ -172,7 +172,7 @@ class _DrOpDashboardPageState extends State<DrOpDashboardPage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(22),
                     ),
-                    color: Colors.white.withOpacity(0.95),
+                    color: Colors.white.withValues(alpha: 0.95),
                     elevation: 8,
                     shadowColor: Colors.black26,
                     child: Padding(
@@ -366,7 +366,7 @@ class _DrOpDashboardPageState extends State<DrOpDashboardPage> {
               // ★ Smooth depth shadow
               boxShadow: [
                 BoxShadow(
-                  color: Colors.brown.withOpacity(0.15),
+                  color: Colors.brown.withValues(alpha: 0.15),
                   blurRadius: 10,
                   offset: const Offset(0, 5),
                 ),

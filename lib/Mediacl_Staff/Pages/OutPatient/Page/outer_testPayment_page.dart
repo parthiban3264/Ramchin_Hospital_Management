@@ -455,14 +455,13 @@ class FeesTestPaymentPageState extends State<FeesTestPaymentPage> {
     //final temperature = consultation['temperature'].toString();
     final bloodPressure = consultation['bp'] ?? '_';
     final sugar = consultation['sugar'] ?? '_';
-    final height = consultation['height'].toString() ?? '_';
-    final weight = consultation['weight'].toString() ?? '_';
-    final BMI = consultation['BMI'].toString() ?? '_';
-    final PK = consultation['PK'].toString() ?? '_';
-    final SpO2 = consultation['SPO2'].toString() ?? '_';
-    final bool isTestOnly = consultation['isTestOnly'] ?? false;
-    final referredDoctorName =
-        consultation['referredByDoctorName'].toString() ?? '-';
+    final height = consultation['height'].toString();
+    final weight = consultation['weight'].toString();
+    final BMI = consultation['BMI'].toString();
+    final PK = consultation['PK'].toString();
+    final SpO2 = consultation['SPO2'].toString();
+    // final bool isTestOnly = consultation['isTestOnly'] ?? false;
+    final referredDoctorName = consultation['referredByDoctorName'].toString();
 
     final num? registrationFee = consultation?['registrationFee'];
     final num? consultationFee =

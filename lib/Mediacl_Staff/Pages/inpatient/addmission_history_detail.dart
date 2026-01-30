@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 const Color royal = Color(0xFFBF955E);
 
@@ -11,8 +10,7 @@ class AdmissionDetailPage extends StatelessWidget {
 
   String formatDate(String? date) {
     if (date == null) return "-";
-    return DateFormat("dd MMM yyyy, hh:mm a")
-        .format(DateTime.parse(date));
+    return DateFormat("dd MMM yyyy, hh:mm a").format(DateTime.parse(date));
   }
 
   @override
@@ -36,7 +34,6 @@ class AdmissionDetailPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             /// ===== PATIENT HEADER =====
             _patientHeader(patient),
 
@@ -66,7 +63,7 @@ class AdmissionDetailPage extends StatelessWidget {
               builder: (w) => _timelineCard(
                 title: w['ward']['wardName'],
                 subtitle:
-                "Bed ${w['ward']['bedNo']} • ${formatDate(w['from'])}",
+                    "Bed ${w['ward']['bedNo']} • ${formatDate(w['from'])}",
               ),
             ),
 
@@ -93,38 +90,39 @@ class AdmissionDetailPage extends StatelessWidget {
               children: charges.isEmpty
                   ? [_empty("No charges")]
                   : charges.map<Widget>((c) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              c['description'],
-                              style: const TextStyle(fontWeight: FontWeight.w600),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    c['description'],
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  _statusChip(c['status']),
+                                ],
+                              ),
                             ),
-                            const SizedBox(height: 6),
-                            _statusChip(c['status']),
+                            Text(
+                              "₹${c['amount']}",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: royal,
+                                fontSize: 15,
+                              ),
+                            ),
                           ],
                         ),
-                      ),
-                      Text(
-                        "₹${c['amount']}",
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: royal,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
+                      );
+                    }).toList(),
             ),
-
           ],
         ),
       ),
@@ -135,14 +133,17 @@ class AdmissionDetailPage extends StatelessWidget {
   Widget _patientHeader(Map patient) {
     return Card(
       color: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16),side: BorderSide(color: royal)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: royal),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
             CircleAvatar(
               radius: 32,
-              backgroundColor: royal.withOpacity(0.15),
+              backgroundColor: royal.withValues(alpha: 0.15),
               child: const Icon(Icons.person, color: royal, size: 36),
             ),
             const SizedBox(width: 16),
@@ -167,7 +168,7 @@ class AdmissionDetailPage extends StatelessWidget {
                   Text(patient['phone']?['mobile'] ?? "-"),
                 ],
               ),
-            )
+            ),
           ],
         ),
       ),
@@ -180,19 +181,19 @@ class AdmissionDetailPage extends StatelessWidget {
 
     switch (status.toLowerCase()) {
       case 'paid':
-        bgColor = Colors.green.withOpacity(0.15);
+        bgColor = Colors.green.withValues(alpha: 0.15);
         textColor = Colors.green;
         break;
       case 'unpaid':
-        bgColor = Colors.red.withOpacity(0.15);
+        bgColor = Colors.red.withValues(alpha: 0.15);
         textColor = Colors.red;
         break;
       case 'pending':
-        bgColor = Colors.orange.withOpacity(0.15);
+        bgColor = Colors.orange.withValues(alpha: 0.15);
         textColor = Colors.orange;
         break;
       default:
-        bgColor = Colors.grey.withOpacity(0.15);
+        bgColor = Colors.grey.withValues(alpha: 0.15);
         textColor = Colors.grey;
     }
 
@@ -211,14 +212,14 @@ class AdmissionDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _sectionCard({
-    required String title,
-    required List<Widget> children,
-  }) {
+  Widget _sectionCard({required String title, required List<Widget> children}) {
     return Card(
       color: Colors.white,
       margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16),side: BorderSide(color: royal)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: royal),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -257,10 +258,7 @@ class AdmissionDetailPage extends StatelessWidget {
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: const Icon(Icons.timeline, color: royal),
-      title: Text(
-        title,
-        style: const TextStyle(fontWeight: FontWeight.bold),
-      ),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
       subtitle: Text(subtitle),
     );
   }
@@ -277,38 +275,36 @@ class AdmissionDetailPage extends StatelessWidget {
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
-          Expanded(
-            child: Text(value ?? "-"),
-          ),
+          Expanded(child: Text(value ?? "-")),
         ],
       ),
     );
   }
 
-  Widget _card({required String title, required String subtitle}) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: royal.withOpacity(0.4)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                  fontWeight: FontWeight.bold, color: royal),
-            ),
-            const SizedBox(height: 4),
-            Text(subtitle),
-          ],
-        ),
-      ),
-    );
-  }
+  // Widget _card({required String title, required String subtitle}) {
+  //   return Card(
+  //     margin: const EdgeInsets.only(bottom: 8),
+  //     shape: RoundedRectangleBorder(
+  //       borderRadius: BorderRadius.circular(12),
+  //       side: BorderSide(color: royal.withValues(alpha:0.4)),
+  //     ),
+  //     child: Padding(
+  //       padding: const EdgeInsets.all(12),
+  //       child: Column(
+  //         crossAxisAlignment: CrossAxisAlignment.start,
+  //         children: [
+  //           Text(
+  //             title,
+  //             style: const TextStyle(
+  //                 fontWeight: FontWeight.bold, color: royal),
+  //           ),
+  //           const SizedBox(height: 4),
+  //           Text(subtitle),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _empty(String msg) {
     return Padding(

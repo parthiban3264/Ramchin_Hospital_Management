@@ -27,6 +27,7 @@ import '../../Mediacl_Staff/Pages/inpatient/add_admission_charges_page.dart';
 import '../../Mediacl_Staff/Pages/inpatient/admit_patient.dart';
 import '../../Mediacl_Staff/Pages/inpatient/assign_change_detail.dart';
 import '../../Mediacl_Staff/Pages/inpatient/available_room.dart';
+import '../../Mediacl_Staff/Pages/inpatient/patient_discharge.dart';
 import '../../Mediacl_Staff/Pages/inpatient/room_patient_details.dart';
 import '../../Mediacl_Staff/Pages/tracking_status/track_patient_status.dart';
 import '../../Services/admin_service.dart';
@@ -451,6 +452,18 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                             context,
                             MaterialPageRoute(
                               builder: (_) => const AdmittedPatientsPage(),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildActionItem(
+                        Icons.disc_full,
+                        "Patient Discharge",
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const PatientDischargePage(),
                             ),
                           );
                         },

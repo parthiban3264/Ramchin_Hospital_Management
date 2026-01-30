@@ -71,7 +71,7 @@ class _ScanReportCardState extends State<ScanReportCard> {
     // 1️⃣ Collect only scan details (skip type == tests)
     /// 1️⃣ Merge all scan sources (testDetails + TeatingAndScanningPatient)
     // ----------------- helper -----------------
-    bool _isValidSelectedOption(dynamic val) {
+    bool isValidSelectedOption(dynamic val) {
       if (val == null) return false;
 
       // normalize: remove common separators and whitespace, then uppercase
@@ -130,7 +130,7 @@ class _ScanReportCardState extends State<ScanReportCard> {
       if (item['options'] is List) {
         for (var opt in item['options']) {
           final dynamic selRaw = opt['selectedOption'];
-          if (_isValidSelectedOption(selRaw)) {
+          if (isValidSelectedOption(selRaw)) {
             final name = (opt['name'] ?? '').toString();
             final sel = opt['selectedOption'].toString();
             final key = '$name|$sel';
@@ -146,7 +146,7 @@ class _ScanReportCardState extends State<ScanReportCard> {
       if (item['selectedOptions'] is List) {
         for (var opt in item['selectedOptions']) {
           final dynamic selRaw = opt['selectedOption'];
-          if (_isValidSelectedOption(selRaw)) {
+          if (isValidSelectedOption(selRaw)) {
             final name = (opt['name'] ?? '').toString();
             final sel = opt['selectedOption'].toString();
             final key = '$name|$sel';
@@ -287,10 +287,7 @@ class _ScanReportCardState extends State<ScanReportCard> {
                   // _buildSectionTitle("X-RAY RESULT DETAILS"),
                   // _buildResultTable(options),
                   _buildSectionTitle("SCAN RESULT DETAILS"),
-                  _buildGroupedScanResults(
-                    groupedScans,
-                    _isValidSelectedOption,
-                  ),
+                  _buildGroupedScanResults(groupedScans, isValidSelectedOption),
 
                   const SizedBox(height: 20),
                   _buildSectionTitle("SCAN IMAGES"),
@@ -833,10 +830,10 @@ class _ScanReportCardState extends State<ScanReportCard> {
                       ),
                     ],
                   );
-                }).toList(),
+                }),
               ],
             );
-          }).toList(),
+          }),
         ],
       ),
     );

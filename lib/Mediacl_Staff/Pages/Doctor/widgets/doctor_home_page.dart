@@ -58,7 +58,10 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(12.0),
             boxShadow: [
-              BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 6),
+              BoxShadow(
+                color: Colors.grey.withValues(alpha: 0.1),
+                blurRadius: 6,
+              ),
             ],
           ),
           child: Column(
@@ -159,7 +162,9 @@ class _DoctorHomePageState extends State<DoctorHomePage> {
                                 show: true,
                                 gradient: LinearGradient(
                                   colors: gradientColors
-                                      .map((color) => color.withOpacity(0.3))
+                                      .map(
+                                        (color) => color.withValues(alpha: 0.3),
+                                      )
                                       .toList(),
                                 ),
                               ),

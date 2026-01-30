@@ -60,7 +60,7 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
       final response = await http.get(
         Uri.parse('$baseUrl/api/app-payment/history/$hospitalId'),
       );
-      print('response ${response.body} , $baseUrl');
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         final List data = jsonDecode(response.body);
         setState(() {
@@ -114,7 +114,7 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),

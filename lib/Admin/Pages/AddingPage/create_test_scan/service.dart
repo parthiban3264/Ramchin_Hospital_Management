@@ -150,8 +150,7 @@ class TestAndScanService {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({"isActive": isActive}),
       );
-      print(isActive);
-      print(response.body);
+
       return response.statusCode == 200;
     } catch (e) {
       return false;

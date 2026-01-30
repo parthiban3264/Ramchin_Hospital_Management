@@ -59,7 +59,7 @@ class PatientAppointDetails extends StatelessWidget {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
               ),
@@ -141,7 +141,7 @@ class PatientAppointDetails extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -199,7 +199,9 @@ class PatientAppointDetails extends StatelessWidget {
           child: Text(
             value,
             style: TextStyle(
-              color: isLight ? Colors.white.withOpacity(0.9) : Colors.black87,
+              color: isLight
+                  ? Colors.white.withValues(alpha: 0.9)
+                  : Colors.black87,
               fontSize: 15,
             ),
           ),
@@ -271,7 +273,10 @@ class PatientAppointDetails extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: primaryColor.withOpacity(0.4), width: 1.1),
+        border: Border.all(
+          color: primaryColor.withValues(alpha: 0.4),
+          width: 1.1,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black12,
@@ -284,7 +289,7 @@ class PatientAppointDetails extends StatelessWidget {
       child: ListTile(
         leading: CircleAvatar(
           radius: 24,
-          backgroundColor: primaryColor.withOpacity(0.15),
+          backgroundColor: primaryColor.withValues(alpha: 0.15),
           child: Icon(icon, color: primaryColor, size: 22),
         ),
 
