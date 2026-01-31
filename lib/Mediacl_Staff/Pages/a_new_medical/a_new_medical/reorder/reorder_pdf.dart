@@ -1,28 +1,21 @@
 import 'dart:convert';
 import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
-import '../../../../../Admin/Pages/admin_edit_profile_page.dart';
-import '../../../../../Appbar/MobileAppbar.dart';
-// import '../../../public/main_navigation.dart';
+const Color royal = Color(0xFF875C3F);
 
 class ReorderPdfPage extends StatefulWidget {
-  final String? hospitalName;
-  final String? hospitalPlace;
-  final String? hospitalPhoto;
+  final Map<String, dynamic>? shopDetails;
   final List<Map<String, dynamic>> medicines;
 
   const ReorderPdfPage({
     super.key,
-
+    required this.shopDetails,
     required this.medicines,
-    this.hospitalName,
-    this.hospitalPlace,
-    this.hospitalPhoto,
   });
 
   @override
@@ -63,24 +56,22 @@ class _ReorderPdfPageState extends State<ReorderPdfPage> {
   /// 🔹 BUILD PDF
   Future<Uint8List> _buildReorderPdf() async {
     final pdf = pw.Document();
-    // final font = pw.Font.ttf(
-    //   await rootBundle.load("assets/fonts/NotoSansTamil-Regular.ttf"),
-    // );
-    // final fontBold = pw.Font.ttf(
-    //   await rootBundle.load("assets/fonts/NotoSansTamil-Bold.ttf"),
-    // );
-    final ttf = await PdfGoogleFonts.notoSansRegular();
-    final ttfBold = await PdfGoogleFonts.notoSansBold();
+    final font = pw.Font.ttf(
+      await rootBundle.load("assets/fonts/NotoSansTamil-Regular.ttf"),
+    );
+    final fontBold = pw.Font.ttf(
+      await rootBundle.load("assets/fonts/NotoSansTamil-Bold.ttf"),
+    );
     Uint8List? logo;
-    if (widget.hospitalPhoto != null) {
-      logo = base64Decode(widget.hospitalPhoto!);
+    if (widget.shopDetails?['logo'] != null) {
+      logo = base64Decode(widget.shopDetails!['logo']);
     }
+    final hall = widget.shopDetails;
 
-    final primaryColor = PdfColor.fromInt(0xFF19527A);
+    final royal = PdfColor.fromInt(0xFF19527A);
 
     pdf.addPage(
       pw.Page(
-        theme: pw.ThemeData.withFont(base: ttf, bold: ttfBold),
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(24),
         build: (_) {
@@ -100,25 +91,32 @@ class _ReorderPdfPageState extends State<ReorderPdfPage> {
                       crossAxisAlignment: pw.CrossAxisAlignment.center,
                       children: [
                         pw.Text(
-                          widget.hospitalName != null
-                              ? widget.hospitalName!.toUpperCase()
-                              : 'Unknown',
+                          hall?['name']?.toString().toUpperCase() ??
+                              'HALL NAME',
                           style: pw.TextStyle(
                             fontSize: 20,
                             fontWeight: pw.FontWeight.bold,
-                            // font: fontBold,
-                            color: primaryColor,
+                            font: fontBold,
+                            color: royal,
                           ),
                         ),
 
-                        if ((widget.hospitalPlace).toString().isNotEmpty)
+                        if ((hall?['address'] ?? '').toString().isNotEmpty)
                           pw.Text(
-                            widget.hospitalPlace != null
-                                ? widget.hospitalPlace!
-                                : "Unknown",
-                            style: pw.TextStyle(
-                              //font: font
-                            ),
+                            hall!['address'],
+                            style: pw.TextStyle(font: font),
+                          ),
+
+                        if ((hall?['phone'] ?? '').toString().isNotEmpty)
+                          pw.Text(
+                            'Phone: ${hall!['phone']}',
+                            style: pw.TextStyle(font: font),
+                          ),
+
+                        if ((hall?['email'] ?? '').toString().isNotEmpty)
+                          pw.Text(
+                            'Email: ${hall!['email']}',
+                            style: pw.TextStyle(font: font),
                           ),
                       ],
                     ),
@@ -127,7 +125,7 @@ class _ReorderPdfPageState extends State<ReorderPdfPage> {
               ),
               pw.SizedBox(height: 16),
 
-              pw.Divider(color: primaryColor),
+              pw.Divider(color: royal),
               pw.SizedBox(height: 12),
 
               /// 🔹 TITLE
@@ -136,8 +134,8 @@ class _ReorderPdfPageState extends State<ReorderPdfPage> {
                   "REORDER MEDICINE LIST",
                   style: pw.TextStyle(
                     fontSize: 16,
-                    // font: fontBold,
-                    color: primaryColor,
+                    font: fontBold,
+                    color: royal,
                   ),
                 ),
               ),
@@ -146,7 +144,7 @@ class _ReorderPdfPageState extends State<ReorderPdfPage> {
 
               /// 🔹 TABLE
               pw.Table(
-                border: pw.TableBorder.all(color: primaryColor, width: 0.6),
+                border: pw.TableBorder.all(color: royal, width: 0.6),
                 columnWidths: {
                   0: const pw.FlexColumnWidth(4),
                   1: const pw.FlexColumnWidth(2),
@@ -189,19 +187,10 @@ class _ReorderPdfPageState extends State<ReorderPdfPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: CustomAppBar(
-        title: 'Reorder PDF',
-        pageContext: context,
-        showBackButton: true,
-        showNotificationIcon: true,
-        showHomeIcon: true,
-        onHomeClicked: () {
-          int pops = 0;
-
-          Navigator.popUntil(context, (route) {
-            return pops++ == 2;
-          });
-        },
+      appBar: AppBar(
+        backgroundColor: royal,
+        title: const Text("Reorder PDF", style: TextStyle(color: Colors.white)),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
 
       body: showPdf
@@ -245,7 +234,7 @@ class _ReorderPdfPageState extends State<ReorderPdfPage> {
                             margin: const EdgeInsets.only(bottom: 12),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
-                              side: BorderSide(color: primaryColor),
+                              side: BorderSide(color: royal),
                             ),
                             child: Padding(
                               padding: const EdgeInsets.all(12),
@@ -256,7 +245,7 @@ class _ReorderPdfPageState extends State<ReorderPdfPage> {
                                     m['medicine_name'],
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      color: primaryColor,
+                                      color: royal,
                                     ),
                                   ),
                                   Text("Current Stock: ${m['current_stock']}"),
@@ -264,35 +253,31 @@ class _ReorderPdfPageState extends State<ReorderPdfPage> {
                                   TextField(
                                     controller:
                                         qtyControllers[m['medicine_id']],
-                                    cursorColor: primaryColor,
-                                    style: TextStyle(color: primaryColor),
+                                    cursorColor: royal,
+                                    style: TextStyle(color: royal),
                                     keyboardType: TextInputType.number,
                                     decoration: InputDecoration(
                                       labelText: "Required Quantity",
-                                      labelStyle: TextStyle(
-                                        color: primaryColor,
-                                      ),
+                                      labelStyle: TextStyle(color: royal),
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       enabledBorder: OutlineInputBorder(
                                         borderSide: BorderSide(
-                                          color: primaryColor,
+                                          color: royal,
                                           width: 1,
                                         ),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       focusedBorder: OutlineInputBorder(
                                         borderSide: BorderSide(
-                                          color: primaryColor,
+                                          color: royal,
                                           width: 2,
                                         ),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       filled: true,
-                                      fillColor: primaryColor.withValues(
-                                        alpha: 0.05,
-                                      ),
+                                      fillColor: royal.withValues(alpha: 0.05),
                                     ),
                                   ),
                                 ],
@@ -310,7 +295,7 @@ class _ReorderPdfPageState extends State<ReorderPdfPage> {
       bottomNavigationBar: SafeArea(
         child: Container(
           padding: const EdgeInsets.all(12),
-          color: showPdf ? primaryColor : Colors.white,
+          color: showPdf ? royal : Colors.white,
           child: showPdf
               ? Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -319,7 +304,7 @@ class _ReorderPdfPageState extends State<ReorderPdfPage> {
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
-                        foregroundColor: primaryColor,
+                        foregroundColor: royal,
                       ),
                       icon: const Icon(Icons.print),
                       label: const Text("Print"),
@@ -334,7 +319,7 @@ class _ReorderPdfPageState extends State<ReorderPdfPage> {
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
-                        foregroundColor: primaryColor,
+                        foregroundColor: royal,
                       ),
                       icon: const Icon(Icons.share),
                       label: const Text("Share"),
@@ -355,7 +340,7 @@ class _ReorderPdfPageState extends State<ReorderPdfPage> {
                     icon: const Icon(Icons.picture_as_pdf),
                     label: const Text("Generate PDF"),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor,
+                      backgroundColor: royal,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),

@@ -1,26 +1,21 @@
 import 'dart:convert';
 import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
-import '../../../../../Admin/Pages/admin_edit_profile_page.dart';
-import '../../../../../Appbar/MobileAppbar.dart';
+const Color royal = Color(0xFF875C3F);
 
 class ReorderSupplierPdfPage extends StatefulWidget {
-  final String? hospitalName;
-  final String? hospitalPlace;
-  final String? hospitalPhoto;
+  final Map<String, dynamic>? shopDetails;
   final List<Map<String, dynamic>> medicines;
 
   const ReorderSupplierPdfPage({
     super.key,
+    required this.shopDetails,
     required this.medicines,
-    this.hospitalName,
-    this.hospitalPlace,
-    this.hospitalPhoto,
   });
 
   @override
@@ -39,26 +34,22 @@ class _ReorderSupplierPdfPageState extends State<ReorderSupplierPdfPage> {
   /// 🔹 BUILD PDF
   Future<Uint8List> _buildReorderPdf() async {
     final pdf = pw.Document();
-    // final font = pw.Font.ttf(
-    //   await rootBundle.load("assets/fonts/NotoSansTamil-Regular.ttf"),
-    // );
-    // final fontBold = pw.Font.ttf(
-    //   await rootBundle.load("assets/fonts/NotoSansTamil-Bold.ttf"),
-    // );
+    final font = pw.Font.ttf(
+      await rootBundle.load("assets/fonts/NotoSansTamil-Regular.ttf"),
+    );
+    final fontBold = pw.Font.ttf(
+      await rootBundle.load("assets/fonts/NotoSansTamil-Bold.ttf"),
+    );
     Uint8List? logo;
-    if (widget.hospitalPhoto != null) {
-      logo = base64Decode(widget.hospitalPhoto!);
+    if (widget.shopDetails?['logo'] != null) {
+      logo = base64Decode(widget.shopDetails!['logo']);
     }
-    final hospitalName = widget.hospitalName != null
-        ? widget.hospitalName!
-        : "Unknown";
+    final hall = widget.shopDetails;
 
-    final primaryColor = PdfColor.fromInt(0xFF19527A);
-    final ttf = await PdfGoogleFonts.notoSansRegular();
-    final ttfBold = await PdfGoogleFonts.notoSansBold();
+    final royal = PdfColor.fromInt(0xFF19527A);
+
     pdf.addPage(
       pw.Page(
-        theme: pw.ThemeData.withFont(base: ttf, bold: ttfBold),
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(24),
         build: (_) {
@@ -78,23 +69,32 @@ class _ReorderSupplierPdfPageState extends State<ReorderSupplierPdfPage> {
                       crossAxisAlignment: pw.CrossAxisAlignment.center,
                       children: [
                         pw.Text(
-                          hospitalName.toUpperCase(),
+                          hall?['name']?.toString().toUpperCase() ??
+                              'HALL NAME',
                           style: pw.TextStyle(
                             fontSize: 20,
                             fontWeight: pw.FontWeight.bold,
-                            // font: fontBold,
-                            color: primaryColor,
+                            font: fontBold,
+                            color: royal,
                           ),
                         ),
 
-                        if ((widget.hospitalPlace).toString().isNotEmpty)
+                        if ((hall?['address'] ?? '').toString().isNotEmpty)
                           pw.Text(
-                            widget.hospitalPlace != null
-                                ? widget.hospitalPlace!
-                                : "Unknown",
-                            style: pw.TextStyle(
-                              //font: font
-                            ),
+                            hall!['address'],
+                            style: pw.TextStyle(font: font),
+                          ),
+
+                        if ((hall?['phone'] ?? '').toString().isNotEmpty)
+                          pw.Text(
+                            'Phone: ${hall!['phone']}',
+                            style: pw.TextStyle(font: font),
+                          ),
+
+                        if ((hall?['email'] ?? '').toString().isNotEmpty)
+                          pw.Text(
+                            'Email: ${hall!['email']}',
+                            style: pw.TextStyle(font: font),
                           ),
                       ],
                     ),
@@ -103,7 +103,7 @@ class _ReorderSupplierPdfPageState extends State<ReorderSupplierPdfPage> {
               ),
               pw.SizedBox(height: 16),
 
-              pw.Divider(color: primaryColor),
+              pw.Divider(color: royal),
               pw.SizedBox(height: 12),
 
               /// 🔹 TITLE
@@ -112,8 +112,8 @@ class _ReorderSupplierPdfPageState extends State<ReorderSupplierPdfPage> {
                   "REORDER MEDICINE LIST",
                   style: pw.TextStyle(
                     fontSize: 16,
-                    //font: fontBold,
-                    color: primaryColor,
+                    font: fontBold,
+                    color: royal,
                   ),
                 ),
               ),
@@ -122,7 +122,7 @@ class _ReorderSupplierPdfPageState extends State<ReorderSupplierPdfPage> {
 
               /// 🔹 TABLE
               pw.Table(
-                border: pw.TableBorder.all(color: primaryColor, width: 0.6),
+                border: pw.TableBorder.all(color: royal, width: 0.6),
                 columnWidths: {
                   0: const pw.FlexColumnWidth(3),
                   1: const pw.FlexColumnWidth(1.5),
@@ -173,19 +173,10 @@ class _ReorderSupplierPdfPageState extends State<ReorderSupplierPdfPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(
-        title: 'Reorder PDF',
-        pageContext: context,
-        showBackButton: true,
-        showNotificationIcon: true,
-        showHomeIcon: true,
-        onHomeClicked: () {
-          int pops = 0;
-
-          Navigator.popUntil(context, (route) {
-            return pops++ == 2;
-          });
-        },
+      appBar: AppBar(
+        backgroundColor: royal,
+        title: const Text("Reorder PDF", style: TextStyle(color: Colors.white)),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
 
       body: FutureBuilder<Uint8List>(
@@ -218,7 +209,7 @@ class _ReorderSupplierPdfPageState extends State<ReorderSupplierPdfPage> {
       /// 🔹 BOTTOM ACTIONS
       bottomNavigationBar: SafeArea(
         child: Container(
-          color: primaryColor,
+          color: royal,
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -227,7 +218,7 @@ class _ReorderSupplierPdfPageState extends State<ReorderSupplierPdfPage> {
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
-                  foregroundColor: primaryColor,
+                  foregroundColor: royal,
                 ),
                 icon: const Icon(Icons.print),
                 label: const Text("Print"),
@@ -242,7 +233,7 @@ class _ReorderSupplierPdfPageState extends State<ReorderSupplierPdfPage> {
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
-                  foregroundColor: primaryColor,
+                  foregroundColor: royal,
                 ),
                 icon: const Icon(Icons.share),
                 label: const Text("Share"),

@@ -7,9 +7,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 import 'package:excel/excel.dart' as excel;
 import 'package:file_picker/file_picker.dart';
-import '../../../services/config.dart';
 import 'package:file_saver/file_saver.dart';
-import 'package:flutter/foundation.dart'; // ✅ For kIsWeb
+import 'package:flutter/foundation.dart';
+
+import '../../../../../../utils/utils.dart'; // ✅ For kIsWeb
 
 const Color royal = Color(0xFF875C3F);
 
@@ -52,7 +53,7 @@ class _BulkUploadMedicinePageState extends State<BulkUploadMedicinePage> {
         border: Border.all(color: royal, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: royal.withValues(alpha:0.15),
+            color: royal.withValues(alpha: 0.15),
             blurRadius: 6,
             offset: const Offset(0, 3),
           ),
@@ -64,21 +65,21 @@ class _BulkUploadMedicinePageState extends State<BulkUploadMedicinePage> {
           ClipOval(
             child: hall['logo'] != null
                 ? Image.memory(
-              base64Decode(hall['logo']),
-              width: 70,
-              height: 70,
-              fit: BoxFit.cover,
-            )
+                    base64Decode(hall['logo']),
+                    width: 70,
+                    height: 70,
+                    fit: BoxFit.cover,
+                  )
                 : Container(
-              width: 70,
-              height: 70,
-              color: Colors.white, // 👈 soft teal background
-              child: const Icon(
-                Icons.home_work_rounded,
-                color: royal,
-                size: 35,
-              ),
-            ),
+                    width: 70,
+                    height: 70,
+                    color: Colors.white, // 👈 soft teal background
+                    child: const Icon(
+                      Icons.home_work_rounded,
+                      color: royal,
+                      size: 35,
+                    ),
+                  ),
           ),
           Expanded(
             child: Center(
@@ -215,7 +216,7 @@ class _BulkUploadMedicinePageState extends State<BulkUploadMedicinePage> {
           return;
         }
         final fileBytes = await File(path).readAsBytes(); // List<int>
-        bytes = Uint8List.fromList(fileBytes);             // ✅ convert
+        bytes = Uint8List.fromList(fileBytes); // ✅ convert
       }
 
       final rows = await parseExcelBytes(bytes);
@@ -229,17 +230,14 @@ class _BulkUploadMedicinePageState extends State<BulkUploadMedicinePage> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => BulkBatchMedicineUpload(
-            batches: rows,
-            shopDetails: shopDetails,
-          ),
+          builder: (_) =>
+              BulkBatchMedicineUpload(batches: rows, shopDetails: shopDetails),
         ),
       );
     } catch (e) {
       _showMessage("Failed to read Excel: $e");
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -248,59 +246,65 @@ class _BulkUploadMedicinePageState extends State<BulkUploadMedicinePage> {
       body: isLoadingShop
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child:
-        Column(
-          children: [
-            const SizedBox(height: 16),
-            if (shopDetails != null) _buildHallCard(shopDetails!),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  const SizedBox(height: 16),
+                  if (shopDetails != null) _buildHallCard(shopDetails!),
 
-            const SizedBox(height: 16),
-            SizedBox(
-              width: 220,
-              height: 52,
-              child: ElevatedButton.icon(
-                onPressed: _downloadTemplate,
-                icon: const Icon(Icons.download),
-                label: const Text(
-                  "Download Template",
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: royal,
-                  foregroundColor: Colors.white,
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: 220,
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      onPressed: _downloadTemplate,
+                      icon: const Icon(Icons.download),
+                      label: const Text(
+                        "Download Template",
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: royal,
+                        foregroundColor: Colors.white,
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+
+                  const SizedBox(height: 20),
+
+                  SizedBox(
+                    width: 180,
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      onPressed: _pickExcelAndOpenUpload,
+                      icon: const Icon(Icons.upload_file),
+                      label: const Text(
+                        "Upload Excel",
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: royal,
+                        foregroundColor: Colors.white,
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-
-            const SizedBox(height: 20),
-
-            SizedBox(
-              width: 180,
-              height: 52,
-              child: ElevatedButton.icon(
-                onPressed: _pickExcelAndOpenUpload,
-                icon: const Icon(Icons.upload_file),
-                label: const Text(
-                  "Upload Excel",
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: royal,
-                  foregroundColor: Colors.white,
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-              ),
-            ),
-
-          ],),),
     );
   }
 }
@@ -316,7 +320,8 @@ class BulkBatchMedicineUpload extends StatefulWidget {
   });
 
   @override
-  State<BulkBatchMedicineUpload> createState() => _BulkBatchMedicineUploadState();
+  State<BulkBatchMedicineUpload> createState() =>
+      _BulkBatchMedicineUploadState();
 }
 
 class _BulkBatchMedicineUploadState extends State<BulkBatchMedicineUpload> {
@@ -389,7 +394,7 @@ class _BulkBatchMedicineUploadState extends State<BulkBatchMedicineUpload> {
 
     calculatedRows = List.generate(
       controllers.length,
-          (_) => <String, dynamic>{},
+      (_) => <String, dynamic>{},
     );
 
     for (int i = 0; i < controllers.length; i++) {
@@ -454,9 +459,7 @@ class _BulkBatchMedicineUploadState extends State<BulkBatchMedicineUpload> {
       return supplierNameCache[cacheKey];
     }
 
-    final res = await http.get(
-      Uri.parse("$baseUrl/suppliers/$shopId/$id"),
-    );
+    final res = await http.get(Uri.parse("$baseUrl/suppliers/$shopId/$id"));
 
     if (res.statusCode == 200) {
       final name = jsonDecode(res.body)["name"];
@@ -492,7 +495,6 @@ class _BulkBatchMedicineUploadState extends State<BulkBatchMedicineUpload> {
   }
 
   Map<String, double> calculateValues(Map<String, TextEditingController> r) {
-
     final qty = double.tryParse(r["Quantity"]?.text ?? "") ?? 0.0;
     final free = double.tryParse(r["Free_quantity"]?.text ?? "") ?? 0.0;
     final unit = double.tryParse(r["Unit"]?.text ?? "") ?? 1.0;
@@ -500,7 +502,6 @@ class _BulkBatchMedicineUploadState extends State<BulkBatchMedicineUpload> {
     final gst = double.tryParse(r["GST"]?.text ?? "") ?? 0.0;
     final profit = double.tryParse(r["Profit"]?.text ?? "") ?? 0.0;
     final mrp = double.tryParse(r["MRP"]?.text ?? "") ?? 0.0;
-
 
     final totalQty = qty + free;
     final totalStock = totalQty * unit;
@@ -513,8 +514,7 @@ class _BulkBatchMedicineUploadState extends State<BulkBatchMedicineUpload> {
     final purchasePerQty = qty == 0.0 ? 0.0 : purchasePrice / qty;
     final purchasePerUnit = unit == 0.0 ? 0.0 : purchasePerQty / unit;
 
-    var sellingPerQty =
-        purchasePerQty + (purchasePerQty * profit / 100);
+    var sellingPerQty = purchasePerQty + (purchasePerQty * profit / 100);
 
     if (mrp > 0 && sellingPerQty > mrp) {
       sellingPerQty = mrp;
@@ -546,7 +546,7 @@ class _BulkBatchMedicineUploadState extends State<BulkBatchMedicineUpload> {
         border: Border.all(color: royal, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: royal.withValues(alpha:0.15),
+            color: royal.withValues(alpha: 0.15),
             blurRadius: 6,
             offset: const Offset(0, 3),
           ),
@@ -558,21 +558,21 @@ class _BulkBatchMedicineUploadState extends State<BulkBatchMedicineUpload> {
           ClipOval(
             child: hall['logo'] != null
                 ? Image.memory(
-              base64Decode(hall['logo']),
-              width: 70,
-              height: 70,
-              fit: BoxFit.cover,
-            )
+                    base64Decode(hall['logo']),
+                    width: 70,
+                    height: 70,
+                    fit: BoxFit.cover,
+                  )
                 : Container(
-              width: 70,
-              height: 70,
-              color: Colors.white, // 👈 soft teal background
-              child: const Icon(
-                Icons.home_work_rounded,
-                color: royal,
-                size: 35,
-              ),
-            ),
+                    width: 70,
+                    height: 70,
+                    color: Colors.white, // 👈 soft teal background
+                    child: const Icon(
+                      Icons.home_work_rounded,
+                      color: royal,
+                      size: 35,
+                    ),
+                  ),
           ),
           Expanded(
             child: Center(
@@ -616,8 +616,7 @@ class _BulkBatchMedicineUploadState extends State<BulkBatchMedicineUpload> {
     final purchasePerQty = qty == 0 ? 0 : purchasePrice / qty;
     final purchasePerUnit = unit == 0 ? 0 : purchasePerQty / unit;
 
-    var sellingPerQty =
-        purchasePerQty * (1 + profit / 100);
+    var sellingPerQty = purchasePerQty * (1 + profit / 100);
 
     if (mrp > 0 && sellingPerQty > mrp) {
       sellingPerQty = mrp;
@@ -680,20 +679,19 @@ class _BulkBatchMedicineUploadState extends State<BulkBatchMedicineUpload> {
                     ? const Icon(Icons.error, color: Colors.orange, size: 18)
                     : medicineNameAvailability[rowIndex] == null
                     ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
                     : Icon(
-                  medicineNameAvailability[rowIndex]!
-                      ? Icons.check_circle
-                      : Icons.cancel,
-                  color: medicineNameAvailability[rowIndex]!
-                      ? Colors.green
-                      : Colors.red,
-                  size: 18,
-                ),
-
+                        medicineNameAvailability[rowIndex]!
+                            ? Icons.check_circle
+                            : Icons.cancel,
+                        color: medicineNameAvailability[rowIndex]!
+                            ? Colors.green
+                            : Colors.red,
+                        size: 18,
+                      ),
               ),
               onChanged: (value) {
                 if (debounce?.isActive ?? false) debounce!.cancel();
@@ -711,7 +709,6 @@ class _BulkBatchMedicineUploadState extends State<BulkBatchMedicineUpload> {
                     setState(() {
                       medicineNameAvailability[rowIndex] = available;
                       validateDuplicateMedicines(); // 🔥 ADD THIS
-
                     });
                   }
                 });
@@ -769,7 +766,9 @@ class _BulkBatchMedicineUploadState extends State<BulkBatchMedicineUpload> {
       });
     }
 
-    final url = Uri.parse("$baseUrl/inventory/medicine/medicine-upload"); // single bulk endpoint
+    final url = Uri.parse(
+      "$baseUrl/inventory/medicine/medicine-upload",
+    ); // single bulk endpoint
 
     final response = await http.post(
       url,
@@ -816,10 +815,7 @@ class _BulkBatchMedicineUploadState extends State<BulkBatchMedicineUpload> {
                 if (!snapshot.hasData) return const SizedBox();
                 return Text(
                   snapshot.data!,
-                  style:  TextStyle(
-                    fontSize: 11,
-                    color: royal,
-                  ),
+                  style: TextStyle(fontSize: 11, color: royal),
                   overflow: TextOverflow.ellipsis,
                 );
               },
@@ -830,25 +826,23 @@ class _BulkBatchMedicineUploadState extends State<BulkBatchMedicineUpload> {
     );
   }
 
-  DataCell editNumber(TextEditingController c) =>
-      DataCell(
-        SizedBox(
-            width: 90,
-            child: TextField(
-              controller: c,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
-              ],
-              decoration: const InputDecoration(
-                isDense: true,
-                border: InputBorder.none,
-              ),
-              onChanged: (_) => setState(() {}),
-            )
-
+  DataCell editNumber(TextEditingController c) => DataCell(
+    SizedBox(
+      width: 90,
+      child: TextField(
+        controller: c,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        inputFormatters: [
+          FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+        ],
+        decoration: const InputDecoration(
+          isDense: true,
+          border: InputBorder.none,
         ),
-      );
+        onChanged: (_) => setState(() {}),
+      ),
+    ),
+  );
 
   DataCell datePickerCell({
     required TextEditingController controller,
@@ -889,7 +883,9 @@ class _BulkBatchMedicineUploadState extends State<BulkBatchMedicineUpload> {
           );
 
           if (pickedDate != null) {
-            controller.text = pickedDate.toIso8601String().split("T")[0]; // yyyy-MM-dd
+            controller.text = pickedDate.toIso8601String().split(
+              "T",
+            )[0]; // yyyy-MM-dd
             setState(() {});
           }
         },
@@ -906,28 +902,24 @@ class _BulkBatchMedicineUploadState extends State<BulkBatchMedicineUpload> {
     );
   }
 
-  DataCell editInt(
-      TextEditingController c,
-      int rowIndex,
-      ) =>
-      DataCell(
-        SizedBox(
-          width: 90,
-          child: TextField(
-            controller: c,
-            cursorColor: royal,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: const InputDecoration(
-              isDense: true,
-              border: InputBorder.none,
-            ),
-            onChanged: (_) {
-              recalcRow(rowIndex); // 🔥 force recalculation
-            },
-          ),
+  DataCell editInt(TextEditingController c, int rowIndex) => DataCell(
+    SizedBox(
+      width: 90,
+      child: TextField(
+        controller: c,
+        cursorColor: royal,
+        keyboardType: TextInputType.number,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+        decoration: const InputDecoration(
+          isDense: true,
+          border: InputBorder.none,
         ),
-      );
+        onChanged: (_) {
+          recalcRow(rowIndex); // 🔥 force recalculation
+        },
+      ),
+    ),
+  );
 
   DataCell editCurrency(TextEditingController c) => DataCell(
     SizedBox(
@@ -937,7 +929,9 @@ class _BulkBatchMedicineUploadState extends State<BulkBatchMedicineUpload> {
         cursorColor: royal,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         inputFormatters: [
-          FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')), // 2 decimals
+          FilteringTextInputFormatter.allow(
+            RegExp(r'^\d+\.?\d{0,2}'),
+          ), // 2 decimals
         ],
         decoration: const InputDecoration(
           isDense: true,
@@ -959,21 +953,27 @@ class _BulkBatchMedicineUploadState extends State<BulkBatchMedicineUpload> {
               TextField(
                 controller: controller,
                 cursorColor: royal,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
                 ],
                 decoration: const InputDecoration(
                   isDense: true,
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 0),
+                  contentPadding: EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 0,
+                  ),
                 ),
                 style: const TextStyle(fontSize: 14),
                 onChanged: (_) => setState(() {}),
               ),
               // Positioned % right after the typed text
               Positioned(
-                left: _calculateTextWidth(controller.text, 14) + 2, // 2px padding
+                left:
+                    _calculateTextWidth(controller.text, 14) + 2, // 2px padding
                 top: 4,
                 child: Text(
                   '%',
@@ -989,7 +989,10 @@ class _BulkBatchMedicineUploadState extends State<BulkBatchMedicineUpload> {
 
   double _calculateTextWidth(String text, double fontSize) {
     final TextPainter textPainter = TextPainter(
-      text: TextSpan(text: text, style: TextStyle(fontSize: fontSize)),
+      text: TextSpan(
+        text: text,
+        style: TextStyle(fontSize: fontSize),
+      ),
       maxLines: 1,
       textDirection: TextDirection.ltr,
     )..layout();
@@ -1012,10 +1015,12 @@ class _BulkBatchMedicineUploadState extends State<BulkBatchMedicineUpload> {
 
       // Medicine & Supplier validation
       final medicineValid = medicineNameAvailability[i] == true;
-      final supplierValid = supplierNameCache.containsKey("$shopId-${r["Supplier_id"]!.text}");
+      final supplierValid = supplierNameCache.containsKey(
+        "$shopId-${r["Supplier_id"]!.text}",
+      );
       final noDuplicate = duplicateMedicine[i] == false;
 
-      if (!medicineValid || !supplierValid|| !noDuplicate) return false;
+      if (!medicineValid || !supplierValid || !noDuplicate) return false;
     }
 
     return true;
@@ -1031,38 +1036,49 @@ class _BulkBatchMedicineUploadState extends State<BulkBatchMedicineUpload> {
         ),
         onPressed: isSubmitEnabled
             ? () async {
-          final confirmed = await showDialog<bool>(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text("Confirm Submission"),
-              content: const Text("Have you checked all the values of the data?"),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: const Text("Cancel",style: TextStyle(color: royal),),
-                ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: royal),
-                  onPressed: () => Navigator.pop(context, true),
-                  child: const Text("Confirm",style: TextStyle(color: Colors.white),),
-                ),
-              ],
-            ),
-          );
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text("Confirm Submission"),
+                    content: const Text(
+                      "Have you checked all the values of the data?",
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text(
+                          "Cancel",
+                          style: TextStyle(color: royal),
+                        ),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: royal),
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text(
+                          "Confirm",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
 
-          if (confirmed == true) {
-            await submitAll();
-          }
-        }
+                if (confirmed == true) {
+                  await submitAll();
+                }
+              }
             : null, // disabled if conditions not met
         child: const Text(
           "Submit Bulk Upload",
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold,color: Colors.white),
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
         ),
       ),
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -1088,8 +1104,8 @@ class _BulkBatchMedicineUploadState extends State<BulkBatchMedicineUpload> {
       body: Column(
         children: [
           Padding(
-              padding: const EdgeInsets.all(12),
-              child: _buildHallCard(widget.shopDetails!)
+            padding: const EdgeInsets.all(12),
+            child: _buildHallCard(widget.shopDetails!),
           ),
 
           const Divider(height: 1),
@@ -1104,18 +1120,17 @@ class _BulkBatchMedicineUploadState extends State<BulkBatchMedicineUpload> {
                   controller: horizontalController,
                   thumbVisibility: true,
                   notificationPredicate: (n) =>
-                  n.metrics.axis == Axis.horizontal,
+                      n.metrics.axis == Axis.horizontal,
                   child: SingleChildScrollView(
                     controller: horizontalController,
                     scrollDirection: Axis.horizontal,
                     child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minWidth: screenWidth + 800,
-                      ),
+                      constraints: BoxConstraints(minWidth: screenWidth + 800),
                       child: DataTableTheme(
                         data: DataTableThemeData(
-                          headingRowColor:
-                          WidgetStateProperty.all(Colors.white),
+                          headingRowColor: WidgetStateProperty.all(
+                            Colors.white,
+                          ),
                           headingTextStyle: const TextStyle(
                             color: royal,
                             fontWeight: FontWeight.bold,
@@ -1167,63 +1182,84 @@ class _BulkBatchMedicineUploadState extends State<BulkBatchMedicineUpload> {
                                 ? calculatedRows[i]
                                 : calculateValues(r);
 
-                            DataCell edit(TextEditingController c) =>
-                                DataCell(
-                                  SizedBox(
-                                    width: 90,
-                                    child: TextField(
-                                      controller: c,
-                                      cursorColor: royal,
-                                      decoration: const InputDecoration(
-                                        isDense: true,
-                                        border: InputBorder.none,
-                                      ),
-                                      onChanged: (_) =>
-                                          setState(() {}),
-                                    ),
+                            DataCell edit(TextEditingController c) => DataCell(
+                              SizedBox(
+                                width: 90,
+                                child: TextField(
+                                  controller: c,
+                                  cursorColor: royal,
+                                  decoration: const InputDecoration(
+                                    isDense: true,
+                                    border: InputBorder.none,
                                   ),
-                                );
+                                  onChanged: (_) => setState(() {}),
+                                ),
+                              ),
+                            );
 
-                            return DataRow(cells: [
-                              medicineNameCell(
-                                controller: r["MEDICINE_NAME"]!,
-                                rowIndex: i,
-                              ),
-                              edit(r["NDC_CODE"]!),
-                              edit(
-                                r["Category"]!.text == 'Other'
-                                    ? r["Other_Category"]!
-                                    : r["Category"]!,
-                              ),
-                              edit(r["Reorder"]!),
-                              edit(r["Batch_no"]!),
-                              edit(r["Rack_no"]!),
-                              edit(r["HSN_code"]!),
-                              datePickerCell(controller: r["MFG_Date"]!, label: "MFG"),
-                              datePickerCell(controller: r["EXP_Date"]!, label: "EXP"),
-                              editInt(r["Quantity"]!,i),
-                              editInt(r["Free_quantity"]!,i),
-                              editInt(r["Unit"]!,i),
-                              editCurrency(r["Rate_per_quantity"]!), // Rate
-                              editPercent(r["GST"]!),               // GST %
-                              editCurrency(r["MRP"]!),              // MRP
-                              editPercent(r["Profit"]!),            // Profit %
-                              editableIdWithName(
-                                controller: r["Supplier_id"]!,
-                                fetchName: fetchSupplierName,
-                              ),
-                              datePickerCell(controller: r["Purchase_Date"]!, label: "Purchase"),
-                              viewInt(calc["totalQty"]!),
-                              viewInt(calc["totalStock"]!),
-                              viewCurrency(calc["gstPerQty"]!),           // GST Amount/Qty
-                              viewCurrency(calc["baseAmount"]!),          // Base Amount
-                              viewCurrency(calc["totalGst"]!),            // Total GST
-                              viewCurrency(calc["purchasePrice"]!),       // Purchase Price
-                              viewCurrency(calc["purchasePerQty"]!),      // Purchase Price/Qty
-                              viewCurrency(calc["purchasePerUnit"]!),
-                              viewCurrency(calc["sellingPrice"]!),    // Selling Price per Quantity// Purchase Price/Unit
-                              viewCurrency(calc["sellingPerUnit"]!),      // Selling Price/Unit
-                            ]);
+                            return DataRow(
+                              cells: [
+                                medicineNameCell(
+                                  controller: r["MEDICINE_NAME"]!,
+                                  rowIndex: i,
+                                ),
+                                edit(r["NDC_CODE"]!),
+                                edit(
+                                  r["Category"]!.text == 'Other'
+                                      ? r["Other_Category"]!
+                                      : r["Category"]!,
+                                ),
+                                edit(r["Reorder"]!),
+                                edit(r["Batch_no"]!),
+                                edit(r["Rack_no"]!),
+                                edit(r["HSN_code"]!),
+                                datePickerCell(
+                                  controller: r["MFG_Date"]!,
+                                  label: "MFG",
+                                ),
+                                datePickerCell(
+                                  controller: r["EXP_Date"]!,
+                                  label: "EXP",
+                                ),
+                                editInt(r["Quantity"]!, i),
+                                editInt(r["Free_quantity"]!, i),
+                                editInt(r["Unit"]!, i),
+                                editCurrency(r["Rate_per_quantity"]!), // Rate
+                                editPercent(r["GST"]!), // GST %
+                                editCurrency(r["MRP"]!), // MRP
+                                editPercent(r["Profit"]!), // Profit %
+                                editableIdWithName(
+                                  controller: r["Supplier_id"]!,
+                                  fetchName: fetchSupplierName,
+                                ),
+                                datePickerCell(
+                                  controller: r["Purchase_Date"]!,
+                                  label: "Purchase",
+                                ),
+                                viewInt(calc["totalQty"]!),
+                                viewInt(calc["totalStock"]!),
+                                viewCurrency(
+                                  calc["gstPerQty"]!,
+                                ), // GST Amount/Qty
+                                viewCurrency(
+                                  calc["baseAmount"]!,
+                                ), // Base Amount
+                                viewCurrency(calc["totalGst"]!), // Total GST
+                                viewCurrency(
+                                  calc["purchasePrice"]!,
+                                ), // Purchase Price
+                                viewCurrency(
+                                  calc["purchasePerQty"]!,
+                                ), // Purchase Price/Qty
+                                viewCurrency(calc["purchasePerUnit"]!),
+                                viewCurrency(
+                                  calc["sellingPrice"]!,
+                                ), // Selling Price per Quantity// Purchase Price/Unit
+                                viewCurrency(
+                                  calc["sellingPerUnit"]!,
+                                ), // Selling Price/Unit
+                              ],
+                            );
                           }),
                         ),
                       ),
@@ -1236,7 +1272,6 @@ class _BulkBatchMedicineUploadState extends State<BulkBatchMedicineUpload> {
 
           const SizedBox(height: 20),
           submitButton(), // Add this below DataTable
-
         ],
       ),
     );

@@ -7,9 +7,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 import 'package:excel/excel.dart' as excel;
 import 'package:file_picker/file_picker.dart';
-import '../../../services/config.dart';
 import 'package:file_saver/file_saver.dart';
-import 'package:flutter/foundation.dart'; // ✅ For kIsWeb
+import 'package:flutter/foundation.dart';
+
+import '../../../../../../utils/utils.dart'; // ✅ For kIsWeb
 
 const Color royal = Color(0xFF875C3F);
 
@@ -17,7 +18,8 @@ class BulkUploadExistBatchPage extends StatefulWidget {
   const BulkUploadExistBatchPage({super.key});
 
   @override
-  State<BulkUploadExistBatchPage> createState() => _BulkUploadExistBatchPageState();
+  State<BulkUploadExistBatchPage> createState() =>
+      _BulkUploadExistBatchPageState();
 }
 
 class _BulkUploadExistBatchPageState extends State<BulkUploadExistBatchPage> {
@@ -52,7 +54,7 @@ class _BulkUploadExistBatchPageState extends State<BulkUploadExistBatchPage> {
         border: Border.all(color: royal, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: royal.withValues(alpha:0.15),
+            color: royal.withValues(alpha: 0.15),
             blurRadius: 6,
             offset: const Offset(0, 3),
           ),
@@ -64,21 +66,21 @@ class _BulkUploadExistBatchPageState extends State<BulkUploadExistBatchPage> {
           ClipOval(
             child: hall['logo'] != null
                 ? Image.memory(
-              base64Decode(hall['logo']),
-              width: 70,
-              height: 70,
-              fit: BoxFit.cover,
-            )
+                    base64Decode(hall['logo']),
+                    width: 70,
+                    height: 70,
+                    fit: BoxFit.cover,
+                  )
                 : Container(
-              width: 70,
-              height: 70,
-              color: Colors.white, // 👈 soft teal background
-              child: const Icon(
-                Icons.home_work_rounded,
-                color: royal,
-                size: 35,
-              ),
-            ),
+                    width: 70,
+                    height: 70,
+                    color: Colors.white, // 👈 soft teal background
+                    child: const Icon(
+                      Icons.home_work_rounded,
+                      color: royal,
+                      size: 35,
+                    ),
+                  ),
           ),
           Expanded(
             child: Center(
@@ -135,7 +137,6 @@ class _BulkUploadExistBatchPageState extends State<BulkUploadExistBatchPage> {
     }
   }
 
-
   Future<List<Map<String, dynamic>>> parseExcelBytes(Uint8List bytes) async {
     final ex = excel.Excel.decodeBytes(bytes);
 
@@ -161,12 +162,14 @@ class _BulkUploadExistBatchPageState extends State<BulkUploadExistBatchPage> {
 
     for (var sheet in ex.tables.values) {
       for (var row in sheet.rows.skip(1)) {
-        dynamic cell(int index) => index < row.length ? row[index]?.value : null;
+        dynamic cell(int index) =>
+            index < row.length ? row[index]?.value : null;
 
         String mfg = formatDate(cell(4));
         String exp = formatDate(cell(3));
         int toInt(dynamic v) => int.tryParse(v?.toString() ?? "") ?? 0;
-        double toDouble(dynamic v) => double.tryParse(v?.toString() ?? "") ?? 0.0;
+        double toDouble(dynamic v) =>
+            double.tryParse(v?.toString() ?? "") ?? 0.0;
 
         rows.add({
           "MEDICINE_ID": cell(0),
@@ -212,7 +215,7 @@ class _BulkUploadExistBatchPageState extends State<BulkUploadExistBatchPage> {
         }
         final file = File(path);
         final fileBytes = await file.readAsBytes(); // List<int>
-        bytes = Uint8List.fromList(fileBytes);      // ✅ convert to Uint8List
+        bytes = Uint8List.fromList(fileBytes); // ✅ convert to Uint8List
       }
 
       final rows = await parseExcelBytes(bytes); // works perfectly now
@@ -225,10 +228,8 @@ class _BulkUploadExistBatchPageState extends State<BulkUploadExistBatchPage> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => BulkBatchExistUpload(
-            batches: rows,
-            shopDetails: shopDetails,
-          ),
+          builder: (_) =>
+              BulkBatchExistUpload(batches: rows, shopDetails: shopDetails),
         ),
       );
     } catch (e) {
@@ -236,68 +237,72 @@ class _BulkUploadExistBatchPageState extends State<BulkUploadExistBatchPage> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
       backgroundColor: Colors.white,
       body: isLoadingShop
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child:
-        Column(
-          children: [
-            const SizedBox(height: 16),
-            if (shopDetails != null) _buildHallCard(shopDetails!),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  const SizedBox(height: 16),
+                  if (shopDetails != null) _buildHallCard(shopDetails!),
 
-            const SizedBox(height: 16),
-            SizedBox(
-              width: 220,
-              height: 52,
-              child: ElevatedButton.icon(
-                onPressed: _downloadTemplate,
-                icon: const Icon(Icons.download),
-                label: const Text(
-                  "Download Template",
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: royal,
-                  foregroundColor: Colors.white,
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: 220,
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      onPressed: _downloadTemplate,
+                      icon: const Icon(Icons.download),
+                      label: const Text(
+                        "Download Template",
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: royal,
+                        foregroundColor: Colors.white,
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+
+                  const SizedBox(height: 20),
+
+                  SizedBox(
+                    width: 180,
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      onPressed: _pickExcelAndOpenUpload,
+                      icon: const Icon(Icons.upload_file),
+                      label: const Text(
+                        "Upload Excel",
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: royal,
+                        foregroundColor: Colors.white,
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-
-            const SizedBox(height: 20),
-
-            SizedBox(
-              width: 180,
-              height: 52,
-              child: ElevatedButton.icon(
-                onPressed: _pickExcelAndOpenUpload,
-                icon: const Icon(Icons.upload_file),
-                label: const Text(
-                  "Upload Excel",
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: royal,
-                  foregroundColor: Colors.white,
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-              ),
-            ),
-
-          ],),),
     );
   }
 }
@@ -339,20 +344,36 @@ class _BulkBatchExistUploadState extends State<BulkBatchExistUpload> {
 
     controllers = widget.batches.map((row) {
       return {
-        "MEDICINE_ID": TextEditingController(text: row["MEDICINE_ID"]?.toString() ?? ""),
-        "Batch_no": TextEditingController(text: row["Batch_no"]?.toString() ?? ""),
-        "Rack_no": TextEditingController(text: row["Rack_no"]?.toString() ?? ""),
-        "EXP_Date": TextEditingController(text: row["EXP_Date"]?.toString() ?? ""),
-        "MFG_Date": TextEditingController(text: row["MFG_Date"]?.toString() ?? ""),
-        "Total_Stock": TextEditingController(text: row["Total_Stock"]?.toString() ?? ""),
+        "MEDICINE_ID": TextEditingController(
+          text: row["MEDICINE_ID"]?.toString() ?? "",
+        ),
+        "Batch_no": TextEditingController(
+          text: row["Batch_no"]?.toString() ?? "",
+        ),
+        "Rack_no": TextEditingController(
+          text: row["Rack_no"]?.toString() ?? "",
+        ),
+        "EXP_Date": TextEditingController(
+          text: row["EXP_Date"]?.toString() ?? "",
+        ),
+        "MFG_Date": TextEditingController(
+          text: row["MFG_Date"]?.toString() ?? "",
+        ),
+        "Total_Stock": TextEditingController(
+          text: row["Total_Stock"]?.toString() ?? "",
+        ),
         "Unit": TextEditingController(text: row["Unit"]?.toString() ?? ""),
-        "sellingPrice": TextEditingController(text: row["Selling_Price_Quantity"]?.toString() ?? ""),
-        "sellingPerUnit": TextEditingController(text: row["Selling_Price_Unit"]?.toString() ?? ""),
+        "sellingPrice": TextEditingController(
+          text: row["Selling_Price_Quantity"]?.toString() ?? "",
+        ),
+        "sellingPerUnit": TextEditingController(
+          text: row["Selling_Price_Unit"]?.toString() ?? "",
+        ),
       };
     }).toList();
     calculatedRows = List.generate(
       controllers.length,
-          (_) => <String, dynamic>{},
+      (_) => <String, dynamic>{},
     );
     for (int i = 0; i < controllers.length; i++) {
       if (controllers[i]["sellingPrice"]!.text.isNotEmpty &&
@@ -363,8 +384,8 @@ class _BulkBatchExistUploadState extends State<BulkBatchExistUpload> {
     }
 
     _postInitTasks(); // ✅ only once
-
   }
+
   void calculateRow(int i) {
     final r = controllers[i];
     final result = calculateValues(r, i);
@@ -443,22 +464,19 @@ class _BulkBatchExistUploadState extends State<BulkBatchExistUpload> {
     return null;
   }
 
-
   Map<String, dynamic> calculateValues(
-      Map<String, TextEditingController> r,
-      int rowIndex,
-      ) {
+    Map<String, TextEditingController> r,
+    int rowIndex,
+  ) {
     final totalStock = int.tryParse(r["Total_Stock"]?.text ?? "0") ?? 0;
     final unit = int.tryParse(r["Unit"]?.text ?? "1") ?? 1;
 
-    final sellingPrice =
-        double.tryParse(r["sellingPrice"]?.text ?? "0") ?? 0.0;
+    final sellingPrice = double.tryParse(r["sellingPrice"]?.text ?? "0") ?? 0.0;
     final sellingPerUnit =
         double.tryParse(r["sellingPerUnit"]?.text ?? "0") ?? 0.0;
 
     // ✅ quantity = ceil logic
-    final totalQty =
-    unit > 0 ? (totalStock / unit).ceil() : totalStock;
+    final totalQty = unit > 0 ? (totalStock / unit).ceil() : totalStock;
 
     double updatedSellingPrice = sellingPrice;
     double updatedSellingPerUnit = sellingPerUnit;
@@ -466,14 +484,12 @@ class _BulkBatchExistUploadState extends State<BulkBatchExistUpload> {
     final edited = lastEditedField[rowIndex];
 
     if (edited == "unit" && sellingPerUnit > 0) {
-      updatedSellingPrice =
-          truncateTo2Decimals(sellingPerUnit * unit);
+      updatedSellingPrice = truncateTo2Decimals(sellingPerUnit * unit);
       r["sellingPrice"]!.text = updatedSellingPrice.toString();
     }
 
     if (edited == "qty" && sellingPrice > 0 && unit > 0) {
-      updatedSellingPerUnit =
-          truncateTo2Decimals(sellingPrice / unit);
+      updatedSellingPerUnit = truncateTo2Decimals(sellingPrice / unit);
       r["sellingPerUnit"]!.text = updatedSellingPerUnit.toString();
     }
 
@@ -484,9 +500,11 @@ class _BulkBatchExistUploadState extends State<BulkBatchExistUpload> {
       "sellingPerUnit": updatedSellingPerUnit,
     };
   }
+
   double truncateTo2Decimals(double value) {
     return (value * 100).truncate() / 100;
   }
+
   Widget _buildHallCard(Map<String, dynamic> hall) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -497,7 +515,7 @@ class _BulkBatchExistUploadState extends State<BulkBatchExistUpload> {
         border: Border.all(color: royal, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: royal.withValues(alpha:0.15),
+            color: royal.withValues(alpha: 0.15),
             blurRadius: 6,
             offset: const Offset(0, 3),
           ),
@@ -509,21 +527,21 @@ class _BulkBatchExistUploadState extends State<BulkBatchExistUpload> {
           ClipOval(
             child: hall['logo'] != null
                 ? Image.memory(
-              base64Decode(hall['logo']),
-              width: 70,
-              height: 70,
-              fit: BoxFit.cover,
-            )
+                    base64Decode(hall['logo']),
+                    width: 70,
+                    height: 70,
+                    fit: BoxFit.cover,
+                  )
                 : Container(
-              width: 70,
-              height: 70,
-              color: Colors.white, // 👈 soft teal background
-              child: const Icon(
-                Icons.home_work_rounded,
-                color: royal,
-                size: 35,
-              ),
-            ),
+                    width: 70,
+                    height: 70,
+                    color: Colors.white, // 👈 soft teal background
+                    child: const Icon(
+                      Icons.home_work_rounded,
+                      color: royal,
+                      size: 35,
+                    ),
+                  ),
           ),
           Expanded(
             child: Center(
@@ -586,7 +604,9 @@ class _BulkBatchExistUploadState extends State<BulkBatchExistUpload> {
       });
     }
 
-    final url = Uri.parse("$baseUrl/inventory/medicine/batch-upload-exist"); // single bulk endpoint
+    final url = Uri.parse(
+      "$baseUrl/inventory/medicine/batch-upload-exist",
+    ); // single bulk endpoint
 
     final response = await http.post(
       url,
@@ -634,10 +654,7 @@ class _BulkBatchExistUploadState extends State<BulkBatchExistUpload> {
                 if (!snapshot.hasData) return const SizedBox();
                 return Text(
                   snapshot.data!,
-                  style:  TextStyle(
-                    fontSize: 11,
-                    color: royal,
-                  ),
+                  style: TextStyle(fontSize: 11, color: royal),
                   overflow: TextOverflow.ellipsis,
                 );
               },
@@ -648,25 +665,23 @@ class _BulkBatchExistUploadState extends State<BulkBatchExistUpload> {
     );
   }
 
-  DataCell editNumber(TextEditingController c) =>
-      DataCell(
-        SizedBox(
-            width: 90,
-            child: TextField(
-              controller: c,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
-              ],
-              decoration: const InputDecoration(
-                isDense: true,
-                border: InputBorder.none,
-              ),
-              onChanged: (_) => setState(() {}),
-            )
-
+  DataCell editNumber(TextEditingController c) => DataCell(
+    SizedBox(
+      width: 90,
+      child: TextField(
+        controller: c,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        inputFormatters: [
+          FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+        ],
+        decoration: const InputDecoration(
+          isDense: true,
+          border: InputBorder.none,
         ),
-      );
+        onChanged: (_) => setState(() {}),
+      ),
+    ),
+  );
 
   DataCell datePickerCell({
     required TextEditingController controller,
@@ -707,7 +722,9 @@ class _BulkBatchExistUploadState extends State<BulkBatchExistUpload> {
           );
 
           if (pickedDate != null) {
-            controller.text = pickedDate.toIso8601String().split("T")[0]; // yyyy-MM-dd
+            controller.text = pickedDate.toIso8601String().split(
+              "T",
+            )[0]; // yyyy-MM-dd
             setState(() {});
           }
         },
@@ -724,71 +741,61 @@ class _BulkBatchExistUploadState extends State<BulkBatchExistUpload> {
     );
   }
 
-  DataCell editInt(
-      TextEditingController c,
-      int rowIndex,
-      ) =>
-      DataCell(
-        SizedBox(
-          width: 90,
-          child: TextField(
-            controller: c,
-            cursorColor: royal,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: const InputDecoration(
-              isDense: true,
-              border: InputBorder.none,
-            ),
-            onChanged: (_) {
-              calculateRow(rowIndex); // 🔥 force recalculation
-            },
-          ),
+  DataCell editInt(TextEditingController c, int rowIndex) => DataCell(
+    SizedBox(
+      width: 90,
+      child: TextField(
+        controller: c,
+        cursorColor: royal,
+        keyboardType: TextInputType.number,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+        decoration: const InputDecoration(
+          isDense: true,
+          border: InputBorder.none,
         ),
-      );
+        onChanged: (_) {
+          calculateRow(rowIndex); // 🔥 force recalculation
+        },
+      ),
+    ),
+  );
 
   DataCell viewInt(int v) => DataCell(Text(v.toString()));
 
   DataCell editCurrency(
-      TextEditingController c,
-      int rowIndex,
-      String field, // "qty" or "unit"
-      ) =>
-      DataCell(
-        SizedBox(
-          width: 90,
-          child: TextField(
-            controller: c,
-            cursorColor: royal,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(
-                RegExp(r'^\d+\.?\d{0,2}'),
-              ),
-            ],
-            decoration: const InputDecoration(
-              isDense: true,
-              border: InputBorder.none,
-              prefixText: '₹',
-            ),
-            onChanged: (_) {
-              lastEditedField[rowIndex] = field;
-              calculateRow(rowIndex);
-            },
-          ),
+    TextEditingController c,
+    int rowIndex,
+    String field, // "qty" or "unit"
+  ) => DataCell(
+    SizedBox(
+      width: 90,
+      child: TextField(
+        controller: c,
+        cursorColor: royal,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        inputFormatters: [
+          FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+        ],
+        decoration: const InputDecoration(
+          isDense: true,
+          border: InputBorder.none,
+          prefixText: '₹',
         ),
-      );
-
-
+        onChanged: (_) {
+          lastEditedField[rowIndex] = field;
+          calculateRow(rowIndex);
+        },
+      ),
+    ),
+  );
 
   DataCell view(double v) => DataCell(Text(v.toStringAsFixed(2)));
 
-
   DataCell batchCell(
-      TextEditingController controller,
-      int medicineId,
-      int rowIndex,
-      ) {
+    TextEditingController controller,
+    int medicineId,
+    int rowIndex,
+  ) {
     return DataCell(
       SizedBox(
         width: 120,
@@ -800,19 +807,19 @@ class _BulkBatchExistUploadState extends State<BulkBatchExistUpload> {
             border: InputBorder.none,
             suffixIcon: batchAvailability[rowIndex] == null
                 ? const SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
                 : Icon(
-              batchAvailability[rowIndex]!
-                  ? Icons.check_circle
-                  : Icons.error,
-              color: batchAvailability[rowIndex]!
-                  ? Colors.green
-                  : Colors.red,
-              size: 18,
-            ),
+                    batchAvailability[rowIndex]!
+                        ? Icons.check_circle
+                        : Icons.error,
+                    color: batchAvailability[rowIndex]!
+                        ? Colors.green
+                        : Colors.red,
+                    size: 18,
+                  ),
           ),
           onChanged: (value) async {
             if (value.isEmpty || medicineId == 0) {
@@ -826,8 +833,10 @@ class _BulkBatchExistUploadState extends State<BulkBatchExistUpload> {
               batchAvailability[rowIndex] = null; // ⏳ checking
             });
 
-            final isAvailable =
-            await validateBatchBackend(medicineId, value.trim());
+            final isAvailable = await validateBatchBackend(
+              medicineId,
+              value.trim(),
+            );
 
             if (!mounted) return;
 
@@ -841,6 +850,7 @@ class _BulkBatchExistUploadState extends State<BulkBatchExistUpload> {
       ),
     );
   }
+
   bool isRowValid(int i) {
     final r = controllers[i];
     final calc = calculateValues(r, i);
@@ -848,15 +858,14 @@ class _BulkBatchExistUploadState extends State<BulkBatchExistUpload> {
     bool notEmpty(String key) =>
         r[key] != null && r[key]!.text.trim().isNotEmpty;
 
-    int toInt(String key) =>
-        int.tryParse(r[key]?.text ?? "") ?? 0;
+    int toInt(String key) => int.tryParse(r[key]?.text ?? "") ?? 0;
 
-    double toDouble(String key) =>
-        double.tryParse(r[key]?.text ?? "") ?? 0;
-    final medicineValid =
-    medicineNameCache.containsKey("$shopId-${r["MEDICINE_ID"]!.text}");
+    double toDouble(String key) => double.tryParse(r[key]?.text ?? "") ?? 0;
+    final medicineValid = medicineNameCache.containsKey(
+      "$shopId-${r["MEDICINE_ID"]!.text}",
+    );
 
-    if (!medicineValid ) return false;
+    if (!medicineValid) return false;
 
     // 🚨 Batch validation (THIS WAS MISSING)
     if (!batchAvailability.containsKey(i)) return false; // not checked yet
@@ -864,21 +873,17 @@ class _BulkBatchExistUploadState extends State<BulkBatchExistUpload> {
     if (batchAvailability[i] == false) return false; // batch exists
 
     return
-      // ✅ medicine name must be valid
-          // ❗ REQUIRED fields (except NDC)
-          notEmpty("Rack_no") &&
-
-          notEmpty("MFG_Date") &&
-          notEmpty("EXP_Date") &&
-
-          toInt("Total_Stock") > 0 &&
-          toInt("Unit") > 0 &&
-
-          toDouble("sellingPrice") > 0 &&
-          toDouble("sellingPerUnit") > 0 &&
-
-          // ✅ calculated value
-          (calc["totalQty"] ?? 0) > 0;
+    // ✅ medicine name must be valid
+    // ❗ REQUIRED fields (except NDC)
+    notEmpty("Rack_no") &&
+        notEmpty("MFG_Date") &&
+        notEmpty("EXP_Date") &&
+        toInt("Total_Stock") > 0 &&
+        toInt("Unit") > 0 &&
+        toDouble("sellingPrice") > 0 &&
+        toDouble("sellingPerUnit") > 0 &&
+        // ✅ calculated value
+        (calc["totalQty"] ?? 0) > 0;
   }
 
   bool get isSubmitEnabled {
@@ -898,33 +903,45 @@ class _BulkBatchExistUploadState extends State<BulkBatchExistUpload> {
         ),
         onPressed: isSubmitEnabled
             ? () async {
-          final confirmed = await showDialog<bool>(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text("Confirm Submission"),
-              content: const Text("Have you checked all the values of the data?"),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: const Text("Cancel",style: TextStyle(color: royal),),
-                ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: royal),
-                  onPressed: () => Navigator.pop(context, true),
-                  child: const Text("Confirm",style: TextStyle(color: Colors.white),),
-                ),
-              ],
-            ),
-          );
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text("Confirm Submission"),
+                    content: const Text(
+                      "Have you checked all the values of the data?",
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text(
+                          "Cancel",
+                          style: TextStyle(color: royal),
+                        ),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: royal),
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text(
+                          "Confirm",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
 
-          if (confirmed == true) {
-            await submitAll();
-          }
-        }
+                if (confirmed == true) {
+                  await submitAll();
+                }
+              }
             : null, // disabled if conditions not met
         child: const Text(
           "Submit Bulk Upload",
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold,color: Colors.white),
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
         ),
       ),
     );
@@ -954,8 +971,8 @@ class _BulkBatchExistUploadState extends State<BulkBatchExistUpload> {
       body: Column(
         children: [
           Padding(
-              padding: const EdgeInsets.all(12),
-              child: _buildHallCard(widget.shopDetails!)
+            padding: const EdgeInsets.all(12),
+            child: _buildHallCard(widget.shopDetails!),
           ),
 
           const Divider(height: 1),
@@ -970,18 +987,17 @@ class _BulkBatchExistUploadState extends State<BulkBatchExistUpload> {
                   controller: horizontalController,
                   thumbVisibility: true,
                   notificationPredicate: (n) =>
-                  n.metrics.axis == Axis.horizontal,
+                      n.metrics.axis == Axis.horizontal,
                   child: SingleChildScrollView(
                     controller: horizontalController,
                     scrollDirection: Axis.horizontal,
                     child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minWidth: screenWidth + 800,
-                      ),
+                      constraints: BoxConstraints(minWidth: screenWidth + 800),
                       child: DataTableTheme(
                         data: DataTableThemeData(
-                          headingRowColor:
-                          WidgetStateProperty.all(Colors.white),
+                          headingRowColor: WidgetStateProperty.all(
+                            Colors.white,
+                          ),
                           headingTextStyle: const TextStyle(
                             color: royal,
                             fontWeight: FontWeight.bold,
@@ -1015,42 +1031,50 @@ class _BulkBatchExistUploadState extends State<BulkBatchExistUpload> {
                                 ? calculatedRows[i]
                                 : (calculatedRows[i] = calculateValues(r, i));
 
-                            DataCell edit(TextEditingController c) =>
-                                DataCell(
-                                  SizedBox(
-                                    width: 90,
-                                    child: TextField(
-                                      controller: c,
-                                      cursorColor: royal,
-                                      decoration: const InputDecoration(
-                                        isDense: true,
-                                        border: InputBorder.none,
-                                      ),
-                                      onChanged: (_) =>
-                                          setState(() {}),
-                                    ),
+                            DataCell edit(TextEditingController c) => DataCell(
+                              SizedBox(
+                                width: 90,
+                                child: TextField(
+                                  controller: c,
+                                  cursorColor: royal,
+                                  decoration: const InputDecoration(
+                                    isDense: true,
+                                    border: InputBorder.none,
                                   ),
-                                );
-
-                            return DataRow(cells: [
-                              editableIdWithName(
-                                controller: r["MEDICINE_ID"]!, // ✅ use the existing controller
-                                fetchName: fetchMedicineName,
+                                  onChanged: (_) => setState(() {}),
+                                ),
                               ),
+                            );
 
-                              batchCell(
-                                r["Batch_no"]!,
-                                int.tryParse(r["MEDICINE_ID"]!.text) ?? 0,
-                                i,
-                              ),
-                              edit(r["Rack_no"]!),
-                              datePickerCell(controller: r["MFG_Date"]!, label: "MFG"),
-                              datePickerCell(controller: r["EXP_Date"]!, label: "EXP"),
-                              editInt(r["Total_Stock"]!,i),
-                              editInt(r["Unit"]!,i),
-                              viewInt(calc["totalQty"]!),
-                              editCurrency(r["sellingPrice"]!, i, "qty"),
-                              editCurrency(r["sellingPerUnit"]!, i, "unit"), ]);
+                            return DataRow(
+                              cells: [
+                                editableIdWithName(
+                                  controller:
+                                      r["MEDICINE_ID"]!, // ✅ use the existing controller
+                                  fetchName: fetchMedicineName,
+                                ),
+
+                                batchCell(
+                                  r["Batch_no"]!,
+                                  int.tryParse(r["MEDICINE_ID"]!.text) ?? 0,
+                                  i,
+                                ),
+                                edit(r["Rack_no"]!),
+                                datePickerCell(
+                                  controller: r["MFG_Date"]!,
+                                  label: "MFG",
+                                ),
+                                datePickerCell(
+                                  controller: r["EXP_Date"]!,
+                                  label: "EXP",
+                                ),
+                                editInt(r["Total_Stock"]!, i),
+                                editInt(r["Unit"]!, i),
+                                viewInt(calc["totalQty"]!),
+                                editCurrency(r["sellingPrice"]!, i, "qty"),
+                                editCurrency(r["sellingPerUnit"]!, i, "unit"),
+                              ],
+                            );
                           }),
                         ),
                       ),
@@ -1063,7 +1087,6 @@ class _BulkBatchExistUploadState extends State<BulkBatchExistUpload> {
 
           const SizedBox(height: 20),
           submitButton(), // Add this below DataTable
-
         ],
       ),
     );

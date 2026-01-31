@@ -1,16 +1,13 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-
-import '../../../../../Admin/Pages/admin_edit_profile_page.dart';
-import '../../../../../Appbar/MobileAppbar.dart';
 import '../../../../../utils/utils.dart';
-import '../medicines/widget/widget.dart';
-import './reorder_pdf.dart';
-import './reorder_supplier_pdf.dart';
-import './supplier_reorderlist.dart';
+import 'reorder_pdf.dart';
+import 'supplier_reorderlist.dart';
+import 'reorder_supplier_pdf.dart';
+
+const Color royal = Color(0xFF875C3F);
 
 class ReorderPage extends StatefulWidget {
   const ReorderPage({super.key});
@@ -20,15 +17,14 @@ class ReorderPage extends StatefulWidget {
 }
 
 class _ReorderPageState extends State<ReorderPage> {
-  String? hospitalId;
+  int? shopId;
   bool isLoading = true;
   List<Map<String, dynamic>> supplierWiseList = [];
   List<Map<String, dynamic>> medicines = [];
+  Map<String, dynamic>? shopDetails;
   List<Map<String, dynamic>> _suppliers = [];
   bool isLoadingSuppliers = true;
-  String? hospitalName;
-  String? hospitalPlace;
-  String? hospitalPhoto;
+
   @override
   void initState() {
     super.initState();
@@ -37,11 +33,11 @@ class _ReorderPageState extends State<ReorderPage> {
 
   Future<void> loadShopId() async {
     final prefs = await SharedPreferences.getInstance();
-    hospitalId = prefs.getString('hospitalId');
+    shopId = prefs.getInt('shopId');
 
-    if (hospitalId != null) {
+    if (shopId != null) {
       await Future.wait([
-        _loadHospitalInfo(),
+        _fetchHallDetails(),
         fetchReorderMedicines(),
         fetchSupplierWiseReorder(),
         _fetchSuppliers(),
@@ -76,7 +72,7 @@ class _ReorderPageState extends State<ReorderPage> {
   Future<void> fetchSupplierWiseReorder() async {
     try {
       final res = await http.get(
-        Uri.parse("$baseUrl/reorder/supplier-wise/$hospitalId"),
+        Uri.parse("$baseUrl/reorder/supplier-wise/$shopId"),
       );
 
       if (res.statusCode == 200) {
@@ -92,7 +88,7 @@ class _ReorderPageState extends State<ReorderPage> {
 
   Future<void> fetchReorderMedicines() async {
     try {
-      final res = await http.get(Uri.parse("$baseUrl/reorder/$hospitalId"));
+      final res = await http.get(Uri.parse("$baseUrl/reorder/$shopId"));
 
       if (res.statusCode == 200) {
         final List data = jsonDecode(res.body);
@@ -103,31 +99,40 @@ class _ReorderPageState extends State<ReorderPage> {
     }
   }
 
-  Future<void> _loadHospitalInfo() async {
-    final prefs = await SharedPreferences.getInstance();
+  Future<void> _fetchHallDetails() async {
+    try {
+      final res = await http.get(Uri.parse('$baseUrl/shops/$shopId'));
 
-    hospitalName = prefs.getString('hospitalName') ?? "Unknown";
-    hospitalPlace = prefs.getString('hospitalPlace') ?? "Unknown";
-    hospitalPhoto =
-        prefs.getString('hospitalPhoto') ??
-        "https://as1.ftcdn.net/v2/jpg/02/50/38/52/1000_F_250385294_tdzxdr2Yzm5Z3J41fBYbgz4PaVc2kQmT.jpg";
+      if (res.statusCode == 200) {
+        shopDetails = jsonDecode(res.body);
+      }
+    } catch (e) {
+      debugPrint("Error fetching shop details: $e");
+    }
+  }
 
-    setState(() {});
+  Future<void> _reloadPage() async {
+    setState(() => isLoading = true);
+
+    await Future.wait([
+      fetchReorderMedicines(),
+      fetchSupplierWiseReorder(),
+      _fetchSuppliers(),
+    ]);
+
+    setState(() => isLoading = false);
   }
 
   void _showMessage(String message) {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          message,
-          style: TextStyle(color: primaryColor, fontSize: 16),
-        ),
+        content: Text(message, style: TextStyle(color: royal, fontSize: 16)),
         backgroundColor: Colors.white,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: primaryColor, width: 2),
+          side: BorderSide(color: royal, width: 2),
         ),
         elevation: 0,
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -136,15 +141,54 @@ class _ReorderPageState extends State<ReorderPage> {
     );
   }
 
+  Widget _buildHallCard(Map<String, dynamic> hall) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      height: 95,
+      decoration: BoxDecoration(
+        color: royal,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 32,
+            backgroundColor: Colors.white,
+            child: hall['logo'] != null
+                ? ClipOval(
+                    child: Image.memory(
+                      base64Decode(hall['logo']),
+                      fit: BoxFit.cover,
+                      width: 64,
+                      height: 64,
+                    ),
+                  )
+                : const Icon(Icons.home_work, color: royal, size: 30),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              hall['name']?.toString().toUpperCase() ?? "SHOP",
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: CustomAppBar(
-        title: 'Reorder',
-        pageContext: context,
-        showBackButton: true,
-        showNotificationIcon: true,
+      appBar: AppBar(
+        backgroundColor: royal,
+        title: const Text("Reorder", style: TextStyle(color: Colors.white)),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
 
       body: isLoading
@@ -154,11 +198,7 @@ class _ReorderPageState extends State<ReorderPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  buildHospitalCard(
-                    hospitalName: hospitalName,
-                    hospitalPlace: hospitalPlace,
-                    hospitalPhoto: hospitalPhoto,
-                  ),
+                  if (shopDetails != null) _buildHallCard(shopDetails!),
                   const SizedBox(height: 30),
                   Center(
                     child: ConstrainedBox(
@@ -174,7 +214,7 @@ class _ReorderPageState extends State<ReorderPage> {
                               style: TextStyle(fontSize: 16),
                             ),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: primaryColor,
+                              backgroundColor: royal,
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 30,
@@ -191,6 +231,7 @@ class _ReorderPageState extends State<ReorderPage> {
                                       context,
                                       MaterialPageRoute(
                                         builder: (_) => ReorderSupplierPdfPage(
+                                          shopDetails: shopDetails,
                                           medicines: medicines,
                                         ),
                                       ),
@@ -205,7 +246,7 @@ class _ReorderPageState extends State<ReorderPage> {
                               style: TextStyle(fontSize: 16),
                             ),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: primaryColor,
+                              backgroundColor: royal,
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 30,
@@ -222,6 +263,7 @@ class _ReorderPageState extends State<ReorderPage> {
                                       context,
                                       MaterialPageRoute(
                                         builder: (_) => ReorderPdfPage(
+                                          shopDetails: shopDetails,
                                           medicines: medicines,
                                         ),
                                       ),
@@ -230,7 +272,7 @@ class _ReorderPageState extends State<ReorderPage> {
                           ),
                           const SizedBox(height: 30),
 
-                          if (_suppliers.isNotEmpty)
+                          if (medicines.isNotEmpty)
                             const Align(
                               alignment: Alignment.centerLeft,
                               child: Text(
@@ -238,74 +280,78 @@ class _ReorderPageState extends State<ReorderPage> {
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: primaryColor,
+                                  color: royal,
                                 ),
                               ),
                             ),
 
                           const SizedBox(height: 12),
 
-                          /// 🔹 SUPPLIER LIST (FROM SUPPLIERS API)
-                          ListView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: _suppliers.length,
-                            itemBuilder: (context, index) {
-                              final supplier = _suppliers[index];
+                          if (medicines.isNotEmpty)
+                            ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: _suppliers.length,
+                              itemBuilder: (context, index) {
+                                final supplier = _suppliers[index];
 
-                              return Card(
-                                elevation: 2,
-                                color: Colors.white,
-                                margin: const EdgeInsets.only(bottom: 10),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  side: BorderSide(
-                                    color: primaryColor.withValues(alpha: 0.3),
-                                  ),
-                                ),
-                                child: ListTile(
-                                  leading: const Icon(
-                                    Icons.local_shipping,
-                                    color: primaryColor,
-                                  ),
-                                  title: Text(
-                                    supplier['name'],
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w600,
+                                return Card(
+                                  elevation: 2,
+                                  color: Colors.white,
+                                  margin: const EdgeInsets.only(bottom: 10),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    side: BorderSide(
+                                      color: royal.withValues(alpha: 0.3),
                                     ),
                                   ),
-                                  subtitle: Text("📞 ${supplier['phone']}"),
-                                  trailing: const Icon(
-                                    Icons.arrow_forward_ios,
-                                    size: 16,
-                                    color: primaryColor,
-                                  ),
-
-                                  /// ✅ SEND SELECTED SUPPLIER + ALL REORDER MEDICINES
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => SupplierReorderDetailPage(
-                                          supplier:
-                                              supplier, // ✅ selected supplier
-                                          medicines:
-                                              medicines, // ✅ ALL reorder medicines
-                                        ),
+                                  child: ListTile(
+                                    leading: const Icon(
+                                      Icons.local_shipping,
+                                      color: royal,
+                                    ),
+                                    title: Text(
+                                      supplier['name'],
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
                                       ),
-                                    );
-                                  },
-                                ),
-                              );
-                            },
-                          ),
+                                    ),
+                                    subtitle: Text("📞 ${supplier['phone']}"),
+                                    trailing: const Icon(
+                                      Icons.arrow_forward_ios,
+                                      size: 16,
+                                      color: royal,
+                                    ),
+
+                                    /// ✅ SEND SELECTED SUPPLIER + ALL REORDER MEDICINES
+                                    onTap: () async {
+                                      final result = await Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              SupplierReorderDetailPage(
+                                                shopDetails: shopDetails,
+                                                supplier: supplier,
+                                                medicines: medicines,
+                                              ),
+                                        ),
+                                      );
+
+                                      if (result == true) {
+                                        _reloadPage(); // ✅ refresh everything
+                                      }
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
 
                           if (medicines.isEmpty)
                             const Padding(
                               padding: EdgeInsets.only(top: 16),
                               child: Text(
                                 "No medicines need reorder",
-                                style: TextStyle(color: primaryColor),
+                                style: TextStyle(color: royal),
                               ),
                             ),
                         ],

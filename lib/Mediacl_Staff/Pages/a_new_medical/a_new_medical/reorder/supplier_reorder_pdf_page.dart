@@ -1,30 +1,23 @@
-import 'dart:convert';
 import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
-// import '../../../public/main_navigation.dart';
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'dart:convert';
 
-import '../../../../../Admin/Pages/admin_edit_profile_page.dart';
+const Color royal = Color(0xFF875C3F);
 
 class SupplierReorderPdfPage extends StatefulWidget {
-  final String? hospitalName;
-  final String? hospitalPlace;
-  final String? hospitalPhoto;
+  final Map<String, dynamic>? shopDetails;
   final Map<String, dynamic> supplier;
   final List medicines;
 
   const SupplierReorderPdfPage({
     super.key,
-
+    required this.shopDetails,
     required this.supplier,
     required this.medicines,
-    this.hospitalName,
-    this.hospitalPlace,
-    this.hospitalPhoto,
   });
 
   @override
@@ -49,16 +42,15 @@ class _SupplierReorderPdfPageState extends State<SupplierReorderPdfPage> {
       await rootBundle.load("assets/fonts/NotoSansTamil-Bold.ttf"),
     );
     Uint8List? logo;
-    if (widget.hospitalPhoto != null) {
-      logo = base64Decode(widget.hospitalPhoto!);
+    if (widget.shopDetails?['logo'] != null) {
+      logo = base64Decode(widget.shopDetails!['logo']);
     }
+    final hall = widget.shopDetails;
 
-    final primaryColor = PdfColor.fromInt(0xFF19527A);
-    final ttf = await PdfGoogleFonts.notoSansRegular();
-    final ttfBold = await PdfGoogleFonts.notoSansBold();
+    final royal = PdfColor.fromInt(0xFF19527A);
+
     pdf.addPage(
       pw.Page(
-        theme: pw.ThemeData.withFont(base: ttf, bold: ttfBold),
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(24),
         build: (_) => pw.Column(
@@ -76,18 +68,30 @@ class _SupplierReorderPdfPageState extends State<SupplierReorderPdfPage> {
                     crossAxisAlignment: pw.CrossAxisAlignment.center,
                     children: [
                       pw.Text(
-                        widget.hospitalName!.toUpperCase(),
+                        hall?['name']?.toString().toUpperCase() ?? 'SHOP NAME',
                         style: pw.TextStyle(
                           fontSize: 20,
                           fontWeight: pw.FontWeight.bold,
                           font: fontBold,
-                          color: primaryColor,
+                          color: royal,
                         ),
                       ),
 
-                      if ((widget.hospitalPlace).toString().isNotEmpty)
+                      if ((hall?['address'] ?? '').toString().isNotEmpty)
                         pw.Text(
-                          widget.hospitalPlace!,
+                          hall!['address'],
+                          style: pw.TextStyle(font: font),
+                        ),
+
+                      if ((hall?['phone'] ?? '').toString().isNotEmpty)
+                        pw.Text(
+                          'Phone: ${hall!['phone']}',
+                          style: pw.TextStyle(font: font),
+                        ),
+
+                      if ((hall?['email'] ?? '').toString().isNotEmpty)
+                        pw.Text(
+                          'Email: ${hall!['email']}',
                           style: pw.TextStyle(font: font),
                         ),
                     ],
@@ -178,89 +182,86 @@ class _SupplierReorderPdfPageState extends State<SupplierReorderPdfPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: primaryColor,
-        title: const Text("Reorder PDF", style: TextStyle(color: Colors.white)),
-        iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.home),
-            onPressed: () {
-              // Navigator.pushReplacement(
-              //   context,
-              //   MaterialPageRoute(builder: (_) => MainNavigation(initialIndex: 2)),
-              // );
-            },
+    return WillPopScope(
+      onWillPop: () async {
+        Navigator.pop(context, true); // ✅ return success to previous page
+        return false; // prevent default back
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: royal,
+          title: const Text(
+            "Reorder PDF",
+            style: TextStyle(color: Colors.white),
           ),
-        ],
-      ),
-      body: FutureBuilder<Uint8List>(
-        future: pdfFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+          iconTheme: const IconThemeData(color: Colors.white),
+        ),
+        body: FutureBuilder<Uint8List>(
+          future: pdfFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-          if (snapshot.hasError) {
-            return Center(
-              child: Text(
-                "Error generating PDF:\n${snapshot.error}",
-                textAlign: TextAlign.center,
-              ),
+            if (snapshot.hasError) {
+              return Center(
+                child: Text(
+                  "Error generating PDF:\n${snapshot.error}",
+                  textAlign: TextAlign.center,
+                ),
+              );
+            }
+
+            final pdfData = snapshot.data!;
+            return PdfPreview(
+              build: (_) => pdfData,
+              allowPrinting: false,
+              allowSharing: false,
+              canChangeOrientation: false,
+              canChangePageFormat: false,
             );
-          }
-
-          final pdfData = snapshot.data!;
-          return PdfPreview(
-            build: (_) => pdfData,
-            allowPrinting: false,
-            allowSharing: false,
-            canChangeOrientation: false,
-            canChangePageFormat: false,
-          );
-        },
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Container(
-          color: primaryColor,
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              /// PRINT
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: primaryColor,
+          },
+        ),
+        bottomNavigationBar: SafeArea(
+          child: Container(
+            color: royal,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: royal,
+                  ),
+                  icon: const Icon(Icons.print),
+                  label: const Text("Print"),
+                  onPressed: () {
+                    pdfFuture.then((pdfData) {
+                      Printing.layoutPdf(onLayout: (_) async => pdfData);
+                    });
+                  },
                 ),
-                icon: const Icon(Icons.print),
-                label: const Text("Print"),
-                onPressed: () {
-                  pdfFuture.then((pdfData) {
-                    Printing.layoutPdf(onLayout: (_) async => pdfData);
-                  });
-                },
-              ),
 
-              /// SHARE (SYSTEM SHARE)
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: primaryColor,
+                /// SHARE (SYSTEM SHARE)
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: royal,
+                  ),
+                  icon: const Icon(Icons.share),
+                  label: const Text("Share"),
+                  onPressed: () {
+                    pdfFuture.then((pdfData) {
+                      Printing.sharePdf(
+                        bytes: pdfData,
+                        filename: "reorder_list.pdf",
+                      );
+                    });
+                  },
                 ),
-                icon: const Icon(Icons.share),
-                label: const Text("Share"),
-                onPressed: () {
-                  pdfFuture.then((pdfData) {
-                    Printing.sharePdf(
-                      bytes: pdfData,
-                      filename: "reorder_list.pdf",
-                    );
-                  });
-                },
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

@@ -985,7 +985,7 @@ class _PatientRegistrationPagesState extends State<PatientRegistrationPages> {
                               ),
                               Spacer(),
                               Text(
-                                '# ${p['id'].toString() ?? ''}',
+                                '# ${p['id'].toString()}',
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,

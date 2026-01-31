@@ -1,9 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:hospitrax/utils/utils.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../public/main_navigation.dart';
-import '../../../services/config.dart';
 
 const royal = Color(0xFF875C3F);
 
@@ -91,13 +90,13 @@ class _OrderedMedicinesPageState extends State<OrderedMedicinesPage> {
             backgroundColor: Colors.white,
             child: hall['logo'] != null
                 ? ClipOval(
-              child: Image.memory(
-                base64Decode(hall['logo']),
-                fit: BoxFit.cover,
-                width: 64,
-                height: 64,
-              ),
-            )
+                    child: Image.memory(
+                      base64Decode(hall['logo']),
+                      fit: BoxFit.cover,
+                      width: 64,
+                      height: 64,
+                    ),
+                  )
                 : const Icon(Icons.home_work, color: royal, size: 30),
           ),
           const SizedBox(width: 12),
@@ -122,21 +121,13 @@ class _OrderedMedicinesPageState extends State<OrderedMedicinesPage> {
       SnackBar(
         content: Text(
           message,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-          ),
+          style: const TextStyle(color: Colors.white, fontSize: 16),
         ),
         backgroundColor: royal,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         elevation: 4,
-        margin: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 12,
-        ),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         duration: const Duration(seconds: 3),
       ),
     );
@@ -282,10 +273,10 @@ class _OrderedMedicinesPageState extends State<OrderedMedicinesPage> {
   }
 
   Widget _buildOrderCard(
-      Map<String, dynamic> order, {
-        required bool selected,
-        required ValueChanged<bool?> onChanged,
-      }) {
+    Map<String, dynamic> order, {
+    required bool selected,
+    required ValueChanged<bool?> onChanged,
+  }) {
     final medicine = order['medicine'] ?? {};
     final supplier = order['supplier'] ?? {};
     return Card(
@@ -333,8 +324,13 @@ class _OrderedMedicinesPageState extends State<OrderedMedicinesPage> {
                     ),
                   const Divider(height: 20, color: royal, thickness: 0.5),
                   if ((supplier['name'] ?? '').toString().isNotEmpty)
-                    const Text("Supplier",
-                        style: TextStyle(fontWeight: FontWeight.bold, color: royal)),
+                    const Text(
+                      "Supplier",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: royal,
+                      ),
+                    ),
                   if ((supplier['name'] ?? '').toString().isNotEmpty)
                     Text("Name: ${supplier['name']}"),
                   if ((supplier['phone'] ?? '').toString().isNotEmpty)
@@ -368,90 +364,91 @@ class _OrderedMedicinesPageState extends State<OrderedMedicinesPage> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: royal,
-        title: const Text("Ordered Medicines", style: TextStyle(color: Colors.white)),
+        title: const Text(
+          "Ordered Medicines",
+          style: TextStyle(color: Colors.white),
+        ),
         iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.home),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => MainNavigation(initialIndex: 2)),
-              );
-            },
-          ),
-        ],
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (shopDetails != null) _buildHallCard(shopDetails!),
-            const SizedBox(height: 16),
-            _buildSearchBar(),
-            const SizedBox(height: 24),
-            if (showOrders.isEmpty)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.only(top: 40),
-                  child: Text("No ordered medicines", style: TextStyle(color: royal)),
-                ),
-              ),
-            if (showOrders.isNotEmpty)
-              Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 600),
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: showOrders.length,
-                    itemBuilder: (context, index) {
-                      final item = showOrders[index];
-                      final int id = (item['order_id'] ?? item['id']) as int;
-
-                      allOrderSelection.putIfAbsent(id, () => false);
-
-                      return _buildOrderCard(
-                        item,
-                        selected: allOrderSelection[id]!,
-                        onChanged: (val) {
-                          setState(() => allOrderSelection[id] = val ?? false);
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ),
-            const SizedBox(height: 20),
-            if (showOrders.isNotEmpty)
-              Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 600),
-                  child: SizedBox(
-                    width: 150,
-                    height: 52,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: royal,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (shopDetails != null) _buildHallCard(shopDetails!),
+                  const SizedBox(height: 16),
+                  _buildSearchBar(),
+                  const SizedBox(height: 24),
+                  if (showOrders.isEmpty)
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.only(top: 40),
+                        child: Text(
+                          "No ordered medicines",
+                          style: TextStyle(color: royal),
                         ),
                       ),
-                      onPressed: _showConfirmDialog,
-                      child: const Text(
-                        "Submit",
-                        style: TextStyle(fontSize: 16, color: Colors.white),
+                    ),
+                  if (showOrders.isNotEmpty)
+                    Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 600),
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: showOrders.length,
+                          itemBuilder: (context, index) {
+                            final item = showOrders[index];
+                            final int id =
+                                (item['order_id'] ?? item['id']) as int;
+
+                            allOrderSelection.putIfAbsent(id, () => false);
+
+                            return _buildOrderCard(
+                              item,
+                              selected: allOrderSelection[id]!,
+                              onChanged: (val) {
+                                setState(
+                                  () => allOrderSelection[id] = val ?? false,
+                                );
+                              },
+                            );
+                          },
+                        ),
                       ),
                     ),
-                  ),
-                ),
+                  const SizedBox(height: 20),
+                  if (showOrders.isNotEmpty)
+                    Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 600),
+                        child: SizedBox(
+                          width: 150,
+                          height: 52,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: royal,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            onPressed: _showConfirmDialog,
+                            child: const Text(
+                              "Submit",
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
-          ],
-        ),
-      ),
+            ),
     );
   }
 }

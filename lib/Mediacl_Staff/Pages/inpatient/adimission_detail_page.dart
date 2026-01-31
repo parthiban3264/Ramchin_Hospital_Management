@@ -74,8 +74,8 @@ class _AdmissionDetailPageState extends State<AdmissionDetailPage> {
 
   void loadStaff() async {
     setState(() => isLoadingPage = true);
-    final prefs = await SharedPreferences.getInstance();
-    final String userId = prefs.getString("userId") ?? "";
+    // final prefs = await SharedPreferences.getInstance();
+    // final String userId = prefs.getString("userId") ?? "";
 
     final data = await AdminService().getMedicalStaff();
 
@@ -85,8 +85,7 @@ class _AdmissionDetailPageState extends State<AdmissionDetailPage> {
     final doctors = data
         .where((s) => s["role"].toString().toLowerCase() == "doctor")
         .toList();
-    print('nurse $nurse');
-    print('doctor $doctors');
+
     setState(() {
       nurseList = nurse;
       doctorList = doctors;

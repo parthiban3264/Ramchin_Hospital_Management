@@ -3,13 +3,15 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:hospitrax/Admin/Pages/admin_edit_profile_page.dart';
-import 'package:hospitrax/Mediacl_Staff/Pages/a_new_medical/a_new_medical/medicines/widget/add_batch_form.dart';
+import 'package:hospitrax/Mediacl_Staff/Pages/a_new_medical/a_new_medical/medicines/widget/exist_batch.dart';
+import 'package:hospitrax/Mediacl_Staff/Pages/a_new_medical/a_new_medical/medicines/widget/exist_medicine.dart';
+import 'package:hospitrax/Mediacl_Staff/Pages/a_new_medical/a_new_medical/medicines/widget/new_batch.dart';
+import 'package:hospitrax/Mediacl_Staff/Pages/a_new_medical/a_new_medical/medicines/widget/new_medicine.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../../Appbar/MobileAppbar.dart';
 import '../../../../../utils/utils.dart';
-import './widget/add_medcine_form.dart';
 import './widget/widget.dart';
 
 const Color aRoyalBlue = Color(0xFF854929);
@@ -31,9 +33,11 @@ class InventoryPageState extends State<InventoryPage> {
   static bool showAddMedicine = false;
   bool showAddBatch = false;
   final TextEditingController searchCtrl = TextEditingController();
-
+  List<String> backendCategories = [];
+  bool isCategoryLoading = false;
   List<Map<String, dynamic>> filteredMedicines = [];
-
+  bool showExistingMedicine = false;
+  bool showExistingMedicineBatch = false;
   bool isEditingProfit = false;
   bool isEditingSelling = false;
   Timer? debounce;
@@ -63,6 +67,28 @@ class InventoryPageState extends State<InventoryPage> {
         prefs.getString('hospitalPhoto') ??
         "https://as1.ftcdn.net/v2/jpg/02/50/38/52/1000_F_250385294_tdzxdr2Yzm5Z3J41fBYbgz4PaVc2kQmT.jpg";
     setState(() {});
+  }
+
+  Future<void> fetchCategories() async {
+    setState(() => isCategoryLoading = true);
+    final prefs = await SharedPreferences.getInstance();
+    hospitalId = prefs.getString('hospitalId');
+    try {
+      final res = await http.get(
+        Uri.parse("$baseUrl/inventory/medicine/categories/$hospitalId"),
+      );
+
+      if (res.statusCode == 200) {
+        final List data = jsonDecode(res.body);
+
+        setState(() {
+          backendCategories = data.map((e) => e.toString()).toList();
+        });
+      }
+    } catch (_) {
+    } finally {
+      setState(() => isCategoryLoading = false);
+    }
   }
 
   Future<void> updateInventoryStatus({
@@ -171,13 +197,10 @@ class InventoryPageState extends State<InventoryPage> {
                 style: outlinedRoyalButton,
                 onPressed: () {
                   setState(() {
-                    // Toggle medicine form
                     showAddMedicine = !showAddMedicine;
-
-                    // Close batch form
                     showAddBatch = false;
-
-                    // Clear forms when opening/closing
+                    showExistingMedicine = false;
+                    showExistingMedicineBatch = false;
                   });
                 },
                 child: Text(
@@ -191,17 +214,66 @@ class InventoryPageState extends State<InventoryPage> {
                 style: outlinedRoyalButton,
                 onPressed: () {
                   setState(() {
-                    // Toggle batch form
                     showAddBatch = !showAddBatch;
-
-                    // Close medicine form
                     showAddMedicine = false;
+                    showExistingMedicine = false;
+                    showExistingMedicineBatch = false;
                   });
                 },
                 child: Text(showAddBatch ? "Close Batch Form" : "Add Batch"),
               ),
             ),
           ],
+        ),
+
+        const SizedBox(height: 10),
+
+        // 🔹 NEW BUTTON
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          child: SizedBox(
+            width: double.infinity, // ← makes button full-width
+            child: ElevatedButton(
+              style: outlinedRoyalButton,
+              onPressed: () {
+                setState(() {
+                  showExistingMedicine = !showExistingMedicine;
+                  showAddMedicine = false;
+                  showAddBatch = false;
+                  showExistingMedicineBatch = false;
+                });
+              },
+              child: Text(
+                showExistingMedicine
+                    ? "Close Existing Medicines"
+                    : "Add Existing Medicine",
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          child: SizedBox(
+            width: double.infinity, // ← makes button full-width
+            child: ElevatedButton(
+              style: outlinedRoyalButton,
+              onPressed: () {
+                setState(() {
+                  showExistingMedicineBatch = !showExistingMedicineBatch;
+
+                  showExistingMedicine = false;
+                  showAddMedicine = false;
+                  showAddBatch = false;
+                });
+              },
+              child: Text(
+                showExistingMedicine
+                    ? "Close Existing Medicines Batch"
+                    : "Add Existing Medicine Batch",
+              ),
+            ),
+          ),
         ),
       ],
     );
@@ -285,20 +357,54 @@ class InventoryPageState extends State<InventoryPage> {
 
                         const SizedBox(height: 16),
                         if (showAddMedicine)
-                          addMedicineForm(
-                            context: context,
+                          AddMedicineForm(
                             hospitalId: hospitalId!,
                             fetchMedicines: fetchMedicines,
+                            onClose: (val) =>
+                                setState(() => showAddMedicine = val),
+                            categories: backendCategories,
                           ),
+                        if (showExistingMedicine)
+                          ExistingMedicineWidget(
+                            hospitalId: hospitalId!,
+                            fetchMedicines: fetchMedicines,
+                            onClose: (val) =>
+                                setState(() => showExistingMedicine = val),
+                            categories: backendCategories,
+                          ),
+
                         if (showAddBatch)
-                          addBatchForm(
-                            medicines: medicines,
-                            isBatchTaken: isBatchTaken,
-                            debounce: debounce,
+                          AddBatchForm(
                             hospitalId: hospitalId!,
-                            showAddBatch: showAddBatch,
                             fetchMedicines: fetchMedicines,
+                            onClose: (val) =>
+                                setState(() => showAddBatch = val),
+                            medicines: medicines,
                           ),
+                        if (showExistingMedicineBatch)
+                          ExistingMedicineBatchForm(
+                            hospitalId: hospitalId!,
+                            fetchMedicines: fetchMedicines,
+                            onClose: (val) =>
+                                setState(() => showExistingMedicineBatch = val),
+                            medicines: medicines,
+                          ),
+                        const SizedBox(height: 16),
+                        // if (showAddMedicine)
+                        //   addMedicineForm(
+                        //     context: context,
+                        //     hospitalId: hospitalId!,
+                        //     fetchMedicines: fetchMedicines,
+                        //   ),
+                        // if (showAddBatch)
+                        //   addBatchForm(
+                        //     medicines: medicines,
+                        //     isBatchTaken: isBatchTaken,
+                        //     debounce: debounce,
+                        //     hospitalId: hospitalId!,
+                        //     showAddBatch: showAddBatch,
+                        //     fetchMedicines: fetchMedicines,
+                        //   ),
                         const Divider(color: primaryColor),
                         if (medicines.isEmpty)
                           const Padding(
