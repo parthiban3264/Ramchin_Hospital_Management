@@ -1,25 +1,340 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:excel/excel.dart' as excel;
+import 'package:file_picker/file_picker.dart';
+import 'package:file_saver/file_saver.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:hospitrax/Admin/Pages/admin_edit_profile_page.dart';
+import 'package:hospitrax/Mediacl_Staff/Pages/OutPatient/Page/injection_page.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../../../utils/utils.dart';
+import '../../../../../../utils/utils.dart';
+
+const Color royal = primaryColor;
+
+class BulkUploadBatchPage extends StatefulWidget {
+  const BulkUploadBatchPage({super.key});
+
+  @override
+  State<BulkUploadBatchPage> createState() => _BulkUploadBatchPageState();
+}
+
+class _BulkUploadBatchPageState extends State<BulkUploadBatchPage> {
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: const TextStyle(color: Colors.white, fontSize: 16),
+        ),
+        backgroundColor: royal,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 4,
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  Future<void> _downloadTemplate() async {
+    try {
+      final data = await rootBundle.load('assets/medicinebatch.xlsx');
+      final bytes = data.buffer.asUint8List();
+
+      final savedPath = await FileSaver.instance.saveFile(
+        name: 'medicinebatch.xlsx', // 👈 include extension in name
+        bytes: bytes,
+        mimeType: MimeType.microsoftExcel,
+      );
+
+      _showMessage("Template downloaded successfully\n$savedPath");
+    } catch (e) {
+      _showMessage("Download failed: $e");
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> parseExcel(File file) async {
+    final bytes = await file.readAsBytes();
+    final ex = excel.Excel.decodeBytes(bytes);
+
+    List<Map<String, dynamic>> rows = [];
+
+    double toTwoDecimals(dynamic value) {
+      if (value == null) return 0.0;
+      double v = 0.0;
+      if (value is double) {
+        v = value;
+      } else if (value is int) {
+        v = value.toDouble();
+      } else {
+        v = double.tryParse(value.toString()) ?? 0.0;
+      }
+      return double.parse(v.toStringAsFixed(2)); // round to 2 decimals
+    }
+
+    String formatDate(dynamic value) {
+      if (value == null) return "";
+      try {
+        DateTime date;
+        if (value is DateTime) {
+          date = value;
+        } else if (value is double) {
+          // Excel serial number
+          date = DateTime(1899, 12, 30).add(Duration(days: value.toInt()));
+        } else {
+          date = DateTime.parse(value.toString());
+        }
+        return date.toIso8601String().split("T")[0];
+      } catch (_) {
+        return "";
+      }
+    }
+
+    bool isMfgValid(String date) {
+      if (date.isEmpty) return true;
+      try {
+        return DateTime.parse(date).isBefore(DateTime.now());
+      } catch (_) {
+        return false;
+      }
+    }
+
+    bool isExpValid(String date) {
+      if (date.isEmpty) return true;
+      try {
+        return DateTime.parse(date).isAfter(DateTime.now());
+      } catch (_) {
+        return false;
+      }
+    }
+
+    for (var sheet in ex.tables.values) {
+      for (var row in sheet.rows.skip(1)) {
+        dynamic cell(int index) =>
+            index < row.length ? row[index]?.value : null;
+
+        String mfg = formatDate(cell(5));
+        String exp = formatDate(cell(4));
+        String purchase = formatDate(cell(14));
+
+        // Apply validation rules
+        if (!isMfgValid(mfg)) mfg = "";
+        if (!isExpValid(exp)) exp = "";
+        if (purchase.isEmpty) purchase = ""; // UI can show "Choose"
+
+        rows.add({
+          "MEDICINE_ID": cell(0),
+          "Batch_no": cell(1),
+          "Rack_no": cell(2),
+          "HSN_code": cell(3),
+          "EXP_Date": exp,
+          "MFG_Date": mfg,
+          "Quantity": cell(6),
+          "Free_quantity": cell(7),
+          "Unit": cell(8),
+          "Rate_per_quantity": toTwoDecimals(cell(9)),
+          "GST": toTwoDecimals(cell(10)),
+          "MRP": toTwoDecimals(cell(11)),
+          "Profit": toTwoDecimals(cell(12)),
+          "Supplier_id": cell(13),
+          "Purchase_Date": purchase,
+        });
+      }
+    }
+
+    return rows;
+  }
+
+  Future<List<Map<String, dynamic>>> parseExcelBytes(Uint8List bytes) async {
+    final ex = excel.Excel.decodeBytes(bytes);
+
+    List<Map<String, dynamic>> rows = [];
+
+    double toTwoDecimals(dynamic value) {
+      if (value == null) return 0.0;
+      double v = 0.0;
+      if (value is double) {
+        v = value;
+      } else if (value is int) {
+        v = value.toDouble();
+      } else {
+        v = double.tryParse(value.toString()) ?? 0.0;
+      }
+      return double.parse(v.toStringAsFixed(2)); // round to 2 decimals
+    }
+
+    String formatDate(dynamic value) {
+      if (value == null) return "";
+      try {
+        DateTime date;
+        if (value is DateTime) {
+          date = value;
+        } else if (value is double) {
+          // Excel serial number
+          date = DateTime(1899, 12, 30).add(Duration(days: value.toInt()));
+        } else {
+          date = DateTime.parse(value.toString());
+        }
+        return date.toIso8601String().split("T")[0]; // yyyy-MM-dd
+      } catch (_) {
+        return "";
+      }
+    }
+
+    for (var sheet in ex.tables.values) {
+      for (var row in sheet.rows.skip(1)) {
+        dynamic cell(int index) =>
+            index < row.length ? row[index]?.value : null;
+
+        String mfg = formatDate(cell(5));
+        String exp = formatDate(cell(4));
+        String purchase = formatDate(cell(14));
+
+        rows.add({
+          "MEDICINE_ID": cell(0),
+          "Batch_no": cell(1),
+          "Rack_no": cell(2),
+          "HSN_code": cell(3),
+          "EXP_Date": exp,
+          "MFG_Date": mfg,
+          "Quantity": cell(6),
+          "Free_quantity": cell(7),
+          "Unit": cell(8),
+          "Rate_per_quantity": toTwoDecimals(cell(9)),
+          "GST": toTwoDecimals(cell(10)),
+          "MRP": toTwoDecimals(cell(11)),
+          "Profit": toTwoDecimals(cell(12)),
+          "Supplier_id": cell(13),
+          "Purchase_Date": purchase,
+        });
+      }
+    }
+
+    return rows;
+  }
+
+  Future<void> _pickExcelAndOpenUpload() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['xlsx'],
+        withData: true, // needed for web
+      );
+
+      if (result == null) {
+        _showMessage("No file selected");
+        return;
+      }
+
+      Uint8List bytes;
+
+      if (kIsWeb) {
+        // On web, bytes are already Uint8List
+        bytes = result.files.single.bytes!;
+      } else {
+        // On mobile/desktop, convert List<int> to Uint8List
+        final path = result.files.single.path;
+        if (path == null) {
+          _showMessage("Invalid file path");
+          return;
+        }
+        final file = File(path);
+        final fileBytes = await file.readAsBytes(); // List<int>
+        bytes = Uint8List.fromList(fileBytes); // ✅ convert to Uint8List
+      }
+
+      final rows = await parseExcelBytes(bytes); // works perfectly now
+
+      if (rows.isEmpty) {
+        _showMessage("Excel file is empty");
+        return;
+      }
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => BulkBatchUpload(batches: rows)),
+      );
+    } catch (e) {
+      _showMessage("Failed to read Excel: $e");
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              const SizedBox(height: 16),
+              SizedBox(
+                width: 220,
+                height: 52,
+                child: ElevatedButton.icon(
+                  onPressed: _downloadTemplate,
+                  icon: const Icon(Icons.download),
+                  label: const Text(
+                    "Download Template",
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: royal,
+                    foregroundColor: Colors.white,
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              SizedBox(
+                width: 180,
+                height: 52,
+                child: ElevatedButton.icon(
+                  onPressed: _pickExcelAndOpenUpload,
+                  icon: const Icon(Icons.upload_file),
+                  label: const Text(
+                    "Upload Excel",
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: royal,
+                    foregroundColor: Colors.white,
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class BulkBatchUpload extends StatefulWidget {
   final List<Map<String, dynamic>> batches;
-  final String hospitalId;
-  final String hospitalPhoto;
-  final String hospitalName;
 
-  const BulkBatchUpload({
-    super.key,
-    required this.batches,
-    required this.hospitalId,
-    required this.hospitalPhoto,
-    required this.hospitalName,
-  });
+  const BulkBatchUpload({super.key, required this.batches});
 
   @override
   State<BulkBatchUpload> createState() => _BulkBatchUploadState();
@@ -37,9 +352,13 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
   @override
   void initState() {
     super.initState();
-    shopId = widget.hospitalId;
-
+    _loadData();
     calculatedRows = List.generate(widget.batches.length, (_) => {});
+
+    // ✅ INITIALIZE batchAvailability FOR ALL ROWS
+    for (int i = 0; i < widget.batches.length; i++) {
+      batchAvailability[i] = false;
+    }
 
     controllers = widget.batches.map((row) {
       return {
@@ -86,46 +405,62 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
     _postInitTasks();
   }
 
+  Future<void> _loadData() async {
+    final prefs = await SharedPreferences.getInstance();
+    shopId = prefs.getString("hospitalId");
+
+    setState(() {});
+  }
+
   Future<void> _postInitTasks() async {
     if (shopId == null) return;
 
-    // ✅ Validate existing batch numbers (Excel loaded)
     for (int i = 0; i < controllers.length; i++) {
       final batch = controllers[i]["Batch_no"]!.text.trim();
       final medId = int.tryParse(controllers[i]["MEDICINE_ID"]!.text);
 
       if (batch.isNotEmpty && medId != null) {
-        batchAvailability[i] = null;
+        setState(() => batchAvailability[i] = null); // loading
+
         final result = await validateBatchBackend(medId, batch);
-        batchAvailability[i] = result;
+
+        if (!mounted) return;
+        setState(() => batchAvailability[i] = result);
       }
     }
 
-    // ✅ Fetch names
     for (final r in controllers) {
       final medId = int.tryParse(r["MEDICINE_ID"]!.text);
       final supId = int.tryParse(r["Supplier_id"]!.text);
+
       if (medId != null) await fetchMedicineName(medId);
       if (supId != null) await fetchSupplierName(supId);
     }
 
-    setState(() {});
+    if (mounted) setState(() {});
   }
 
   Future<bool> validateBatchBackend(int medicineId, String batchNo) async {
     if (shopId == null || batchNo.isEmpty) {
-      throw Exception("ShopId not ready");
+      return false; // ❌ no exception
     }
-    final res = await http.get(
-      Uri.parse(
-        "$baseUrl/inventory/medicine/$shopId/$medicineId/validate-batch?batch_no=$batchNo",
-      ),
-    );
 
-    if (res.statusCode != 200 && res.statusCode != 201) return false;
+    try {
+      final res = await http.get(
+        Uri.parse(
+          "$baseUrl/inventory/medicine/$shopId/$medicineId/validate-batch?batch_no=$batchNo",
+        ),
+      );
 
-    final data = jsonDecode(res.body);
-    return data["is_valid"] == true;
+      if (res.statusCode != 200 && res.statusCode != 201) {
+        return false;
+      }
+
+      final data = jsonDecode(res.body);
+      return data["is_valid"] == true;
+    } catch (e) {
+      return false; // network / parse error
+    }
   }
 
   Future<String?> fetchMedicineName(int id) async {
@@ -208,64 +543,6 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
     };
   }
 
-  Widget _buildHallCard({String? hospitalName, String? hospitalPhoto}) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      height: 95,
-      decoration: BoxDecoration(
-        color: primaryColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: primaryColor, width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: primaryColor.withValues(alpha: 0.15),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          ClipOval(
-            child: hospitalPhoto != null
-                ? Image.network(
-                    (hospitalPhoto),
-                    width: 70,
-                    height: 70,
-                    fit: BoxFit.cover,
-                  )
-                : Container(
-                    width: 70,
-                    height: 70,
-                    color: Colors.white, // 👈 soft teal background
-                    child: const Icon(
-                      Icons.home_work_rounded,
-                      color: primaryColor,
-                      size: 35,
-                    ),
-                  ),
-          ),
-          Expanded(
-            child: Center(
-              child: Text(
-                hospitalName == null ? '-' : hospitalName.toUpperCase(),
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.1,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   void recalcRow(int i) {
     final r = controllers[i];
 
@@ -275,19 +552,39 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
     final rate = double.tryParse(r["Rate_per_quantity"]!.text) ?? 0;
     final gst = double.tryParse(r["GST"]!.text) ?? 0;
     final profit = double.tryParse(r["Profit"]!.text) ?? 0;
+    final mrp = double.tryParse(r["MRP"]!.text) ?? 0;
 
     final totalQty = qty + free;
-    final stock = totalQty * unit;
-    final base = qty * rate;
-    final gstAmt = base * gst / 100;
-    final purchase = base + gstAmt;
-    final sellQty = (purchase / qty) * (1 + profit / 100);
+    final totalStock = totalQty * unit;
+
+    final baseAmount = qty * rate;
+    final gstPerQty = rate * gst / 100;
+    final totalGst = gstPerQty * qty;
+    final purchasePrice = baseAmount + totalGst;
+
+    final purchasePerQty = qty == 0 ? 0 : purchasePrice / qty;
+    final purchasePerUnit = unit == 0 ? 0 : purchasePerQty / unit;
+
+    var sellingPerQty = purchasePerQty * (1 + profit / 100);
+
+    if (mrp > 0 && sellingPerQty > mrp) {
+      sellingPerQty = mrp;
+    }
+
+    final sellingPerUnit = unit == 0 ? 0 : sellingPerQty / unit;
 
     setState(() {
       calculatedRows[i] = {
-        "total_stock": stock,
-        "purchase_price": purchase,
-        "selling_price": sellQty,
+        "totalQty": totalQty,
+        "totalStock": totalStock,
+        "gstPerQty": gstPerQty,
+        "baseAmount": baseAmount,
+        "totalGst": totalGst,
+        "purchasePrice": purchasePrice,
+        "purchasePerQty": purchasePerQty,
+        "purchasePerUnit": purchasePerUnit,
+        "sellingPrice": sellingPerQty,
+        "sellingPerUnit": sellingPerUnit,
       };
     });
   }
@@ -300,7 +597,7 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
           message,
           style: const TextStyle(color: Colors.white, fontSize: 16),
         ),
-        backgroundColor: primaryColor,
+        backgroundColor: royal,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         elevation: 4,
@@ -366,6 +663,9 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       _showMessage("Bulk upload completed");
+
+      if (!mounted) return;
+      Navigator.pop(context);
     } else {
       _showMessage("Error during bulk upload: ${response.statusCode}");
     }
@@ -381,7 +681,7 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
         child: Column(
           children: [
             TextField(
-              cursorColor: primaryColor,
+              cursorColor: royal,
               controller: controller,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
@@ -398,7 +698,7 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
                 if (!snapshot.hasData) return const SizedBox();
                 return Text(
                   snapshot.data!,
-                  style: TextStyle(fontSize: 11, color: primaryColor),
+                  style: TextStyle(fontSize: 11, color: royal),
                   overflow: TextOverflow.ellipsis,
                 );
               },
@@ -450,13 +750,13 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
               return Theme(
                 data: Theme.of(context).copyWith(
                   colorScheme: ColorScheme.light(
-                    primary: primaryColor, // header background
+                    primary: royal, // header background
                     onPrimary: Colors.white, // header text color
                     onSurface: Colors.black, // body text color
                   ),
                   textButtonTheme: TextButtonThemeData(
                     style: TextButton.styleFrom(
-                      foregroundColor: primaryColor, // button text color
+                      foregroundColor: royal, // button text color
                     ),
                   ),
                 ),
@@ -485,19 +785,21 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
     );
   }
 
-  DataCell editInt(TextEditingController c) => DataCell(
+  DataCell editInt(TextEditingController c, int rowIndex) => DataCell(
     SizedBox(
       width: 90,
       child: TextField(
         controller: c,
-        cursorColor: primaryColor,
+        cursorColor: royal,
         keyboardType: TextInputType.number,
         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         decoration: const InputDecoration(
           isDense: true,
           border: InputBorder.none,
         ),
-        onChanged: (_) => setState(() {}),
+        onChanged: (_) {
+          recalcRow(rowIndex); // 🔥 force recalculation
+        },
       ),
     ),
   );
@@ -507,7 +809,7 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
       width: 90,
       child: TextField(
         controller: c,
-        cursorColor: primaryColor,
+        cursorColor: royal,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         inputFormatters: [
           FilteringTextInputFormatter.allow(
@@ -533,7 +835,7 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
             children: [
               TextField(
                 controller: controller,
-                cursorColor: primaryColor,
+                cursorColor: royal,
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
@@ -600,7 +902,7 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
         width: 120,
         child: TextField(
           controller: controller,
-          cursorColor: primaryColor,
+          cursorColor: royal,
           decoration: InputDecoration(
             isDense: true,
             border: InputBorder.none,
@@ -622,23 +924,27 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
           ),
           onChanged: (value) async {
             if (value.isEmpty || medicineId == 0) {
-              batchAvailability[rowIndex] = null;
-              setState(() {});
+              setState(() {
+                batchAvailability[rowIndex] = false;
+              });
               return;
             }
 
-            batchAvailability[rowIndex] = null; // ⏳ checking
-            setState(() {});
+            setState(() {
+              batchAvailability[rowIndex] = null; // ⏳ checking
+            });
 
             final isAvailable = await validateBatchBackend(
               medicineId,
               value.trim(),
             );
 
-            // ✅ override old result safely
+            if (!mounted) return;
+
             if (controller.text.trim() == value.trim()) {
-              batchAvailability[rowIndex] = isAvailable;
-              setState(() {});
+              setState(() {
+                batchAvailability[rowIndex] = isAvailable;
+              });
             }
           },
         ),
@@ -674,7 +980,7 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
       padding: const EdgeInsets.all(12),
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: primaryColor,
+          backgroundColor: royal,
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
         ),
         onPressed: isSubmitEnabled
@@ -689,14 +995,18 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(context, false),
-                        child: const Text("Cancel"),
+                        child: const Text(
+                          "Cancel",
+                          style: TextStyle(color: royal),
+                        ),
                       ),
                       ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColor,
-                        ),
+                        style: ElevatedButton.styleFrom(backgroundColor: royal),
                         onPressed: () => Navigator.pop(context, true),
-                        child: const Text("Confirm"),
+                        child: const Text(
+                          "Confirm",
+                          style: TextStyle(color: Colors.white),
+                        ),
                       ),
                     ],
                   ),
@@ -728,7 +1038,7 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: primaryColor,
+        backgroundColor: royal,
         foregroundColor: Colors.white,
         elevation: 2,
         title: const Text(
@@ -742,14 +1052,6 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
       ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: _buildHallCard(
-              hospitalName: widget.hospitalName,
-              hospitalPhoto: widget.hospitalPhoto,
-            ),
-          ),
-
           const Divider(height: 1),
 
           Expanded(
@@ -774,7 +1076,7 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
                             Colors.white,
                           ),
                           headingTextStyle: const TextStyle(
-                            color: primaryColor,
+                            color: royal,
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
                           ),
@@ -789,7 +1091,7 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
                           headingRowHeight: 48,
                           dataRowMinHeight: 46,
                           columns: const [
-                            DataColumn(label: Text("Medicine")),
+                            DataColumn(label: Text("Medicine ID")),
                             DataColumn(label: Text("Batch")),
                             DataColumn(label: Text("Rack")),
                             DataColumn(label: Text("HSN")),
@@ -810,21 +1112,23 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
                             DataColumn(label: Text("Base Amount")),
                             DataColumn(label: Text("Total GST")),
                             DataColumn(label: Text("Purchase Price")),
-                            DataColumn(label: Text("Purchase Price/Unit")),
                             DataColumn(label: Text("Purchase Price/Qty")),
-                            DataColumn(label: Text("Selling Price/Unit")),
+                            DataColumn(label: Text("Purchase Price/Unit")),
                             DataColumn(label: Text("Selling Price/Qty")),
+                            DataColumn(label: Text("Selling Price/Unit")),
                           ],
                           rows: List.generate(controllers.length, (i) {
                             final r = controllers[i];
-                            final calc = calculateValues(r);
+                            final calc = calculatedRows[i].isNotEmpty
+                                ? calculatedRows[i]
+                                : calculateValues(r);
 
                             DataCell edit(TextEditingController c) => DataCell(
                               SizedBox(
                                 width: 90,
                                 child: TextField(
                                   controller: c,
-                                  cursorColor: primaryColor,
+                                  cursorColor: royal,
                                   decoration: const InputDecoration(
                                     isDense: true,
                                     border: InputBorder.none,
@@ -857,9 +1161,9 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
                                   controller: r["EXP_Date"]!,
                                   label: "EXP",
                                 ),
-                                editInt(r["Quantity"]!),
-                                editInt(r["Free_quantity"]!),
-                                editInt(r["Unit"]!),
+                                editInt(r["Quantity"]!, i),
+                                editInt(r["Free_quantity"]!, i),
+                                editInt(r["Unit"]!, i),
                                 editCurrency(r["Rate_per_quantity"]!), // Rate
                                 editPercent(r["GST"]!), // GST %
                                 editCurrency(r["MRP"]!), // MRP
@@ -887,15 +1191,13 @@ class _BulkBatchUploadState extends State<BulkBatchUpload> {
                                 viewCurrency(
                                   calc["purchasePerQty"]!,
                                 ), // Purchase Price/Qty
+                                viewCurrency(calc["purchasePerUnit"]!),
                                 viewCurrency(
-                                  calc["purchasePerUnit"]!,
-                                ), // Purchase Price/Unit
+                                  calc["sellingPrice"]!,
+                                ), // Selling Price per Quantity// Purchase Price/Unit
                                 viewCurrency(
                                   calc["sellingPerUnit"]!,
                                 ), // Selling Price/Unit
-                                viewCurrency(
-                                  calc["sellingPrice"]!,
-                                ), // Selling Price per Quantity
                               ],
                             );
                           }),

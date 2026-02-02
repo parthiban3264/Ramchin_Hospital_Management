@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'bulk_upload_exist.dart';
-import 'bulk_existing_batch.dart';
+import 'package:hospitrax/Mediacl_Staff/Pages/OutPatient/Page/injection_page.dart';
 
-class BulkUploadExistTabsPage extends StatelessWidget {
-  const BulkUploadExistTabsPage({super.key});
+import 'bulk_upload_batch.dart';
+import 'bulk_upload_medicine.dart';
 
-  static const Color royal = Color(0xFF875C3F);
+class BulkUploadNewTabsPage extends StatelessWidget {
+  const BulkUploadNewTabsPage({super.key});
+
+  static const Color royal = primaryColor;
 
   @override
   Widget build(BuildContext context) {
@@ -27,10 +29,7 @@ class BulkUploadExistTabsPage extends StatelessWidget {
           ),
           const Expanded(
             child: TabBarView(
-              children: [
-                BulkUploadMedicineExistPage(),
-                BulkUploadExistBatchPage(),
-              ],
+              children: [BulkUploadMedicinePage(), BulkUploadBatchPage()],
             ),
           ),
         ],

@@ -1,110 +1,31 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:async';
-import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter/services.dart';
+
 import 'package:excel/excel.dart' as excel;
 import 'package:file_picker/file_picker.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:hospitrax/Admin/Pages/admin_edit_profile_page.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../../../../utils/utils.dart'; // ✅ For kIsWeb
+import '../../../../../../utils/utils.dart';
 
-const Color royal = Color(0xFF875C3F);
+const Color royal = primaryColor;
 
-class BulkUploadMedicineExistPage extends StatefulWidget {
-  const BulkUploadMedicineExistPage({super.key});
+class BulkUploadExistBatchPage extends StatefulWidget {
+  const BulkUploadExistBatchPage({super.key});
 
   @override
-  State<BulkUploadMedicineExistPage> createState() =>
-      _BulkUploadMedicineExistPageState();
+  State<BulkUploadExistBatchPage> createState() =>
+      _BulkUploadExistBatchPageState();
 }
 
-class _BulkUploadMedicineExistPageState
-    extends State<BulkUploadMedicineExistPage> {
-  bool isLoadingShop = true;
-  Map<String, dynamic>? shopDetails;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadData();
-  }
-
-  Future<void> _loadData() async {
-    final prefs = await SharedPreferences.getInstance();
-    final shopId = prefs.getInt("shopId");
-    if (shopId != null) {
-      final res = await http.get(Uri.parse('$baseUrl/shops/$shopId'));
-      if (res.statusCode == 200) {
-        shopDetails = jsonDecode(res.body);
-      }
-    }
-    setState(() => isLoadingShop = false);
-  }
-
-  Widget _buildHallCard(Map<String, dynamic> hall) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      height: 95,
-      decoration: BoxDecoration(
-        color: royal,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: royal, width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: royal.withValues(alpha: 0.15),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          ClipOval(
-            child: hall['logo'] != null
-                ? Image.memory(
-                    base64Decode(hall['logo']),
-                    width: 70,
-                    height: 70,
-                    fit: BoxFit.cover,
-                  )
-                : Container(
-                    width: 70,
-                    height: 70,
-                    color: Colors.white, // 👈 soft teal background
-                    child: const Icon(
-                      Icons.home_work_rounded,
-                      color: royal,
-                      size: 35,
-                    ),
-                  ),
-          ),
-          Expanded(
-            child: Center(
-              child: Text(
-                hall['name']?.toString().toUpperCase() ?? "HALL NAME",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.1,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
+class _BulkUploadExistBatchPageState extends State<BulkUploadExistBatchPage> {
   void _showMessage(String message) {
-    if (!mounted) return; // <-- ADD THIS
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -124,11 +45,11 @@ class _BulkUploadMedicineExistPageState
 
   Future<void> _downloadTemplate() async {
     try {
-      final data = await rootBundle.load('assets/medicine_exist.xlsx');
+      final data = await rootBundle.load('assets/medicine_exist_batch.xlsx');
       final bytes = data.buffer.asUint8List();
 
       final savedPath = await FileSaver.instance.saveFile(
-        name: 'medicine_exist.xlsx', // 👈 include extension in name
+        name: 'medicine_exist_batch.xlsx', // 👈 include extension in name
         bytes: bytes,
         mimeType: MimeType.microsoftExcel,
       );
@@ -141,6 +62,7 @@ class _BulkUploadMedicineExistPageState
 
   Future<List<Map<String, dynamic>>> parseExcelBytes(Uint8List bytes) async {
     final ex = excel.Excel.decodeBytes(bytes);
+
     List<Map<String, dynamic>> rows = [];
 
     String formatDate(dynamic value) {
@@ -150,40 +72,42 @@ class _BulkUploadMedicineExistPageState
         if (value is DateTime) {
           date = value;
         } else if (value is double) {
+          // Excel serial number
           date = DateTime(1899, 12, 30).add(Duration(days: value.toInt()));
         } else {
           date = DateTime.parse(value.toString());
         }
-        return date.toIso8601String().split("T")[0];
+        return date.toIso8601String().split("T")[0]; // yyyy-MM-dd
       } catch (_) {
         return "";
       }
     }
 
-    int toInt(dynamic v) => int.tryParse(v?.toString() ?? "") ?? 0;
-    double toDouble(dynamic v) => double.tryParse(v?.toString() ?? "") ?? 0.0;
-
     for (var sheet in ex.tables.values) {
       for (var row in sheet.rows.skip(1)) {
-        dynamic cell(int i) => i < row.length ? row[i]?.value : null;
+        dynamic cell(int index) =>
+            index < row.length ? row[index]?.value : null;
+
+        String mfg = formatDate(cell(4));
+        String exp = formatDate(cell(3));
+        int toInt(dynamic v) => int.tryParse(v?.toString() ?? "") ?? 0;
+        double toDouble(dynamic v) =>
+            double.tryParse(v?.toString() ?? "") ?? 0.0;
 
         rows.add({
-          "MEDICINE_NAME": cell(0),
-          "NDC_CODE": cell(1),
-          "Category": cell(2),
-          "Other_Category": cell(3),
-          "Reorder": toInt(cell(4)),
-          "Batch_no": cell(5),
-          "Rack_no": cell(6),
-          "EXP_Date": formatDate(cell(7)),
-          "MFG_Date": formatDate(cell(8)),
-          "Total_Stock": toInt(cell(9)),
-          "Unit": toInt(cell(10)),
-          "Selling_Price_Quantity": toDouble(cell(11)),
-          "Selling_Price_Unit": toDouble(cell(12)),
+          "MEDICINE_ID": cell(0),
+          "Batch_no": cell(1),
+          "Rack_no": cell(2),
+          "EXP_Date": exp,
+          "MFG_Date": mfg,
+          "Total_Stock": toInt(cell(5)),
+          "Unit": toInt(cell(6)),
+          "Selling_Price_Quantity": toDouble(cell(7)),
+          "Selling_Price_Unit": toDouble(cell(8)),
         });
       }
     }
+
     return rows;
   }
 
@@ -192,7 +116,7 @@ class _BulkUploadMedicineExistPageState
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['xlsx'],
-        withData: true, // ✅ REQUIRED for web
+        withData: true, // needed for web
       );
 
       if (result == null) {
@@ -200,38 +124,33 @@ class _BulkUploadMedicineExistPageState
         return;
       }
 
-      Uint8List bytes;
+      Uint8List bytes; // ✅ must be Uint8List
 
       if (kIsWeb) {
-        // 🌐 Web: bytes already available
+        // On web, bytes are already Uint8List
         bytes = result.files.single.bytes!;
       } else {
-        // 📱 Mobile/Desktop
+        // On mobile/desktop, convert List<int> to Uint8List
         final path = result.files.single.path;
         if (path == null) {
           _showMessage("Invalid file path");
           return;
         }
-        final fileBytes = await File(path).readAsBytes(); // List<int>
-        bytes = Uint8List.fromList(fileBytes); // ✅ convert
+        final file = File(path);
+        final fileBytes = await file.readAsBytes(); // List<int>
+        bytes = Uint8List.fromList(fileBytes); // ✅ convert to Uint8List
       }
 
-      final rows = await parseExcelBytes(bytes);
+      final rows = await parseExcelBytes(bytes); // works perfectly now
 
       if (rows.isEmpty) {
         _showMessage("Excel file is empty");
         return;
       }
-
       if (!mounted) return;
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (_) => BulkBatchMedicineExistUpload(
-            batches: rows,
-            shopDetails: shopDetails,
-          ),
-        ),
+        MaterialPageRoute(builder: (_) => BulkBatchExistUpload(batches: rows)),
       );
     } catch (e) {
       _showMessage("Failed to read Excel: $e");
@@ -242,118 +161,97 @@ class _BulkUploadMedicineExistPageState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: isLoadingShop
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  const SizedBox(height: 16),
-                  if (shopDetails != null) _buildHallCard(shopDetails!),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              const SizedBox(height: 16),
 
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: 220,
-                    height: 52,
-                    child: ElevatedButton.icon(
-                      onPressed: _downloadTemplate,
-                      icon: const Icon(Icons.download),
-                      label: const Text(
-                        "Download Template",
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: royal,
-                        foregroundColor: Colors.white,
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
+              SizedBox(
+                width: 220,
+                height: 52,
+                child: ElevatedButton.icon(
+                  onPressed: _downloadTemplate,
+                  icon: const Icon(Icons.download),
+                  label: const Text(
+                    "Download Template",
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: royal,
+                    foregroundColor: Colors.white,
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-
-                  const SizedBox(height: 20),
-
-                  SizedBox(
-                    width: 180,
-                    height: 52,
-                    child: ElevatedButton.icon(
-                      onPressed: _pickExcelAndOpenUpload,
-                      icon: const Icon(Icons.upload_file),
-                      label: const Text(
-                        "Upload Excel",
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: royal,
-                        foregroundColor: Colors.white,
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
+
+              const SizedBox(height: 20),
+
+              SizedBox(
+                width: 180,
+                height: 52,
+                child: ElevatedButton.icon(
+                  onPressed: _pickExcelAndOpenUpload,
+                  icon: const Icon(Icons.upload_file),
+                  label: const Text(
+                    "Upload Excel",
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: royal,
+                    foregroundColor: Colors.white,
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
 
-class BulkBatchMedicineExistUpload extends StatefulWidget {
+class BulkBatchExistUpload extends StatefulWidget {
   final List<Map<String, dynamic>> batches;
-  final Map<String, dynamic>? shopDetails;
 
-  const BulkBatchMedicineExistUpload({
-    super.key,
-    required this.batches,
-    required this.shopDetails,
-  });
+  const BulkBatchExistUpload({super.key, required this.batches});
 
   @override
-  State<BulkBatchMedicineExistUpload> createState() =>
-      _BulkBatchMedicineExistUploadState();
+  State<BulkBatchExistUpload> createState() => _BulkBatchExistUploadState();
 }
 
-class _BulkBatchMedicineExistUploadState
-    extends State<BulkBatchMedicineExistUpload> {
+class _BulkBatchExistUploadState extends State<BulkBatchExistUpload> {
   late List<Map<String, TextEditingController>> controllers;
   late List<Map<String, dynamic>> calculatedRows;
-  Map<int, bool?> medicineNameAvailability = {};
+  Map<String, String> medicineNameCache = {};
+  Map<int, bool?> batchAvailability = {};
   Map<int, String?> lastEditedField = {};
-  Map<int, bool> duplicateMedicine = {};
 
-  int? shopId;
+  String? shopId;
 
   @override
   void initState() {
     super.initState();
-    shopId = int.tryParse(widget.shopDetails?['shop_id']?.toString() ?? '');
+    loadShopId();
+    calculatedRows = List.generate(widget.batches.length, (_) => {});
+
+    // ✅ INITIALIZE batchAvailability FOR ALL ROWS
+    for (int i = 0; i < widget.batches.length; i++) {
+      batchAvailability[i] = false;
+    }
 
     controllers = widget.batches.map((row) {
       return {
-        "MEDICINE_NAME": TextEditingController(
-          text: row["MEDICINE_NAME"]?.toString() ?? "",
-        ),
-        "NDC_CODE": TextEditingController(
-          text: row["NDC_CODE"]?.toString() ?? "",
-        ),
-        "Category": TextEditingController(
-          text: row["Category"]?.toString() ?? "",
-        ),
-        "Other_Category": TextEditingController(
-          text: row["Other_Category"]?.toString() ?? "",
-        ),
-        "Reorder": TextEditingController(
-          text: row["Reorder"]?.toString() ?? "",
+        "MEDICINE_ID": TextEditingController(
+          text: row["MEDICINE_ID"]?.toString() ?? "",
         ),
         "Batch_no": TextEditingController(
           text: row["Batch_no"]?.toString() ?? "",
@@ -379,156 +277,104 @@ class _BulkBatchMedicineExistUploadState
         ),
       };
     }).toList();
-
     calculatedRows = List.generate(
       controllers.length,
       (_) => <String, dynamic>{},
     );
-
     for (int i = 0; i < controllers.length; i++) {
-      medicineNameAvailability[i] = false;
-      duplicateMedicine[i] = false;
-
-      // 🔥 IMPORTANT PART
       if (controllers[i]["sellingPrice"]!.text.isNotEmpty &&
           (double.tryParse(controllers[i]["sellingPrice"]!.text) ?? 0) > 0) {
-        lastEditedField[i] = "qty"; // 👈 behave like qty edited
-        calculateRow(i); // 👈 force calculation
+        lastEditedField[i] = "qty";
+        calculateRow(i);
       }
     }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      validateAllMedicineNames();
-      validateDuplicateMedicines(); // 🔥 ADD THIS
+    _postInitTasks(); // ✅ only once
+  }
+
+  Future loadShopId() async {
+    final prefs = await SharedPreferences.getInstance();
+    shopId = prefs.getString('hospitalId');
+
+    setState(() {});
+  }
+
+  void calculateRow(int i) {
+    final r = controllers[i];
+    final result = calculateValues(r, i);
+
+    setState(() {
+      calculatedRows[i] = result;
     });
   }
 
-  Future<bool> checkMedicineName(String name) async {
-    if (shopId == null || name.trim().isEmpty) return false;
+  Future<void> _postInitTasks() async {
+    if (shopId == null) return;
+
+    for (int i = 0; i < controllers.length; i++) {
+      final batch = controllers[i]["Batch_no"]!.text.trim();
+      final medId = int.tryParse(controllers[i]["MEDICINE_ID"]!.text);
+
+      if (batch.isNotEmpty && medId != null) {
+        setState(() => batchAvailability[i] = null); // loading
+
+        final result = await validateBatchBackend(medId, batch);
+
+        if (!mounted) return;
+        setState(() => batchAvailability[i] = result);
+      }
+    }
+
+    for (final r in controllers) {
+      final medId = int.tryParse(r["MEDICINE_ID"]!.text);
+
+      if (medId != null) await fetchMedicineName(medId);
+    }
+
+    if (mounted) setState(() {});
+  }
+
+  Future<bool> validateBatchBackend(int medicineId, String batchNo) async {
+    if (shopId == null || batchNo.isEmpty) {
+      return false; // ❌ no exception
+    }
 
     try {
-      final url = Uri.parse(
-        "$baseUrl/inventory/medicine/check-name/$shopId?name=${Uri.encodeComponent(name)}",
+      final res = await http.get(
+        Uri.parse(
+          "$baseUrl/inventory/medicine/$shopId/$medicineId/validate-batch?batch_no=$batchNo",
+        ),
       );
 
-      final response = await http.get(url);
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return !(data['exists'] ?? false); // ✅ available if NOT exists
-      }
-    } catch (_) {}
-
-    return false;
-  }
-
-  Future<void> validateAllMedicineNames() async {
-    for (int i = 0; i < controllers.length; i++) {
-      final name = controllers[i]["MEDICINE_NAME"]!.text.trim();
-
-      if (name.isEmpty) {
-        medicineNameAvailability[i] = false;
-        continue;
+      if (res.statusCode != 200 && res.statusCode != 201) {
+        return false;
       }
 
-      setState(() {
-        medicineNameAvailability[i] = null; // ⏳ checking
-      });
-
-      final available = await checkMedicineName(name);
-
-      if (!mounted) return;
-
-      setState(() {
-        medicineNameAvailability[i] = available;
-      });
-      setState(() {
-        validateDuplicateMedicines();
-      });
+      final data = jsonDecode(res.body);
+      return data["is_valid"] == true;
+    } catch (e) {
+      return false; // network / parse error
     }
   }
 
-  Widget _buildHallCard(Map<String, dynamic> hall) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      height: 95,
-      decoration: BoxDecoration(
-        color: royal,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: royal, width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: royal.withValues(alpha: 0.15),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          ClipOval(
-            child: hall['logo'] != null
-                ? Image.memory(
-                    base64Decode(hall['logo']),
-                    width: 70,
-                    height: 70,
-                    fit: BoxFit.cover,
-                  )
-                : Container(
-                    width: 70,
-                    height: 70,
-                    color: Colors.white, // 👈 soft teal background
-                    child: const Icon(
-                      Icons.home_work_rounded,
-                      color: royal,
-                      size: 35,
-                    ),
-                  ),
-          ),
-          Expanded(
-            child: Center(
-              child: Text(
-                hall['name']?.toString().toUpperCase() ?? "HALL NAME",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.1,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ),
-        ],
-      ),
+  Future<String?> fetchMedicineName(int id) async {
+    if (shopId == null) return null;
+
+    final cacheKey = "$shopId-$id";
+    if (medicineNameCache.containsKey(cacheKey)) {
+      return medicineNameCache[cacheKey];
+    }
+
+    final res = await http.get(
+      Uri.parse("$baseUrl/medicine/by-id/$shopId/$id"),
     );
-  }
 
-  void validateDuplicateMedicines() {
-    final nameMap = <String, List<int>>{};
-
-    for (int i = 0; i < controllers.length; i++) {
-      final name = controllers[i]["MEDICINE_NAME"]!.text.trim().toLowerCase();
-      if (name.isEmpty) continue;
-
-      nameMap.putIfAbsent(name, () => []).add(i);
+    if (res.statusCode == 200) {
+      final name = jsonDecode(res.body)["name"];
+      medicineNameCache[cacheKey] = name;
+      return name;
     }
-
-    // reset
-    for (int i = 0; i < controllers.length; i++) {
-      duplicateMedicine[i] = false;
-    }
-
-    // mark duplicates
-    nameMap.forEach((_, indexes) {
-      if (indexes.length > 1) {
-        for (final i in indexes) {
-          duplicateMedicine[i] = true;
-        }
-      }
-    });
+    return null;
   }
 
   Map<String, dynamic> calculateValues(
@@ -572,45 +418,6 @@ class _BulkBatchMedicineExistUploadState
     return (value * 100).truncate() / 100;
   }
 
-  bool isRowValid(int i) {
-    final r = controllers[i];
-    final calc = calculateValues(r, i);
-
-    bool notEmpty(String key) =>
-        r[key] != null && r[key]!.text.trim().isNotEmpty;
-
-    int toInt(String key) => int.tryParse(r[key]?.text ?? "") ?? 0;
-
-    double toDouble(String key) => double.tryParse(r[key]?.text ?? "") ?? 0;
-
-    return
-    // ✅ medicine name must be valid
-    medicineNameAvailability[i] == true &&
-        duplicateMedicine[i] == false &&
-        // ❗ REQUIRED fields (except NDC)
-        notEmpty("MEDICINE_NAME") &&
-        notEmpty("Category") &&
-        notEmpty("Batch_no") &&
-        notEmpty("Rack_no") &&
-        notEmpty("MFG_Date") &&
-        notEmpty("EXP_Date") &&
-        toInt("Total_Stock") > 0 &&
-        toInt("Unit") > 0 &&
-        toDouble("sellingPrice") > 0 &&
-        toDouble("sellingPerUnit") > 0 &&
-        // ✅ calculated value
-        (calc["totalQty"] ?? 0) > 0;
-  }
-
-  void calculateRow(int i) {
-    final r = controllers[i];
-    final result = calculateValues(r, i);
-
-    setState(() {
-      calculatedRows[i] = result;
-    });
-  }
-
   void _showMessage(String message) {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -629,68 +436,6 @@ class _BulkBatchMedicineExistUploadState
     );
   }
 
-  DataCell medicineNameCell({
-    required TextEditingController controller,
-    required int rowIndex,
-  }) {
-    Timer? debounce;
-
-    return DataCell(
-      SizedBox(
-        width: 180,
-        child: StatefulBuilder(
-          builder: (context, setLocalState) {
-            return TextField(
-              controller: controller,
-              cursorColor: royal,
-              decoration: InputDecoration(
-                isDense: true,
-                border: InputBorder.none,
-                suffixIcon: duplicateMedicine[rowIndex] == true
-                    ? const Icon(Icons.error, color: Colors.orange, size: 18)
-                    : medicineNameAvailability[rowIndex] == null
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Icon(
-                        medicineNameAvailability[rowIndex]!
-                            ? Icons.check_circle
-                            : Icons.cancel,
-                        color: medicineNameAvailability[rowIndex]!
-                            ? Colors.green
-                            : Colors.red,
-                        size: 18,
-                      ),
-              ),
-              onChanged: (value) {
-                if (debounce?.isActive ?? false) debounce!.cancel();
-
-                setLocalState(() {
-                  medicineNameAvailability[rowIndex] = null; // ⏳ checking
-                });
-
-                debounce = Timer(const Duration(milliseconds: 500), () async {
-                  final available = await checkMedicineName(value.trim());
-
-                  if (!mounted) return;
-
-                  if (controller.text.trim() == value.trim()) {
-                    setState(() {
-                      medicineNameAvailability[rowIndex] = available;
-                      validateDuplicateMedicines(); // 🔥 ADD THIS
-                    });
-                  }
-                });
-              },
-            );
-          },
-        ),
-      ),
-    );
-  }
-
   Future<void> submitAll() async {
     if (shopId == null) return;
 
@@ -701,12 +446,7 @@ class _BulkBatchMedicineExistUploadState
       final calc = calculateValues(r, i);
 
       batchPayload.add({
-        "medicine_name": r["MEDICINE_NAME"]!.text.trim(),
-        "ndc_code": r["NDC_CODE"]!.text.trim(),
-        "category": r["Category"]!.text == "Other"
-            ? r["Other_Category"]!.text.trim()
-            : r["Category"]!.text.trim(),
-        "reorder_level": int.tryParse(r["Reorder"]!.text) ?? 0,
+        "medicine_id": int.parse(r["MEDICINE_ID"]!.text),
         "batch_no": r["Batch_no"]!.text,
         "rack_no": r["Rack_no"]?.text ?? "",
         "mfg_date": r["MFG_Date"]?.text,
@@ -720,7 +460,7 @@ class _BulkBatchMedicineExistUploadState
     }
 
     final url = Uri.parse(
-      "$baseUrl/inventory/medicine/medicine-exist-upload",
+      "$baseUrl/inventory/medicine/batch-upload-exist",
     ); // single bulk endpoint
 
     final response = await http.post(
@@ -734,6 +474,7 @@ class _BulkBatchMedicineExistUploadState
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       _showMessage("Bulk upload completed");
+
       if (!mounted) return;
       Navigator.pop(context);
     } else {
@@ -778,6 +519,24 @@ class _BulkBatchMedicineExistUploadState
       ),
     );
   }
+
+  DataCell editNumber(TextEditingController c) => DataCell(
+    SizedBox(
+      width: 90,
+      child: TextField(
+        controller: c,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        inputFormatters: [
+          FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+        ],
+        decoration: const InputDecoration(
+          isDense: true,
+          border: InputBorder.none,
+        ),
+        onChanged: (_) => setState(() {}),
+      ),
+    ),
+  );
 
   DataCell datePickerCell({
     required TextEditingController controller,
@@ -856,6 +615,8 @@ class _BulkBatchMedicineExistUploadState
     ),
   );
 
+  DataCell viewInt(int v) => DataCell(Text(v.toString()));
+
   DataCell editCurrency(
     TextEditingController c,
     int rowIndex,
@@ -883,7 +644,102 @@ class _BulkBatchMedicineExistUploadState
     ),
   );
 
-  DataCell viewInt(int v) => DataCell(Text(v.toString()));
+  DataCell view(double v) => DataCell(Text(v.toStringAsFixed(2)));
+
+  DataCell batchCell(
+    TextEditingController controller,
+    int medicineId,
+    int rowIndex,
+  ) {
+    return DataCell(
+      SizedBox(
+        width: 120,
+        child: TextField(
+          controller: controller,
+          cursorColor: royal,
+          decoration: InputDecoration(
+            isDense: true,
+            border: InputBorder.none,
+            suffixIcon: batchAvailability[rowIndex] == null
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Icon(
+                    batchAvailability[rowIndex]!
+                        ? Icons.check_circle
+                        : Icons.error,
+                    color: batchAvailability[rowIndex]!
+                        ? Colors.green
+                        : Colors.red,
+                    size: 18,
+                  ),
+          ),
+          onChanged: (value) async {
+            if (value.isEmpty || medicineId == 0) {
+              setState(() {
+                batchAvailability[rowIndex] = false;
+              });
+              return;
+            }
+
+            setState(() {
+              batchAvailability[rowIndex] = null; // ⏳ checking
+            });
+
+            final isAvailable = await validateBatchBackend(
+              medicineId,
+              value.trim(),
+            );
+
+            if (!mounted) return;
+
+            if (controller.text.trim() == value.trim()) {
+              setState(() {
+                batchAvailability[rowIndex] = isAvailable;
+              });
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  bool isRowValid(int i) {
+    final r = controllers[i];
+    final calc = calculateValues(r, i);
+
+    bool notEmpty(String key) =>
+        r[key] != null && r[key]!.text.trim().isNotEmpty;
+
+    int toInt(String key) => int.tryParse(r[key]?.text ?? "") ?? 0;
+
+    double toDouble(String key) => double.tryParse(r[key]?.text ?? "") ?? 0;
+    final medicineValid = medicineNameCache.containsKey(
+      "$shopId-${r["MEDICINE_ID"]!.text}",
+    );
+
+    if (!medicineValid) return false;
+
+    // 🚨 Batch validation (THIS WAS MISSING)
+    if (!batchAvailability.containsKey(i)) return false; // not checked yet
+    if (batchAvailability[i] == null) return false; // still loading
+    if (batchAvailability[i] == false) return false; // batch exists
+
+    return
+    // ✅ medicine name must be valid
+    // ❗ REQUIRED fields (except NDC)
+    notEmpty("Rack_no") &&
+        notEmpty("MFG_Date") &&
+        notEmpty("EXP_Date") &&
+        toInt("Total_Stock") > 0 &&
+        toInt("Unit") > 0 &&
+        toDouble("sellingPrice") > 0 &&
+        toDouble("sellingPerUnit") > 0 &&
+        // ✅ calculated value
+        (calc["totalQty"] ?? 0) > 0;
+  }
 
   bool get isSubmitEnabled {
     for (int i = 0; i < controllers.length; i++) {
@@ -959,7 +815,7 @@ class _BulkBatchMedicineExistUploadState
         foregroundColor: Colors.white,
         elevation: 2,
         title: const Text(
-          "Bulk Exist Medicine Upload",
+          "Bulk Batch Upload",
           style: TextStyle(fontWeight: FontWeight.w600),
         ),
         leading: IconButton(
@@ -969,11 +825,6 @@ class _BulkBatchMedicineExistUploadState
       ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: _buildHallCard(widget.shopDetails!),
-          ),
-
           const Divider(height: 1),
 
           Expanded(
@@ -1013,10 +864,7 @@ class _BulkBatchMedicineExistUploadState
                           headingRowHeight: 48,
                           dataRowMinHeight: 46,
                           columns: const [
-                            DataColumn(label: Text("Medicine")),
-                            DataColumn(label: Text("NDC Code")),
-                            DataColumn(label: Text("Category")),
-                            DataColumn(label: Text("Reorder")),
+                            DataColumn(label: Text("Medicine ID")),
                             DataColumn(label: Text("Batch")),
                             DataColumn(label: Text("Rack")),
                             DataColumn(label: Text("MFG")),
@@ -1050,18 +898,17 @@ class _BulkBatchMedicineExistUploadState
 
                             return DataRow(
                               cells: [
-                                medicineNameCell(
-                                  controller: r["MEDICINE_NAME"]!,
-                                  rowIndex: i,
+                                editableIdWithName(
+                                  controller:
+                                      r["MEDICINE_ID"]!, // ✅ use the existing controller
+                                  fetchName: fetchMedicineName,
                                 ),
-                                edit(r["NDC_CODE"]!),
-                                edit(
-                                  r["Category"]!.text == 'Other'
-                                      ? r["Other_Category"]!
-                                      : r["Category"]!,
+
+                                batchCell(
+                                  r["Batch_no"]!,
+                                  int.tryParse(r["MEDICINE_ID"]!.text) ?? 0,
+                                  i,
                                 ),
-                                edit(r["Reorder"]!),
-                                edit(r["Batch_no"]!),
                                 edit(r["Rack_no"]!),
                                 datePickerCell(
                                   controller: r["MFG_Date"]!,

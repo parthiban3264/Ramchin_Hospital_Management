@@ -1,10 +1,13 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:hospitrax/utils/utils.dart';
+import 'package:hospitrax/Admin/Pages/admin_edit_profile_page.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-const royal = Color(0xFF875C3F);
+import '../../../../../utils/utils.dart';
+
+const royal = primaryColor;
 
 class OrderedMedicinesPage extends StatefulWidget {
   const OrderedMedicinesPage({super.key});
@@ -15,8 +18,8 @@ class OrderedMedicinesPage extends StatefulWidget {
 
 class _OrderedMedicinesPageState extends State<OrderedMedicinesPage> {
   bool isLoading = true;
-  int? shopId;
-  Map<String, dynamic>? shopDetails;
+  String? shopId;
+
   List<Map<String, dynamic>> allOrders = [];
 
   String _searchQuery = '';
@@ -38,23 +41,13 @@ class _OrderedMedicinesPageState extends State<OrderedMedicinesPage> {
 
   Future<void> _loadShopId() async {
     final prefs = await SharedPreferences.getInstance();
-    shopId = prefs.getInt('shopId');
+    shopId = prefs.getString('hospitalId');
 
     if (shopId != null) {
-      await _fetchHallDetails();
       await _fetchAllOrders();
     }
 
     setState(() => isLoading = false);
-  }
-
-  Future<void> _fetchHallDetails() async {
-    try {
-      final res = await http.get(Uri.parse('$baseUrl/shops/$shopId'));
-      if (res.statusCode == 200) shopDetails = jsonDecode(res.body);
-    } catch (e) {
-      debugPrint("Error fetching shop details: $e");
-    }
   }
 
   Future<void> _fetchAllOrders() async {
@@ -73,46 +66,6 @@ class _OrderedMedicinesPageState extends State<OrderedMedicinesPage> {
     } catch (e) {
       debugPrint("Error fetching all orders: $e");
     }
-  }
-
-  Widget _buildHallCard(Map<String, dynamic> hall) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      height: 95,
-      decoration: BoxDecoration(
-        color: royal,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 32,
-            backgroundColor: Colors.white,
-            child: hall['logo'] != null
-                ? ClipOval(
-                    child: Image.memory(
-                      base64Decode(hall['logo']),
-                      fit: BoxFit.cover,
-                      width: 64,
-                      height: 64,
-                    ),
-                  )
-                : const Icon(Icons.home_work, color: royal, size: 30),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              hall['name']?.toString().toUpperCase() ?? "SHOP",
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   void showMessage(String message) {
@@ -369,6 +322,7 @@ class _OrderedMedicinesPageState extends State<OrderedMedicinesPage> {
           style: TextStyle(color: Colors.white),
         ),
         iconTheme: const IconThemeData(color: Colors.white),
+        actions: [IconButton(icon: const Icon(Icons.home), onPressed: () {})],
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -377,8 +331,6 @@ class _OrderedMedicinesPageState extends State<OrderedMedicinesPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (shopDetails != null) _buildHallCard(shopDetails!),
-                  const SizedBox(height: 16),
                   _buildSearchBar(),
                   const SizedBox(height: 24),
                   if (showOrders.isEmpty)

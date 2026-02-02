@@ -1,21 +1,22 @@
 import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:hospitrax/Admin/Pages/admin_edit_profile_page.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import 'package:flutter/services.dart' show rootBundle;
-import 'dart:convert';
+// import 'dart:convert';
 
-const Color royal = Color(0xFF875C3F);
+const Color royal = primaryColor;
 
 class SupplierReorderPdfPage extends StatefulWidget {
-  final Map<String, dynamic>? shopDetails;
   final Map<String, dynamic> supplier;
   final List medicines;
 
   const SupplierReorderPdfPage({
     super.key,
-    required this.shopDetails,
+
     required this.supplier,
     required this.medicines,
   });
@@ -42,10 +43,10 @@ class _SupplierReorderPdfPageState extends State<SupplierReorderPdfPage> {
       await rootBundle.load("assets/fonts/NotoSansTamil-Bold.ttf"),
     );
     Uint8List? logo;
-    if (widget.shopDetails?['logo'] != null) {
-      logo = base64Decode(widget.shopDetails!['logo']);
-    }
-    final hall = widget.shopDetails;
+    // if (widget.shopDetails?['logo'] != null) {
+    //   logo = base64Decode(widget.shopDetails!['logo']);
+    // }
+    // final hall = widget.shopDetails;
 
     final royal = PdfColor.fromInt(0xFF19527A);
 
@@ -56,49 +57,53 @@ class _SupplierReorderPdfPageState extends State<SupplierReorderPdfPage> {
         build: (_) => pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
-            pw.Row(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-              children: [
-                if (logo != null)
-                  pw.Image(pw.MemoryImage(logo), width: 70, height: 70),
-
-                pw.Expanded(
-                  child: pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.center,
-                    children: [
-                      pw.Text(
-                        hall?['name']?.toString().toUpperCase() ?? 'SHOP NAME',
-                        style: pw.TextStyle(
-                          fontSize: 20,
-                          fontWeight: pw.FontWeight.bold,
-                          font: fontBold,
-                          color: royal,
-                        ),
-                      ),
-
-                      if ((hall?['address'] ?? '').toString().isNotEmpty)
-                        pw.Text(
-                          hall!['address'],
-                          style: pw.TextStyle(font: font),
-                        ),
-
-                      if ((hall?['phone'] ?? '').toString().isNotEmpty)
-                        pw.Text(
-                          'Phone: ${hall!['phone']}',
-                          style: pw.TextStyle(font: font),
-                        ),
-
-                      if ((hall?['email'] ?? '').toString().isNotEmpty)
-                        pw.Text(
-                          'Email: ${hall!['email']}',
-                          style: pw.TextStyle(font: font),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+            // pw.Row(
+            //   crossAxisAlignment: pw.CrossAxisAlignment.start,
+            //   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            //   children: [
+            //     if (logo != null)
+            //       pw.Image(
+            //         pw.MemoryImage(logo),
+            //         width: 70,
+            //         height: 70,
+            //       ),
+            //
+            //     pw.Expanded(
+            //       child: pw.Column(
+            //         crossAxisAlignment: pw.CrossAxisAlignment.center,
+            //         children: [
+            //           pw.Text(
+            //             hall?['name']?.toString().toUpperCase() ?? 'SHOP NAME',
+            //             style: pw.TextStyle(
+            //               fontSize: 20,
+            //               fontWeight: pw.FontWeight.bold,
+            //               font: fontBold,
+            //               color: royal,
+            //             ),
+            //           ),
+            //
+            //           if ((hall?['address'] ?? '').toString().isNotEmpty)
+            //             pw.Text(
+            //               hall!['address'],
+            //               style: pw.TextStyle(font: font),
+            //             ),
+            //
+            //           if ((hall?['phone'] ?? '').toString().isNotEmpty)
+            //             pw.Text(
+            //               'Phone: ${hall!['phone']}',
+            //               style: pw.TextStyle(font: font),
+            //             ),
+            //
+            //           if ((hall?['email'] ?? '').toString().isNotEmpty)
+            //             pw.Text(
+            //               'Email: ${hall!['email']}',
+            //               style: pw.TextStyle(font: font),
+            //             ),
+            //         ],
+            //       ),
+            //     ),
+            //   ],
+            // ),
             pw.SizedBox(height: 16),
             pw.Container(
               padding: const pw.EdgeInsets.all(12),
@@ -195,6 +200,7 @@ class _SupplierReorderPdfPageState extends State<SupplierReorderPdfPage> {
             style: TextStyle(color: Colors.white),
           ),
           iconTheme: const IconThemeData(color: Colors.white),
+          actions: [IconButton(icon: const Icon(Icons.home), onPressed: () {})],
         ),
         body: FutureBuilder<Uint8List>(
           future: pdfFuture,

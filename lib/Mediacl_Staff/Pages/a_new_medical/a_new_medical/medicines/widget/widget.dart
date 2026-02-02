@@ -630,46 +630,46 @@ Widget batchTileImproved({
                                         batch['free_quantity'].toString(),
                                       ),
                                     if (shouldShow(
-                                      batch['purchase_details']['rate_per_quantity'],
+                                      batch['purchase_details']?['rate_per_quantity'],
                                     ))
                                       infoRow(
                                         "Rate/ Quantity",
-                                        "₹${batch['purchase_details']['rate_per_quantity']}",
+                                        "₹${batch['purchase_details']?['rate_per_quantity']}",
                                       ),
                                     if (shouldShow(
-                                      batch['purchase_details']['gst_percent'],
+                                      batch['purchase_details']?['gst_percent'],
                                     ))
                                       infoRow(
                                         "GST %/Quantity",
-                                        "${batch['purchase_details']['gst_percent']}%",
+                                        "${batch['purchase_details']?['gst_percent']}%",
                                       ),
                                     if (shouldShow(
-                                      batch['purchase_details']['gst_per_quantity'],
+                                      batch['purchase_details']?['gst_per_quantity'],
                                     ))
                                       infoRow(
                                         "GST Amount/Quantity",
-                                        "₹${batch['purchase_details']['gst_per_quantity']}",
+                                        "₹${batch['purchase_details']?['gst_per_quantity']}",
                                       ),
                                     if (shouldShow(
-                                      batch['purchase_details']['base_amount'],
+                                      batch['purchase_details']?['base_amount'],
                                     ))
                                       infoRow(
                                         "Base Amount",
-                                        "₹${batch['purchase_details']['base_amount']}",
+                                        "₹${batch['purchase_details']?['base_amount']}",
                                       ),
                                     if (shouldShow(
-                                      batch['purchase_details']['total_gst_amount'],
+                                      batch['purchase_details']?['total_gst_amount'],
                                     ))
                                       infoRow(
                                         "Total GST Amount",
-                                        "₹${batch['purchase_details']['total_gst_amount']}",
+                                        "₹${batch['purchase_details']?['total_gst_amount']}",
                                       ),
                                     if (shouldShow(
-                                      batch['purchase_details']['purchase_price'],
+                                      batch['purchase_details']?['purchase_price'],
                                     ))
                                       infoRow(
                                         "Purchased price",
-                                        "₹${batch['purchase_details']['purchase_price']}",
+                                        "₹${batch['purchase_details']?['purchase_price']}",
                                       ),
                                     if (shouldShow(batch['supplier']?['name']))
                                       infoRow(
@@ -682,12 +682,12 @@ Widget batchTileImproved({
                                         batch['supplier']?['phone'] ?? "-",
                                       ),
                                     if (shouldShow(
-                                      batch['purchase_details']['purchase_date'],
+                                      batch['purchase_details']?['purchase_date'],
                                     ))
                                       infoRow(
                                         "Date",
                                         formatDate(
-                                          batch['purchase_details']['purchase_date'],
+                                          batch['purchase_details']?['purchase_date'],
                                         ),
                                       ),
                                   ],

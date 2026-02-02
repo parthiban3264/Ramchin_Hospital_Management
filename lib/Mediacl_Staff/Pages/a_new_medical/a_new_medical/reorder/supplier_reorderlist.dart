@@ -1,24 +1,25 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:hospitrax/Admin/Pages/admin_edit_profile_page.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../../../utils/utils.dart';
 import 'supplier_reorder_pdf_page.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 
-const Color royal = Color(0xFF875C3F);
+const Color royal = primaryColor;
 
 class SupplierReorderDetailPage extends StatefulWidget {
-  final Map<String, dynamic>? shopDetails; // ✅ ADD
   final Map<String, dynamic> supplier;
   final List medicines;
 
   const SupplierReorderDetailPage({
     super.key,
-    required this.shopDetails, // ✅ ADD
     required this.supplier,
     required this.medicines,
   });
-
 
   @override
   State<SupplierReorderDetailPage> createState() =>
@@ -51,10 +52,7 @@ class _SupplierReorderDetailPageState extends State<SupplierReorderDetailPage> {
 
       final qty = int.tryParse(qtyControllers[id]!.text) ?? 0;
       if (qty > 0) {
-        items.add({
-          "medicine_id": id,
-          "quantity": qty,
-        });
+        items.add({"medicine_id": id, "quantity": qty});
       }
     }
 
@@ -74,12 +72,15 @@ class _SupplierReorderDetailPageState extends State<SupplierReorderDetailPage> {
           ),
           actions: [
             TextButton(
-              child: const Text('Cancel',style: TextStyle(color: royal),),
+              child: const Text('Cancel', style: TextStyle(color: royal)),
               onPressed: () => Navigator.pop(ctx, false),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: royal),
-              child: const Text('Confirm',style: TextStyle(color: Colors.white),),
+              child: const Text(
+                'Confirm',
+                style: TextStyle(color: Colors.white),
+              ),
               onPressed: () => Navigator.pop(ctx, true),
             ),
           ],
@@ -90,12 +91,10 @@ class _SupplierReorderDetailPageState extends State<SupplierReorderDetailPage> {
     if (confirmed != true) return;
 
     // 🔥 API CALL
-    final payload = {
-      "supplier_id": widget.supplier['id'],
-      "items": items,
-    };
+    final payload = {"supplier_id": widget.supplier['id'], "items": items};
 
-    final shopId = widget.shopDetails!['shop_id'];
+    final prefs = await SharedPreferences.getInstance();
+    final shopId = prefs.getString('hospitalId');
 
     try {
       final response = await http.post(
@@ -123,21 +122,13 @@ class _SupplierReorderDetailPageState extends State<SupplierReorderDetailPage> {
       SnackBar(
         content: Text(
           message,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-          ),
+          style: const TextStyle(color: Colors.white, fontSize: 16),
         ),
         backgroundColor: royal,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         elevation: 4,
-        margin: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 12,
-        ),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         duration: const Duration(seconds: 3),
       ),
     );
@@ -178,12 +169,10 @@ class _SupplierReorderDetailPageState extends State<SupplierReorderDetailPage> {
 
     for (final item in items) {
       final medicine = widget.medicines.firstWhere(
-            (m) => m['medicine_id'] == item['medicine_id'],
+        (m) => m['medicine_id'] == item['medicine_id'],
       );
 
-      buffer.writeln(
-        '• ${medicine['medicine_name']}  ×  ${item['quantity']}',
-      );
+      buffer.writeln('• ${medicine['medicine_name']}  ×  ${item['quantity']}');
     }
 
     return buffer.toString();
@@ -194,28 +183,23 @@ class _SupplierReorderDetailPageState extends State<SupplierReorderDetailPage> {
 
     for (final item in items) {
       final medicine = widget.medicines.firstWhere(
-            (m) => m['medicine_id'] == item['medicine_id'],
+        (m) => m['medicine_id'] == item['medicine_id'],
       );
 
-      finalList.add({
-        ...medicine,
-        'required_qty': item['quantity'],
-      });
+      finalList.add({...medicine, 'required_qty': item['quantity']});
     }
 
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => SupplierReorderPdfPage(
-          shopDetails: widget.shopDetails,
           supplier: widget.supplier,
           medicines: finalList,
         ),
       ),
     );
-    if(!mounted)return;
+    if (!mounted) return;
     Navigator.pop(context, result);
-
   }
 
   @override
@@ -224,8 +208,12 @@ class _SupplierReorderDetailPageState extends State<SupplierReorderDetailPage> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: royal,
-        title:  Text(widget.supplier['name'], style: TextStyle(color: Colors.white)),
+        title: Text(
+          widget.supplier['name'],
+          style: TextStyle(color: Colors.white),
+        ),
         iconTheme: const IconThemeData(color: Colors.white),
+        actions: [IconButton(icon: const Icon(Icons.home), onPressed: () {})],
       ),
       body: Center(
         child: ConstrainedBox(
@@ -253,14 +241,18 @@ class _SupplierReorderDetailPageState extends State<SupplierReorderDetailPage> {
                           Row(
                             children: [
                               Checkbox(
-                                value: selectedMedicines.contains(m['medicine_id']),
+                                value: selectedMedicines.contains(
+                                  m['medicine_id'],
+                                ),
                                 activeColor: royal,
                                 onChanged: (value) {
                                   setState(() {
                                     if (value == true) {
                                       selectedMedicines.add(m['medicine_id']);
                                     } else {
-                                      selectedMedicines.remove(m['medicine_id']);
+                                      selectedMedicines.remove(
+                                        m['medicine_id'],
+                                      );
                                     }
                                     _checkAllQtyEntered();
                                   });
@@ -288,7 +280,8 @@ class _SupplierReorderDetailPageState extends State<SupplierReorderDetailPage> {
                               style: TextStyle(color: royal),
                               keyboardType: TextInputType.number,
                               inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly, // ✅ ONLY DIGITS
+                                FilteringTextInputFormatter
+                                    .digitsOnly, // ✅ ONLY DIGITS
                               ],
                               decoration: InputDecoration(
                                 labelText: "Required Quantity",
@@ -297,11 +290,17 @@ class _SupplierReorderDetailPageState extends State<SupplierReorderDetailPage> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 enabledBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(color: royal, width: 1),
+                                  borderSide: BorderSide(
+                                    color: royal,
+                                    width: 1,
+                                  ),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 focusedBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(color: royal, width: 2),
+                                  borderSide: BorderSide(
+                                    color: royal,
+                                    width: 2,
+                                  ),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 filled: true,
@@ -320,7 +319,7 @@ class _SupplierReorderDetailPageState extends State<SupplierReorderDetailPage> {
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   onPressed: isAllQtyEntered ? _submitReorder : null,
-                  child:  Text("Submit Reorder"),
+                  child: Text("Submit Reorder"),
                 ),
               ],
             ),
@@ -330,4 +329,3 @@ class _SupplierReorderDetailPageState extends State<SupplierReorderDetailPage> {
     );
   }
 }
-

@@ -1,13 +1,16 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:hospitrax/Admin/Pages/admin_edit_profile_page.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../../../utils/utils.dart';
 import 'reorder_pdf.dart';
-import 'supplier_reorderlist.dart';
 import 'reorder_supplier_pdf.dart';
+import 'supplier_reorderlist.dart';
 
-const Color royal = Color(0xFF875C3F);
+const Color royal = primaryColor;
 
 class ReorderPage extends StatefulWidget {
   const ReorderPage({super.key});
@@ -17,11 +20,11 @@ class ReorderPage extends StatefulWidget {
 }
 
 class _ReorderPageState extends State<ReorderPage> {
-  int? shopId;
+  String? shopId;
   bool isLoading = true;
   List<Map<String, dynamic>> supplierWiseList = [];
   List<Map<String, dynamic>> medicines = [];
-  Map<String, dynamic>? shopDetails;
+
   List<Map<String, dynamic>> _suppliers = [];
   bool isLoadingSuppliers = true;
 
@@ -33,11 +36,10 @@ class _ReorderPageState extends State<ReorderPage> {
 
   Future<void> loadShopId() async {
     final prefs = await SharedPreferences.getInstance();
-    shopId = prefs.getInt('shopId');
+    shopId = prefs.getString('hospitalId');
 
     if (shopId != null) {
       await Future.wait([
-        _fetchHallDetails(),
         fetchReorderMedicines(),
         fetchSupplierWiseReorder(),
         _fetchSuppliers(),
@@ -48,7 +50,7 @@ class _ReorderPageState extends State<ReorderPage> {
 
   Future<void> _fetchSuppliers() async {
     final prefs = await SharedPreferences.getInstance();
-    final shopId = prefs.getInt("shopId");
+    final shopId = prefs.getString("hospitalId");
     if (shopId == null) return;
 
     try {
@@ -99,18 +101,6 @@ class _ReorderPageState extends State<ReorderPage> {
     }
   }
 
-  Future<void> _fetchHallDetails() async {
-    try {
-      final res = await http.get(Uri.parse('$baseUrl/shops/$shopId'));
-
-      if (res.statusCode == 200) {
-        shopDetails = jsonDecode(res.body);
-      }
-    } catch (e) {
-      debugPrint("Error fetching shop details: $e");
-    }
-  }
-
   Future<void> _reloadPage() async {
     setState(() => isLoading = true);
 
@@ -141,46 +131,6 @@ class _ReorderPageState extends State<ReorderPage> {
     );
   }
 
-  Widget _buildHallCard(Map<String, dynamic> hall) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      height: 95,
-      decoration: BoxDecoration(
-        color: royal,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 32,
-            backgroundColor: Colors.white,
-            child: hall['logo'] != null
-                ? ClipOval(
-                    child: Image.memory(
-                      base64Decode(hall['logo']),
-                      fit: BoxFit.cover,
-                      width: 64,
-                      height: 64,
-                    ),
-                  )
-                : const Icon(Icons.home_work, color: royal, size: 30),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              hall['name']?.toString().toUpperCase() ?? "SHOP",
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -189,6 +139,7 @@ class _ReorderPageState extends State<ReorderPage> {
         backgroundColor: royal,
         title: const Text("Reorder", style: TextStyle(color: Colors.white)),
         iconTheme: const IconThemeData(color: Colors.white),
+        actions: [IconButton(icon: const Icon(Icons.home), onPressed: () {})],
       ),
 
       body: isLoading
@@ -198,8 +149,6 @@ class _ReorderPageState extends State<ReorderPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  if (shopDetails != null) _buildHallCard(shopDetails!),
-                  const SizedBox(height: 30),
                   Center(
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(
@@ -231,7 +180,6 @@ class _ReorderPageState extends State<ReorderPage> {
                                       context,
                                       MaterialPageRoute(
                                         builder: (_) => ReorderSupplierPdfPage(
-                                          shopDetails: shopDetails,
                                           medicines: medicines,
                                         ),
                                       ),
@@ -263,7 +211,6 @@ class _ReorderPageState extends State<ReorderPage> {
                                       context,
                                       MaterialPageRoute(
                                         builder: (_) => ReorderPdfPage(
-                                          shopDetails: shopDetails,
                                           medicines: medicines,
                                         ),
                                       ),
@@ -330,7 +277,6 @@ class _ReorderPageState extends State<ReorderPage> {
                                         MaterialPageRoute(
                                           builder: (_) =>
                                               SupplierReorderDetailPage(
-                                                shopDetails: shopDetails,
                                                 supplier: supplier,
                                                 medicines: medicines,
                                               ),
