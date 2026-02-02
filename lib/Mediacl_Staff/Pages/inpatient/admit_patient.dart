@@ -7,6 +7,8 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../Services/admin_service.dart';
+
 const Color royal = Color(0xFFBF955E);
 
 class AdmitPatientPage extends StatefulWidget {
@@ -29,6 +31,8 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
   bool _autoSearched = false;
   int? wardId;
   int? bedId;
+  int? doctorId;
+  int? nurseId;
   bool loading = false;
   String hospitalName = '';
   String hospitalPlace = '';
@@ -44,13 +48,18 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
   Map<String, Set<int>> selectedBeds = {};
   final patientIdCtrl = TextEditingController();
   bool isAdvancedPayment = true;
+  bool changeDoctor = false;
+  bool changeNurse = false;
+  List<dynamic> nurseList = [];
+  List<dynamic> doctorList = [];
+  bool isLoadingPage = true;
 
   @override
   void initState() {
     super.initState();
     _loadHospitalInfo();
     loadInitialData();
-
+    loadStaff();
     phoneCtrl.addListener(_onPhoneChanged);
     patientIdCtrl.addListener(_onPatientIdChanged);
     _updateTime();
@@ -60,6 +69,37 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
   void _updateTime() {
     setState(() {
       _dateTime = DateFormat('yyyy-MM-dd hh:mm a').format(DateTime.now());
+    });
+  }
+
+  void loadStaff() async {
+    setState(() => isLoadingPage = true);
+    // final prefs = await SharedPreferences.getInstance();
+    // final String userId = prefs.getString("userId") ?? "";
+
+    final data = await AdminService().getMedicalStaff();
+
+    final nurse = data
+        .where((s) => s["role"].toString().toLowerCase() == "nurse")
+        .toList();
+    final doctors = data
+        .where((s) => s["role"].toString().toLowerCase() == "doctor")
+        .toList();
+
+    setState(() {
+      nurseList = nurse;
+      doctorList = doctors;
+      //filteredList = nonAdmins;
+      // ✅ SET DEFAULTS ONCE
+      if (nurseList.isNotEmpty && nurseId == null) {
+        nurseId = int.parse(nurseList.first['user_Id'].toString());
+      }
+
+      if (doctorList.isNotEmpty && doctorId == null) {
+        doctorId = int.parse(doctorList.first['user_Id'].toString());
+      }
+
+      isLoadingPage = false;
     });
   }
 
@@ -115,11 +155,11 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
         }
 
         setState(() {
+          _autoSearched = false; // reset so next changes work
           selectedPatientId = patient["id"];
           selectedPatient = patient;
           patientsFound = [patient];
           phoneCtrl.text = mobilePhone;
-          _autoSearched = false; // reset so next changes work
         });
       }
     } else {
@@ -289,6 +329,13 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
           "relation": admitByRelationCtrl.text,
         },
       "createdAt": _dateTime.toString(),
+      "staffChange": [
+        {
+          "doctor": doctorId.toString(),
+          "nurse": nurseId.toString(),
+          "dateTime": _dateTime.toString(),
+        },
+      ],
       "isAdvanced": isAdvancedPayment,
     };
 
@@ -582,6 +629,32 @@ Bed: ${p["bed"]?["bedNo"] ?? ""}
   }
 
   Widget buildAdmissionForm() {
+    final a = selectedPatient;
+    print('a $a');
+    final consultationList = a?['Consultation'] as List?;
+
+    final consultationDoctorId =
+        consultationList != null && consultationList.isNotEmpty
+        ? consultationList.last['doctor_Id']
+        : null;
+
+    final doctor = doctorList.firstWhere(
+      (e) => e['user_Id'] == consultationDoctorId,
+      orElse: () => null,
+    );
+
+    final doctorText = doctor != null
+        ? '${doctor['name']} • ${doctor['specialist']}'
+        : '${doctorList.first['name']} • ${doctorList.first['specialist']}';
+    if (consultationList != null && consultationList.isNotEmpty) {
+      final last = consultationList.last;
+
+      setState(() {
+        doctorId = int.parse(last['doctor_Id']); // must be int
+      });
+    }
+
+    final nurseText = nurseList.first['name'];
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -680,6 +753,15 @@ Bed: ${p["bed"]?["bedNo"] ?? ""}
                                   mobilePhone; // correctly set phone
                               patientIdCtrl.text = patient["id"].toString();
                             });
+                            final consultationList =
+                                patient['Consultation'] as List?;
+
+                            if (consultationList != null &&
+                                consultationList.isNotEmpty) {
+                              final last = consultationList.last;
+
+                              doctorId = last['doctor_Id'];
+                            }
                           },
                           validator: (v) => v == null ? "Select patient" : null,
                         ),
@@ -723,6 +805,60 @@ Bed: ${p["bed"]?["bedNo"] ?? ""}
                       ),
                     ],
 
+                    const Divider(height: 30),
+                    if (bedLocked) ...[
+                      const Center(
+                        child: Text(
+                          "HealthCare Professional",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: royal,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      _editableCard(
+                        title: "Doctor",
+                        value: doctorText,
+                        changing: changeDoctor,
+                        onTap: () =>
+                            setState(() => changeDoctor = !changeDoctor),
+                        child: DropdownButtonFormField<int>(
+                          key: ValueKey(doctorList.length), // 🔥 FORCE REBUILD
+                          value: changeDoctor ? doctorId : null,
+                          hint: const Text("Select Doctor"),
+                          items: doctorList.map<DropdownMenuItem<int>>((b) {
+                            return DropdownMenuItem(
+                              value: int.parse(b['user_Id']),
+                              child: Text("${b['name']} • ${b['specialist']}"),
+                            );
+                          }).toList(),
+                          onChanged: (v) => setState(() => doctorId = v),
+                        ),
+                      ),
+
+                      _editableCard(
+                        title: "Nurses",
+                        value: nurseText,
+                        changing: changeNurse,
+                        onTap: () => setState(() => changeNurse = !changeNurse),
+                        child: DropdownButtonFormField<int>(
+                          key: ValueKey(nurseList.length), // 🔥 FORCE REBUILD
+                          value: changeNurse ? nurseId : null,
+                          hint: const Text("Select Nurse"),
+                          items: nurseList.map<DropdownMenuItem<int>>((b) {
+                            return DropdownMenuItem(
+                              value: int.parse(b['user_Id'].toString()),
+                              child: Text(b['name'].toString()),
+                            );
+                          }).toList(),
+                          onChanged: (v) => setState(() => nurseId = v),
+                        ),
+                      ),
+                    ],
                     const Divider(height: 30),
 
                     const Center(
@@ -895,6 +1031,56 @@ Bed: ${p["bed"]?["bedNo"] ?? ""}
           : buildWardBedSelection(),
     );
   }
+}
+
+Widget _editableCard({
+  required String title,
+  required String value,
+  required bool changing,
+  required VoidCallback onTap,
+  required Widget child,
+}) {
+  return Card(
+    color: Colors.white,
+    margin: const EdgeInsets.only(bottom: 16),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(14),
+      side: BorderSide(color: royal),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: royal,
+                ),
+              ),
+              TextButton(
+                onPressed: onTap,
+                child: Text(
+                  changing ? "Cancel" : "Change",
+                  style: TextStyle(color: royal),
+                ),
+              ),
+            ],
+          ),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+          ),
+          if (changing) ...[const SizedBox(height: 12), child],
+        ],
+      ),
+    ),
+  );
 }
 
 Widget buildHospitalCard({

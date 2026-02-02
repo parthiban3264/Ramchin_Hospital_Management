@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../Mediacl_Staff/Pages/a_new_medical/a_new_medical/bulk_upload/bulk_upload.dart';
 import '../../Mediacl_Staff/Pages/a_new_medical/a_new_medical/medicines/add_medicines.dart';
+import '../../Mediacl_Staff/Pages/a_new_medical/a_new_medical/ordered/ordered_list.dart';
 import '../../Mediacl_Staff/Pages/a_new_medical/a_new_medical/reorder/reorder_list.dart';
 import '../../Mediacl_Staff/Pages/a_new_medical/a_new_medical/stock/stock_management.dart';
 import '../../Mediacl_Staff/Pages/a_new_medical/a_new_medical/supplier/supplier.dart';
@@ -271,6 +272,18 @@ class _AdminAddingPageState extends State<AdminAddingPage> {
                         context,
                         MaterialPageRoute(
                           builder: (context) => const ReorderPage(),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildActionItem(
+                    Icons.medical_information,
+                    "Ordered\nMedicine",
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const OrderedMedicinesPage(),
                         ),
                       );
                     },

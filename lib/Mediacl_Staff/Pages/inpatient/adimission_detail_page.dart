@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import '../../../../../../utils/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -26,14 +27,30 @@ class _AdmissionDetailPageState extends State<AdmissionDetailPage> {
   List<dynamic> doctorList = [];
   bool isLoadingPage = true;
   List beds = [];
-  int? doctorId = 123;
-  int? nurseId = 1234567895;
+  int? doctorId;
+  int? nurseId;
+  bool isSaving = false;
 
   @override
   void initState() {
     super.initState();
+    final staffChange = (widget.admission['staffChange'] as List?) ?? [];
+    final latest = staffChange.isNotEmpty ? staffChange.last : null;
+
+    doctorId = latest != null
+        ? int.tryParse(latest['doctor'].toString())
+        : null;
+    nurseId = latest != null ? int.tryParse(latest['nurse'].toString()) : null;
     loadBeds();
     loadStaff();
+    _updateTime();
+  }
+
+  String? _dateTime;
+  void _updateTime() {
+    setState(() {
+      _dateTime = DateFormat('yyyy-MM-dd hh:mm a').format(DateTime.now());
+    });
   }
 
   Future<void> loadBeds() async {
@@ -94,84 +111,131 @@ class _AdmissionDetailPageState extends State<AdmissionDetailPage> {
     });
   }
 
+  // Future<void> saveChanges() async {
+  //   if (!changeBed) return;
+  //   final prefs = await SharedPreferences.getInstance();
+  //   final hospitalId = prefs.getString('hospitalId');
+  //   try {
+  //     final response = await http.patch(
+  //       Uri.parse(
+  //         "$baseUrl/admissions/${widget.admission['id']}/$hospitalId/change-assignment",
+  //       ),
+  //       headers: {'Content-Type': 'application/json'},
+  //       body: jsonEncode({
+  //         if (changeBed && bedId != null && bedId != widget.admission['bedId'])
+  //           'newBedId': bedId,
+  //       }),
+  //     );
+  //
+  //     if (response.statusCode == 200 || response.statusCode == 201) {
+  //       // Success message
+  //       if (!mounted) return;
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         const SnackBar(
+  //           content: Text("Assignment updated successfully"),
+  //           backgroundColor: Colors.green,
+  //         ),
+  //       );
+  //
+  //       // Pop back and notify parent to refresh
+  //       Navigator.pop(context, true);
+  //     } else {
+  //       // Show error
+  //       if (!mounted) return;
+  //       final error = jsonDecode(response.body);
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(
+  //           content: Text(
+  //             "Failed to update: ${error['message'] ?? response.reasonPhrase}",
+  //           ),
+  //           backgroundColor: Colors.red,
+  //         ),
+  //       );
+  //     }
+  //   } catch (e) {
+  //     if (!mounted) return;
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
+  //     );
+  //   }
+  // }
+
   Future<void> saveChanges() async {
-    if (!changeBed) return;
+    setState(() => isSaving = true);
     final prefs = await SharedPreferences.getInstance();
     final hospitalId = prefs.getString('hospitalId');
+
+    if (!changeBed && !changeDoctor && !changeNurse) return;
+
     try {
-      final response = await http.patch(
-        Uri.parse(
-          "$baseUrl/admissions/${widget.admission['id']}/$hospitalId/change-assignment",
-        ),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          if (changeBed && bedId != null && bedId != widget.admission['bedId'])
-            'newBedId': bedId,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        // Success message
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Assignment updated successfully"),
-            backgroundColor: Colors.green,
+      // 🔹 1. Bed change
+      if (changeBed && bedId != null && bedId != widget.admission['bedId']) {
+        await http.patch(
+          Uri.parse(
+            "$baseUrl/admissions/${widget.admission['id']}/$hospitalId/change-assignment",
           ),
-        );
-
-        // Pop back and notify parent to refresh
-        Navigator.pop(context, true);
-      } else {
-        // Show error
-        if (!mounted) return;
-        final error = jsonDecode(response.body);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              "Failed to update: ${error['message'] ?? response.reasonPhrase}",
-            ),
-            backgroundColor: Colors.red,
-          ),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'newBedId': bedId}),
         );
       }
+
+      // 🔹 2. Doctor / Nurse change (staffChange)
+      if (changeDoctor || changeNurse) {
+        await http.patch(
+          Uri.parse(
+            "$baseUrl/admissions/${widget.admission['id']}/staff-change",
+          ),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode([
+            {
+              "doctor": doctorId.toString(),
+              "nurse": nurseId.toString(),
+              "dateTime": _dateTime.toString(),
+            },
+          ]),
+        );
+      }
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Changes saved successfully"),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
       );
-    }
-  }
-
-  Future<void> dischargePatient() async {
-    final success = await ChargeService.dischargeAdmission(
-      widget.admission['id'],
-    );
-
-    if (!mounted) return;
-
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Patient discharged successfully'),
-          backgroundColor: Colors.green,
-        ),
-      );
-
-      Navigator.pop(context, true); // refresh previous screen
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Discharge failed'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+    } finally {
+      if (mounted) setState(() => isSaving = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final bool hasAnyChange =
+        (changeBed && bedId != widget.admission['bedId']) ||
+        changeDoctor ||
+        changeNurse;
+
     final a = widget.admission;
+    // final consultationDoctorId = a['staffChange'][0]['doctor'].toString();
+    // final consultationNurseId = a['staffChange'][0]['nurse'].toString();
+    final List staffChange = (a['staffChange'] as List?) ?? [];
+
+    final latestStaff = staffChange.isNotEmpty ? staffChange.last : null;
+
+    final consultationDoctorId = latestStaff?['doctor']?.toString();
+
+    final consultationNurseId = latestStaff?['nurse']?.toString();
+    print('consultationDoctorId: $consultationDoctorId');
+    print('doctorList: $doctorList');
+    print('a: $a');
     final p = a['patient'];
 
     final admitTime = DateTime.parse(
@@ -179,8 +243,37 @@ class _AdmissionDetailPageState extends State<AdmissionDetailPage> {
     ).toLocal().toString().substring(0, 16);
 
     final bedText = "Bed ${a['bed']['bedNo']} • ${a['bed']['ward']['name']}";
-    final doctorText = "1";
-    final nurseText = "2";
+    // final doctor = doctorList.firstWhere(
+    //   (e) => e['user_Id'] == consultationDoctorId,
+    //   orElse: () => null,
+    // );
+    // final nurse = nurseList.firstWhere(
+    //   (e) => e['user_Id'] == consultationNurseId,
+    //   orElse: () => null,
+    // );
+    final doctor = consultationDoctorId == null
+        ? null
+        : doctorList.firstWhere(
+            (e) => e['user_Id'].toString() == consultationDoctorId,
+            orElse: () => null,
+          );
+
+    final nurse = consultationNurseId == null
+        ? null
+        : nurseList.firstWhere(
+            (e) => e['user_Id'].toString() == consultationNurseId,
+            orElse: () => null,
+          );
+
+    // final doctorText = doctor != null
+    //     ? '${doctor['name']} • ${doctor['specialist']}'
+    //     : 'Unknown Doctor';
+    // final nurseText = nurse != null ? '${nurse['name']}' : 'Unknown Doctor';
+    final doctorText = doctor != null
+        ? '${doctor['name']} • ${doctor['specialist']}'
+        : 'Not assigned';
+
+    final nurseText = nurse != null ? nurse['name'] : 'Not assigned';
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -289,27 +382,49 @@ class _AdmissionDetailPageState extends State<AdmissionDetailPage> {
                 Expanded(
                   child: SizedBox(
                     height: 52,
-                    child: ElevatedButton.icon(
-                      icon: const Icon(Icons.save),
-                      label: const Text(
-                        "Save Changes",
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                    child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orangeAccent,
+                        backgroundColor: hasAnyChange
+                            ? Colors.orangeAccent
+                            : Colors.grey,
                         foregroundColor: Colors.white,
                         elevation: 3,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
-                      onPressed: saveChanges,
+                      onPressed: (hasAnyChange && !isSaving)
+                          ? saveChanges
+                          : null,
+                      child: isSaving
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: const [
+                                Icon(Icons.save),
+                                SizedBox(width: 8),
+                                Text(
+                                  "Save Changes",
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
                     ),
                   ),
                 ),
+
                 //const SizedBox(width: 10),
               ],
             ),

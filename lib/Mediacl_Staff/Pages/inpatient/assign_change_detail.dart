@@ -57,8 +57,12 @@ class _AdmittedPatientsPageState extends State<AdmittedPatientsPage> {
         final patient = a['patient']['name'].toString().toLowerCase();
         final ward = a['bed']['ward']['name'].toString().toLowerCase();
         final bed = a['bed']['bedNo'].toString();
+        final consultation = a['consultation'].toString();
 
-        return patient.contains(q) || ward.contains(q) || bed.contains(q);
+        return patient.contains(q) ||
+            ward.contains(q) ||
+            bed.contains(q) ||
+            consultation.contains(q);
       }).toList();
     });
   }
