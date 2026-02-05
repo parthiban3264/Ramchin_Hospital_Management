@@ -185,7 +185,7 @@ class TestingPageState extends State<TestingPage> {
           children: [
             // 🔹 SEARCH BAR (STATIC)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               child: Material(
                 elevation: 2,
                 borderRadius: BorderRadius.circular(12),
@@ -216,7 +216,7 @@ class TestingPageState extends State<TestingPage> {
                     // 🔹 SELECTED TEST SUMMARY
                     if (savedTests.isNotEmpty)
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
                         child: Material(
                           elevation: 3,
                           borderRadius: BorderRadius.circular(16),
@@ -234,7 +234,7 @@ class TestingPageState extends State<TestingPage> {
                               ),
                               const SizedBox(height: 8),
                               Padding(
-                                padding: const EdgeInsets.all(12),
+                                padding: const EdgeInsets.all(10),
                                 child: Column(
                                   children: savedTests.entries.map((entry) {
                                     final testName = entry.key;
@@ -330,8 +330,8 @@ class TestingPageState extends State<TestingPage> {
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         padding: const EdgeInsets.only(
-                          left: 16,
-                          right: 16,
+                          left: 6,
+                          right: 6,
                           bottom: 100,
                         ),
                         itemBuilder: (context, index) {
@@ -419,7 +419,7 @@ class TestingPageState extends State<TestingPage> {
             testName,
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              fontSize: 20,
+              fontSize: 18,
               color: anyCompleted ? Colors.green : Colors.black87,
             ),
           ),

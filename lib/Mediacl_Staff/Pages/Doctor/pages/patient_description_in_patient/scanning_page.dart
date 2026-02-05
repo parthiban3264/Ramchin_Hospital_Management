@@ -112,7 +112,7 @@ class ScanningPageState extends State<ScanningPage> {
         body: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               child: Material(
                 elevation: 2,
                 borderRadius: BorderRadius.circular(12),
@@ -142,7 +142,7 @@ class ScanningPageState extends State<ScanningPage> {
                   children: [
                     if (savedScans.isNotEmpty)
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
                         child: Material(
                           elevation: 3,
                           borderRadius: BorderRadius.circular(16),
@@ -250,8 +250,8 @@ class ScanningPageState extends State<ScanningPage> {
                             physics: const NeverScrollableScrollPhysics(),
 
                             padding: const EdgeInsets.only(
-                              left: 16,
-                              right: 16,
+                              left: 6,
+                              right: 6,
                               bottom: 100,
                             ),
                             itemCount: filteredScans.length,
@@ -360,7 +360,7 @@ class ScanningPageState extends State<ScanningPage> {
         title: Center(
           child: Text(
             scanName,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
           ),
         ),
         initiallyExpanded: isExpanded,
