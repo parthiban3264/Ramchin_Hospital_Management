@@ -70,12 +70,12 @@ Future<String?> getStaffNameByUserId(String userId) async {
 // Extract AppBar builder for reuse
 PreferredSizeWidget buildAppBar(bool isButtonEnabled, BuildContext context) {
   return PreferredSize(
-    preferredSize: Size.fromHeight(80),
+    preferredSize: Size.fromHeight(100),
     child: Column(
       children: [
         // ---- Existing AppBar UI ----
         Container(
-          height: 80,
+          height: 100,
           decoration: BoxDecoration(
             gradient: LinearGradient(colors: [primaryColor, primaryColor]),
             borderRadius: const BorderRadius.only(

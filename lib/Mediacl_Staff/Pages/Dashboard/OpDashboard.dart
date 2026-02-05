@@ -7,6 +7,12 @@ import '../OutPatient/patient_registration/PatientRegistrationPage.dart';
 import '../OutPatient/Queue/InjectionQueuePage.dart';
 import '../OutPatient/Queue/op_queue_page.dart';
 import '../OutPatient/Queue/SymptomsQueuePage.dart';
+import '../inpatient/add_admission_charges_page.dart';
+import '../inpatient/admit_patient.dart';
+import '../inpatient/assign_change_detail.dart';
+import '../inpatient/available_room.dart';
+import '../inpatient/patient_discharge.dart';
+import '../inpatient/room_patient_details.dart';
 
 class OpDashboardPage extends StatefulWidget {
   const OpDashboardPage({super.key});
@@ -244,9 +250,198 @@ class _OpDashboardPageState extends State<OpDashboardPage> {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  if (opPermissionIds.contains(29) ||
+                      opPermissionIds.contains(30) ||
+                      opPermissionIds.contains(31) ||
+                      opPermissionIds.contains(32) ||
+                      opPermissionIds.contains(34) ||
+                      opPermissionIds.contains(33))
+                    _buildSection(
+                      'INPATIENT DESK',
+                      _responsiveGrid([
+                        if (opPermissionIds.contains(29))
+                          _buildActionItem(
+                            Icons.medical_services_outlined,
+                            "Admit Patient",
+                            () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const AdmitPatientPage(),
+                                ),
+                              );
+                            },
+                          ),
+                        if (opPermissionIds.contains(30))
+                          _buildActionItem(
+                            Icons.add_business,
+                            "Change bed & staff",
+                            () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const AdmittedPatientsPage(),
+                                ),
+                              );
+                            },
+                          ),
+                        if (opPermissionIds.contains(31))
+                          _buildActionItem(
+                            Icons.disc_full,
+                            "Patient Discharge",
+                            () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const PatientDischargePage(),
+                                ),
+                              );
+                            },
+                          ),
+                        // _buildActionItem(
+                        //   Icons.money,
+                        //   "AddAdmissionChargesPage",
+                        //   () {
+                        //     Navigator.push(
+                        //       context,
+                        //       MaterialPageRoute(
+                        //         builder: (_) => const AddAdmissionChargesPage(),
+                        //       ),
+                        //     );
+                        //   },
+                        // ),
+
+                        // _buildActionItem(Icons.add_business, "Manage Rooms", () {
+                        //   Navigator.push(
+                        //     context,
+                        //     MaterialPageRoute(builder: (_) => const WardsPage()),
+                        //   );
+                        // }),
+                        if (opPermissionIds.contains(32))
+                          _buildActionItem(
+                            Icons.event_available,
+                            "Available Rooms",
+                            () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const AvailableRoomsPage(),
+                                ),
+                              );
+                            },
+                          ),
+
+                        // _buildActionItem(
+                        //   Icons.add_business,
+                        //   "Change bed & staff",
+                        //   () {
+                        //     Navigator.push(
+                        //       context,
+                        //       MaterialPageRoute(
+                        //         builder: (_) => const AdmittedPatientsPage(),
+                        //       ),
+                        //     );
+                        //   },
+                        // ),
+                        if (opPermissionIds.contains(33))
+                          _buildActionItem(
+                            Icons.currency_rupee,
+                            "Add Charges",
+                            () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      const AddAdmissionChargesPage(),
+                                ),
+                              );
+                            },
+                          ),
+                        if (opPermissionIds.contains(34))
+                          _buildActionItem(Icons.roofing, "Room Details", () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const WardsAndBedsPage(),
+                              ),
+                            );
+                          }),
+                      ]),
+                    ),
                 ],
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _responsiveGrid(List<Widget> children) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+
+        int columns = width >= 1200
+            ? 7
+            : width >= 900
+            ? 6
+            : width >= 700
+            ? 5
+            : width >= 500
+            ? 4
+            : 3;
+
+        const spacing = 24.0;
+
+        final itemWidth = (width - (spacing * (columns - 1))) / columns;
+
+        return SizedBox(
+          width: double.infinity,
+
+          child: Wrap(
+            alignment: WrapAlignment.center,
+            runAlignment: WrapAlignment.center,
+            spacing: spacing,
+            runSpacing: spacing,
+            children: children
+                .map(
+                  (child) => SizedBox(
+                    width: itemWidth,
+                    child: Center(child: child),
+                  ),
+                )
+                .toList(),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSection(String title, Widget content) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
+
+      child: Card(
+        elevation: 0.5,
+        color: Colors.white.withValues(alpha: 0.95),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
+          child: Column(
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF886638),
+                ),
+              ),
+              const SizedBox(height: 24),
+              content,
+            ],
           ),
         ),
       ),

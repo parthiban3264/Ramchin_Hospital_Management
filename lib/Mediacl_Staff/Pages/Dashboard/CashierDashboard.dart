@@ -12,6 +12,12 @@ import '../../../Services/admin_service.dart';
 import '../OutPatient/Queue/FeesQueuePage.dart';
 
 import '../OutPatient/patient_registration/patient_registration_payment_page.dart';
+import '../inpatient/add_admission_charges_page.dart';
+import '../inpatient/admit_patient.dart';
+import '../inpatient/assign_change_detail.dart';
+import '../inpatient/available_room.dart';
+import '../inpatient/patient_discharge.dart';
+import '../inpatient/room_patient_details.dart';
 
 class CashierDashboardPage extends StatefulWidget {
   const CashierDashboardPage({super.key});
@@ -441,6 +447,8 @@ class _CashierDashboardPageState extends State<CashierDashboardPage> {
                         ),
                       ),
                     ),
+
+                  const SizedBox(height: 16),
                 ],
               ),
             ),

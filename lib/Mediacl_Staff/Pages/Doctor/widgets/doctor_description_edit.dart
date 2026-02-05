@@ -5,7 +5,8 @@ import '../../../../Services/testing&scanning_service.dart';
 import '../../../../Services/payment_service.dart';
 
 class EditTestScanTab extends StatefulWidget {
-  const EditTestScanTab({super.key});
+  final String patientType;
+  const EditTestScanTab({super.key, required this.patientType});
 
   @override
   State<EditTestScanTab> createState() => _EditTestScanTabState();
@@ -40,6 +41,7 @@ class _EditTestScanTabState extends State<EditTestScanTab> {
 
     final data = await TestingScanningService().getAllEditTestingAndScanning(
       doctorId,
+      widget.patientType,
     );
 
     _originalData = data;

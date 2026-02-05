@@ -78,7 +78,10 @@ class TestingScanningService {
     }
   }
 
-  Future<List<dynamic>> getAllEditTestingAndScanning(String doctorId) async {
+  Future<List<dynamic>> getAllEditTestingAndScanning(
+    String doctorId,
+    String patientType,
+  ) async {
     try {
       // final prefs = await SharedPreferences.getInstance();
       final hospitalId = await getHospitalId();
@@ -86,7 +89,7 @@ class TestingScanningService {
 
       final response = await http.get(
         Uri.parse(
-          '$baseUrl/testing_and_scanning_patient/all/pendingPaymentStatus/$hospitalId/$doctorId',
+          '$baseUrl/testing_and_scanning_patient/all/pendingPaymentStatus/$hospitalId/$doctorId/$patientType',
         ),
       );
 

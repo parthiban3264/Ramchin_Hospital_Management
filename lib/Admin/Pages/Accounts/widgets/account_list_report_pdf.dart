@@ -89,6 +89,23 @@ class AccountListReportPdf {
       pw.MultiPage(
         theme: pw.ThemeData.withFont(base: font, bold: bold),
         pageFormat: PdfPageFormat.a4,
+        footer: (context) {
+          return pw.Align(
+            alignment: pw.Alignment.center,
+            child: pw.Container(
+              padding: const pw.EdgeInsets.only(top: 6),
+              decoration: const pw.BoxDecoration(
+                border: pw.Border(
+                  top: pw.BorderSide(width: 0.5, color: PdfColors.grey300),
+                ),
+              ),
+              child: pw.Text(
+                "Powered by Ramchin Technologies Pvt Ltd",
+                style: pw.TextStyle(fontSize: 11, color: PdfColors.grey600),
+              ),
+            ),
+          );
+        },
         build: (_) => [
           // ---------- HEADER ----------
           pw.Row(

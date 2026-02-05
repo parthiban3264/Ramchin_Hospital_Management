@@ -87,29 +87,118 @@ class _DrInPatientQueuePageState extends State<DrInPatientQueuePage> {
     if (consultations.isEmpty) return [];
 
     // Edit tab
-    if (selectedIndex == 2) {
-      return [];
-    }
+    // if (selectedIndex == 1) {
+    //   return [];
+    // }
 
     return consultations.where((c) {
-      final status = (c['status'] ?? '').toString().toLowerCase();
+      //final status = (c['status'] ?? '').toString().toLowerCase();
+      final paymentType = (c['patientType'] ?? '').toString().toLowerCase();
       final queueStatus = (c['queueStatus'] ?? '').toString().toLowerCase();
 
       // IP patients are always ADMITTED
-      if (status != 'admitted') return false;
+      if (paymentType != 'ip') return false;
 
       if (selectedIndex == 0) {
         // 🟡 Pending Patients
-        return queueStatus == 'pending' || queueStatus == 'drqueue';
+        return queueStatus == 'pending' ||
+            queueStatus == 'drqueue' ||
+            queueStatus == 'ongoing';
       }
-
-      if (selectedIndex == 1) {
-        // 🟢 Consulting Patients
-        return queueStatus == 'ongoing';
-      }
+      //
+      // if (selectedIndex == 1) {
+      //   // 🟢 Consulting Patients
+      //   return queueStatus == 'ongoing';
+      // }
 
       return false;
     }).toList();
+  }
+
+  // Map<String, Map<String, dynamic>> _groupByWardAndRoom(List<dynamic> list) {
+  //   final Map<String, Map<String, dynamic>> grouped = {};
+  //
+  //   for (final item in list) {
+  //     final consultation = Map<String, dynamic>.from(item);
+  //
+  //     final admission = (consultation['Admission'] as List?)?.isNotEmpty == true
+  //         ? consultation['Admission'][0]
+  //         : null;
+  //
+  //     final wardName =
+  //         admission?['bed']?['ward']?['name']?.toString() ?? 'Unknown Ward';
+  //
+  //     final wardType = admission?['bed']?['ward']?['type']?.toString() ?? '-';
+  //
+  //     final bedNo = admission?['bed']?['bedNo']?.toString() ?? 'Unknown Room';
+  //
+  //     // 🟢 Create ward if not exists
+  //     grouped.putIfAbsent(wardName, () {
+  //       return {
+  //         'wardType': wardType,
+  //         'rooms': <String, List<Map<String, dynamic>>>{},
+  //       };
+  //     });
+  //
+  //     final rooms =
+  //         grouped[wardName]!['rooms']
+  //             as Map<String, List<Map<String, dynamic>>>;
+  //
+  //     // 🟢 Create room if not exists
+  //     rooms.putIfAbsent(bedNo, () => []);
+  //
+  //     rooms[bedNo]!.add(consultation);
+  //   }
+  //
+  //   return grouped;
+  // }
+
+  Map<String, Map<String, dynamic>> _groupByWardAndRoom(List<dynamic> list) {
+    final Map<String, Map<String, dynamic>> grouped = {};
+
+    for (final item in list) {
+      final consultation = Map<String, dynamic>.from(item);
+
+      final admission = (consultation['Admission'] as List?)?.isNotEmpty == true
+          ? consultation['Admission'][0]
+          : null;
+
+      // 🟡 wardChange list
+      final wardChanges = admission?['wardChange'] as List? ?? [];
+      final lastWardChange = wardChanges.isNotEmpty ? wardChanges.last : null;
+
+      // ✅ FINAL ward & bed (last wardChange → fallback to admission)
+      final wardName =
+          lastWardChange?['toWard']?['wardName']?.toString() ??
+          admission?['bed']?['ward']?['name']?.toString() ??
+          'Unknown Ward';
+
+      final wardType = admission?['bed']?['ward']?['type']?.toString() ?? '-';
+
+      final bedNo =
+          lastWardChange?['toWard']?['bedNo']?.toString() ??
+          admission?['bed']?['bedNo']?.toString() ??
+          'Unknown Room';
+
+      // 🟢 Create ward if not exists
+      grouped.putIfAbsent(wardName, () {
+        return {
+          'wardType': wardType,
+          'rooms': <String, List<Map<String, dynamic>>>{},
+        };
+      });
+
+      final rooms =
+          grouped[wardName]!['rooms']
+              as Map<String, List<Map<String, dynamic>>>;
+
+      // 🟢 Create room if not exists
+      rooms.putIfAbsent(bedNo, () => []);
+
+      rooms[bedNo]!.add(consultation);
+    }
+
+    return grouped;
   }
 
   Color _getBorderColor(String? gender) {
@@ -204,6 +293,68 @@ class _DrInPatientQueuePageState extends State<DrInPatientQueuePage> {
     );
   }
 
+  Widget _buildInfoDoubleRow({
+    required String leftLabel,
+    required String leftValue,
+    required String rightLabel,
+    required String rightValue,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          // Left pair
+          Expanded(
+            child: Row(
+              children: [
+                Text(
+                  leftLabel,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    leftValue,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 15),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(width: 12),
+
+          // Right pair
+          Expanded(
+            child: Row(
+              children: [
+                Text(
+                  rightLabel,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    rightValue,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 15),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPatientCard(Map<String, dynamic> consultation) {
     final patient = consultation['Patient'] ?? {};
     final name = patient['name'] ?? 'Unknown';
@@ -212,7 +363,21 @@ class _DrInPatientQueuePageState extends State<DrInPatientQueuePage> {
         ? '-'
         : consultation['tokenNo'].toString();
     final id = consultation['patient_Id'].toString();
-
+    final admitDate =
+        (consultation['Admission'] is List &&
+            consultation['Admission'].isNotEmpty)
+        ? consultation['Admission'][0]['admitTime'].toString().split('T').first
+        : '-';
+    final admitId =
+        (consultation['Admission'] is List &&
+            consultation['Admission'].isNotEmpty)
+        ? consultation['Admission'][0]['id'].toString()
+        : '-';
+    final roomNo =
+        (consultation['Admission'] is List &&
+            consultation['Admission'].isNotEmpty)
+        ? consultation['Admission'][0]['bed']['bedNo'].toString()
+        : '-';
     final phone = patient['phone'] ?? '-';
     final address = patient['address']?['Address'] ?? '-';
     final gender = patient['gender'] ?? '';
@@ -252,6 +417,7 @@ class _DrInPatientQueuePageState extends State<DrInPatientQueuePage> {
                 consultation: consultation,
                 mode: mode,
                 role: widget.role,
+                patientType: 'IN',
               ),
             ),
           );
@@ -312,7 +478,7 @@ class _DrInPatientQueuePageState extends State<DrInPatientQueuePage> {
                               : mode == 2
                               ? "Scan"
                               : mode == 3
-                              ? "Test_Scan"
+                              ? "Test+Scan"
                               : "",
                           style: const TextStyle(
                             color: Colors.white,
@@ -324,35 +490,43 @@ class _DrInPatientQueuePageState extends State<DrInPatientQueuePage> {
                     ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 2),
               const Divider(),
-              Row(
-                //crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Token No: ',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                  Text(
-                    tokenNo,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
 
-              _buildInfoRow("Patient ID:", id),
-              _buildInfoRow("Cell No:", phone),
-              _buildInfoRow("Address:", address),
+              // Row(
+              //   //crossAxisAlignment: CrossAxisAlignment.center,
+              //   mainAxisAlignment: MainAxisAlignment.center,
+              //   children: [
+              //     Text(
+              //       'Token No: ',
+              //       style: TextStyle(
+              //         fontSize: 16,
+              //         fontWeight: FontWeight.w500,
+              //         color: Colors.grey[700],
+              //       ),
+              //     ),
+              //     Text(
+              //       tokenNo,
+              //       style: const TextStyle(
+              //         fontSize: 18,
+              //         fontWeight: FontWeight.bold,
+              //         color: Colors.black,
+              //       ),
+              //     ),
+              //   ],
+              // ),
+              //const SizedBox(height: 6),
+              //_buildInfoSplitRow("PID:", id, "AId:", admitId),
+              //_buildInfoRow(),
+              _buildInfoDoubleRow(
+                leftLabel: "PID:",
+                leftValue: id,
+                rightLabel: "AID:",
+                rightValue: admitId,
+              ),
+              _buildInfoRow("Admitted Date:", admitDate.toString()),
+              //_buildInfoRow("Cell No:", phone),
+              //_buildInfoRow("Address:", address),
             ],
           ),
         ),
@@ -382,6 +556,7 @@ class _DrInPatientQueuePageState extends State<DrInPatientQueuePage> {
 
   @override
   Widget build(BuildContext context) {
+    final grouped = _groupByWardAndRoom(_filteredConsultations());
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: PreferredSize(
@@ -452,7 +627,7 @@ class _DrInPatientQueuePageState extends State<DrInPatientQueuePage> {
                 const SizedBox(height: 2),
 
                 // Header (only for Pending & Consulting)
-                selectedIndex == 2
+                selectedIndex == 1
                     ? const SizedBox()
                     : Container(
                         margin: const EdgeInsets.symmetric(
@@ -476,7 +651,7 @@ class _DrInPatientQueuePageState extends State<DrInPatientQueuePage> {
                             Text(
                               selectedIndex == 0
                                   ? "Pending Patients"
-                                  : "Consulting Patients",
+                                  : "Edit Patients",
                               style: TextStyle(
                                 fontSize: 17,
                                 fontWeight: FontWeight.bold,
@@ -499,27 +674,56 @@ class _DrInPatientQueuePageState extends State<DrInPatientQueuePage> {
                   child: RefreshIndicator(
                     color: primaryColor,
                     onRefresh: () => _fetchConsultations(showLoading: false),
-                    child: selectedIndex == 2
-                        ? EditTestScanTab() // ✅ ALWAYS visible
+                    child: selectedIndex == 1
+                        ? EditTestScanTab(
+                            patientType: 'inpatient',
+                          ) // ✅ ALWAYS visible
                         : _filteredConsultations().isEmpty
                         ? _buildEmptyState(
                             message: selectedIndex == 0
                                 ? "No pending patients"
-                                : "No consulting patients",
+                                : "No Edit patients",
                           )
-                        : ListView.builder(
+                        : ListView(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 5,
+                              horizontal: 10,
+                              vertical: 8,
                             ),
-                            itemCount: _filteredConsultations().length,
-                            itemBuilder: (context, index) {
-                              final consultation =
-                                  _filteredConsultations()[index];
-                              return _buildPatientCard(
-                                Map<String, dynamic>.from(consultation),
+                            children: grouped.entries.map((wardEntry) {
+                              final wardName = wardEntry.key;
+                              final wardType =
+                                  wardEntry.value['wardType'] as String;
+                              final rooms =
+                                  wardEntry.value['rooms']
+                                      as Map<
+                                        String,
+                                        List<Map<String, dynamic>>
+                                      >;
+
+                              return wardContainer(
+                                wardName: wardName,
+                                wardType: wardType,
+                                roomWidgets: rooms.entries.map((roomEntry) {
+                                  final patients = roomEntry.value;
+
+                                  return Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      _roomHeader(roomEntry.key),
+                                      _roomPatients(
+                                        patients
+                                            .map(
+                                              (e) =>
+                                                  Map<String, dynamic>.from(e),
+                                            )
+                                            .toList(),
+                                      ),
+                                    ],
+                                  );
+                                }).toList(),
                               );
-                            },
+                            }).toList(),
                           ),
                   ),
                 ),
@@ -534,11 +738,104 @@ class _DrInPatientQueuePageState extends State<DrInPatientQueuePage> {
         onTap: (index) => setState(() => selectedIndex = index),
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.schedule), label: 'Pending'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.run_circle_outlined),
-            label: 'Consulting',
-          ),
+          // BottomNavigationBarItem(
+          //   icon: Icon(Icons.run_circle_outlined),
+          //   label: 'Consulting',
+          // ),
           BottomNavigationBarItem(icon: Icon(Icons.edit), label: 'Edit'),
+        ],
+      ),
+    );
+  }
+
+  Widget _roomPatients(List<Map<String, dynamic>> patients) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 1, right: 1),
+      child: Column(
+        children: patients
+            .map(
+              (consultation) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _buildPatientCard(consultation),
+              ),
+            )
+            .toList(),
+      ),
+    );
+  }
+
+  Widget _roomHeader(String roomNo) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, bottom: 4),
+      child: Row(
+        children: [
+          Container(
+            width: 4,
+            height: 20,
+            decoration: BoxDecoration(
+              color: Colors.blueGrey.shade600,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Icon(Icons.bed, size: 18, color: Colors.blueGrey.shade700),
+          const SizedBox(width: 6),
+          Text(
+            "Room - $roomNo",
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget wardContainer({
+    required String wardName,
+    required String wardType,
+    required List<Widget> roomWidgets,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Card(
+        color: Colors.white,
+        elevation: 1.5,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: ExpansionTile(
+          initiallyExpanded: true,
+          tilePadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+          childrenPadding: const EdgeInsets.only(left: 6, right: 6, bottom: 12),
+          title: Row(
+            children: [
+              Icon(Icons.local_hospital, color: Colors.blueGrey.shade700),
+              const SizedBox(width: 8),
+              Text(
+                "Ward - $wardName * $wardType",
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          children: roomWidgets,
+        ),
+      ),
+    );
+  }
+
+  Widget infoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 50,
+            child: Text(
+              "$label :",
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+          Expanded(child: Text(value)),
         ],
       ),
     );

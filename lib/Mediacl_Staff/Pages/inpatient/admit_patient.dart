@@ -1,12 +1,15 @@
+import 'dart:async';
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import '../../../../../../../utils/utils.dart';
-import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../../../../utils/utils.dart';
+import '../../../Pages/NotificationsPage.dart';
 import '../../../Services/admin_service.dart';
 
 const Color royal = Color(0xFFBF955E);
@@ -28,7 +31,7 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
   final admitByRelationCtrl = TextEditingController();
   List wards = [];
   List beds = [];
-  bool _autoSearched = false;
+  bool autoSearched = false;
   int? wardId;
   int? bedId;
   int? doctorId;
@@ -53,6 +56,8 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
   List<dynamic> nurseList = [];
   List<dynamic> doctorList = [];
   bool isLoadingPage = true;
+  Timer? _searchTimer;
+  bool _isUpdatingInternally = false;
 
   @override
   void initState() {
@@ -63,6 +68,17 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
     phoneCtrl.addListener(_onPhoneChanged);
     patientIdCtrl.addListener(_onPatientIdChanged);
     _updateTime();
+  }
+
+  @override
+  void dispose() {
+    _searchTimer?.cancel();
+    phoneCtrl.dispose();
+    patientIdCtrl.dispose();
+    admitByNameCtrl.dispose();
+    admitByPhoneCtrl.dispose();
+    admitByRelationCtrl.dispose();
+    super.dispose();
   }
 
   String? _dateTime;
@@ -104,33 +120,40 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
   }
 
   void _onPhoneChanged() {
+    if (_isUpdatingInternally) return;
+
     final phone = phoneCtrl.text.trim();
-    if (phone.length == 10 && !_autoSearched) {
-      _autoSearched = true;
-      searchPatientByPhone(phone);
-    }
-    if (phone.length < 10) {
-      _autoSearched = false;
-      patientsFound.clear();
-      selectedPatientId = null;
-      selectedPatient = null;
-      setState(() {});
+    _searchTimer?.cancel();
+
+    if (phone.length == 10) {
+      _searchTimer = Timer(const Duration(milliseconds: 500), () {
+        if (mounted) searchPatientByPhone(phone);
+      });
+    } else if (phone.length < 10) {
+      // PRE-EMPTIVE clear if we are moving away from a selected patient
+      if (selectedPatientId != null) {
+        _clearPatientSelection(showSnackbar: false);
+      }
     }
   }
 
   void _onPatientIdChanged() {
+    if (_isUpdatingInternally) return;
+
     final id = patientIdCtrl.text.trim();
+    _searchTimer?.cancel();
 
     if (id.isNotEmpty) {
-      searchPatientById(id); // call search every time
-    } else {
-      // clear when empty
-      setState(() {
-        patientsFound.clear();
-        selectedPatientId = null;
-        selectedPatient = null;
-        _autoSearched = false;
+      // PRE-EMPTIVE clear if the current selection doesn't match the input
+      if (selectedPatientId?.toString() != id && selectedPatientId != null) {
+        _clearPatientSelection(showSnackbar: false);
+      }
+
+      _searchTimer = Timer(const Duration(milliseconds: 500), () {
+        if (mounted) searchPatientById(id);
       });
+    } else {
+      _clearPatientSelection(showSnackbar: false);
     }
   }
 
@@ -144,56 +167,52 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
       Uri.parse("$baseUrl/admissions/patients/by-id/$id/$hospitalId"),
     );
 
+    if (!mounted) return;
     setState(() => loading = false);
 
+    // Only apply result if the user has not changed the Patient ID in the meantime
+    // (avoids race: typing "2002" then late response for "200" overwriting to 200)
+    final currentId = patientIdCtrl.text.trim();
+    if (currentId != id) return;
+
     if (res.statusCode == 200 || res.statusCode == 201) {
-      final patient = jsonDecode(res.body);
-      if (patient != null) {
+      final patientRaw = jsonDecode(res.body);
+      if (patientRaw != null && patientRaw is Map && patientRaw.isNotEmpty) {
+        final Map<String, dynamic> patient = Map<String, dynamic>.from(
+          patientRaw,
+        );
+        final returnedId = patient["id"]?.toString() ?? "";
+        // If we got a result but it's not what we asked for, or it's empty, clear.
+        if (returnedId != id) {
+          _clearPatientSelection(showSnackbar: false);
+          return;
+        }
+
         String mobilePhone = patient["phone"]?["mobile"] ?? "";
         if (mobilePhone.startsWith("+91")) {
           mobilePhone = mobilePhone.substring(3).trim();
         }
 
         setState(() {
-          _autoSearched = false; // reset so next changes work
+          _isUpdatingInternally = true;
+          autoSearched = false;
           selectedPatientId = patient["id"];
           selectedPatient = patient;
           patientsFound = [patient];
           phoneCtrl.text = mobilePhone;
+
+          final consultationList = patient['Consultation'] as List?;
+          if (consultationList != null && consultationList.isNotEmpty) {
+            final last = consultationList.last;
+            final dId = int.tryParse(last['doctor_Id']?.toString() ?? "");
+            if (dId != null) {
+              doctorId = dId;
+            }
+          }
         });
-      }
-    } else {
-      _clearPatientSelection();
-    }
-  }
-
-  Future<void> searchPatientByPhone(String phone) async {
-    final prefs = await SharedPreferences.getInstance();
-    final hospitalId = prefs.getString('hospitalId');
-
-    setState(() => loading = true);
-
-    final res = await http.get(
-      Uri.parse("$baseUrl/admissions/patients/by-phone/$phone/$hospitalId"),
-    );
-
-    setState(() => loading = false);
-
-    if (res.statusCode == 200) {
-      final List data = jsonDecode(res.body);
-      if (data.isNotEmpty) {
-        final patient = data[0]; // auto-select first match
-        String mobilePhone = patient["phone"]?["mobile"] ?? "";
-        if (mobilePhone.startsWith("+91")) {
-          mobilePhone = mobilePhone.substring(3).trim();
-        }
-
-        setState(() {
-          selectedPatientId = patient["id"];
-          selectedPatient = patient;
-          patientsFound = data;
-          patientIdCtrl.text = patient["id"].toString();
-          phoneCtrl.text = mobilePhone;
+        // Release lock after build
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _isUpdatingInternally = false;
         });
       } else {
         _clearPatientSelection();
@@ -203,14 +222,94 @@ class _AdmitPatientPageState extends State<AdmitPatientPage> {
     }
   }
 
-  void _clearPatientSelection() {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text("Patient not found")));
+  Future<void> searchPatientByPhone(String phone) async {
+    final currentPhone = phoneCtrl.text.trim();
+    if (currentPhone != phone) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final hospitalId = prefs.getString('hospitalId');
+
+    setState(() => loading = true);
+
+    final res = await http.get(
+      Uri.parse("$baseUrl/admissions/patients/by-phone/$phone/$hospitalId"),
+    );
+
+    if (!mounted) return;
+    setState(() => loading = false);
+
+    // Guard against race condition
+    if (phoneCtrl.text.trim() != phone) return;
+
+    if (res.statusCode == 200) {
+      final decoded = jsonDecode(res.body);
+      if (decoded is List && decoded.isNotEmpty) {
+        final patientRaw = decoded[0]; // auto-select first match
+        if (patientRaw is! Map) {
+          _clearPatientSelection();
+          return;
+        }
+
+        final Map<String, dynamic> patient = Map<String, dynamic>.from(
+          patientRaw,
+        );
+
+        String mobilePhone = patient["phone"]?["mobile"] ?? "";
+        if (mobilePhone.startsWith("+91")) {
+          mobilePhone = mobilePhone.substring(3).trim();
+        }
+
+        setState(() {
+          _isUpdatingInternally = true;
+          selectedPatientId = patient["id"];
+          selectedPatient = patient;
+          patientsFound = decoded;
+          patientIdCtrl.text = patient["id"].toString();
+          phoneCtrl.text = mobilePhone;
+
+          final consultationList = patient['Consultation'] as List?;
+          if (consultationList != null && consultationList.isNotEmpty) {
+            final last = consultationList.last;
+            final dId = int.tryParse(last['doctor_Id']?.toString() ?? "");
+            if (dId != null) {
+              doctorId = dId;
+            }
+          }
+        });
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _isUpdatingInternally = false;
+        });
+      } else {
+        _clearPatientSelection();
+      }
+    } else {
+      _clearPatientSelection();
+    }
+  }
+
+  void _clearPatientSelection({bool showSnackbar = true}) {
+    if (showSnackbar && mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Patient not found")));
+    }
     setState(() {
+      _isUpdatingInternally = true;
       selectedPatientId = null;
       selectedPatient = null;
-      patientsFound.clear();
+      patientsFound = [];
+      phoneCtrl.clear();
+      // Reset doctor/nurse to defaults if possible
+      if (doctorList.isNotEmpty) {
+        doctorId = int.tryParse(doctorList.first['user_Id'].toString());
+      }
+      if (nurseList.isNotEmpty) {
+        nurseId = int.tryParse(nurseList.first['user_Id'].toString());
+      }
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _isUpdatingInternally = false;
     });
   }
 
@@ -645,14 +744,11 @@ Bed: ${p["bed"]?["bedNo"] ?? ""}
 
     final doctorText = doctor != null
         ? '${doctor['name']} • ${doctor['specialist']}'
-        : '${doctorList.first['name']} • ${doctorList.first['specialist']}';
-    if (consultationList != null && consultationList.isNotEmpty) {
-      final last = consultationList.last;
+        : (doctorList.isNotEmpty
+              ? '${doctorList.first['name']} • ${doctorList.first['specialist']}'
+              : 'No doctor selected');
 
-      setState(() {
-        doctorId = int.parse(last['doctor_Id']); // must be int
-      });
-    }
+    // Remove setState from build - logic moved to search/selection methods
 
     final nurseText = nurseList.first['name'];
     return SingleChildScrollView(
@@ -752,16 +848,20 @@ Bed: ${p["bed"]?["bedNo"] ?? ""}
                               phoneCtrl.text =
                                   mobilePhone; // correctly set phone
                               patientIdCtrl.text = patient["id"].toString();
+
+                              final consultationList =
+                                  patient['Consultation'] as List?;
+                              if (consultationList != null &&
+                                  consultationList.isNotEmpty) {
+                                final last = consultationList.last;
+                                final dId = int.tryParse(
+                                  last['doctor_Id']?.toString() ?? "",
+                                );
+                                if (dId != null) {
+                                  doctorId = dId;
+                                }
+                              }
                             });
-                            final consultationList =
-                                patient['Consultation'] as List?;
-
-                            if (consultationList != null &&
-                                consultationList.isNotEmpty) {
-                              final last = consultationList.last;
-
-                              doctorId = last['doctor_Id'];
-                            }
                           },
                           validator: (v) => v == null ? "Select patient" : null,
                         ),
@@ -1016,13 +1116,59 @@ Bed: ${p["bed"]?["bedNo"] ?? ""}
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: royal,
-        title: const Text(
-          "Admit Patient",
-          style: TextStyle(color: Colors.white),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(100),
+        child: Container(
+          height: 100,
+          decoration: BoxDecoration(
+            color: royal,
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(18),
+              bottomRight: Radius.circular(18),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  const Text(
+                    "Admit Patient",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.notifications, color: Colors.white),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const NotificationPage(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: showSuccess
           ? buildSuccessView()

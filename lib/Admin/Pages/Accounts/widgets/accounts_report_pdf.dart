@@ -178,7 +178,32 @@ class AccountsReportPdf {
               _row('Balance', balance),
               _row('Drawing Out', drawingOut),
               _dashDivider(),
+              pw.SizedBox(height: 2),
               _rowBold('Cash in Hand', cashInHand),
+              pw.SizedBox(height: 2),
+              pw.Align(
+                alignment: pw.Alignment.bottomCenter,
+                child: pw.Container(
+                  margin: const pw.EdgeInsets.only(top: 2),
+                  padding: const pw.EdgeInsets.symmetric(vertical: 4),
+                  // decoration: const pw.BoxDecoration(
+                  //   border: pw.Border(
+                  //     top: pw.BorderSide(width: 0.5, color: PdfColors.grey300),
+                  //   ),
+                  // ),
+                  child: pw.Text(
+                    "Powered by Ramchin Technologies Pvt Ltd",
+                    style: pw.TextStyle(
+                      fontSize: 7,
+                      color: PdfColors.grey,
+                      //fontWeight: pw.FontWeight.bold,
+                      //letterSpacing: 0.5,
+                    ),
+                    textAlign: pw.TextAlign.center,
+                  ),
+                ),
+              ),
+              pw.SizedBox(height: 2),
             ],
           ),
         ),
@@ -322,10 +347,13 @@ class AccountsReportPdf {
   static pw.Widget _rowBold(String t, double v) => pw.Row(
     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
     children: [
-      pw.Text(t, style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+      pw.Text(
+        t,
+        style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
+      ),
       pw.Text(
         v.toInt().toString(),
-        style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+        style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
       ),
     ],
   );

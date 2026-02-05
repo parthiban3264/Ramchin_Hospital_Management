@@ -281,13 +281,18 @@ class _PatientListReportPageState extends State<PatientListReportPage> {
   // }
   double _calculatePreviousBalance(ReportType type) {
     DateTime cutoff;
+    DateTime _endOfDay(DateTime d) {
+      return DateTime(d.year, d.month, d.day, 23, 59, 59, 999);
+    }
 
     if (type == ReportType.daily) {
-      cutoff = DateTime(
-        selectedYear,
-        DateFormat.MMMM().parse(selectedMonth).month,
-        selectedDay,
-      ).subtract(const Duration(days: 1));
+      cutoff = _endOfDay(
+        DateTime(
+          selectedYear,
+          DateFormat.MMMM().parse(selectedMonth).month,
+          selectedDay - 1,
+        ),
+      );
     } else if (type == ReportType.monthly) {
       final monthIndex = DateFormat.MMMM().parse(selectedMonth).month;
       cutoff = DateTime(
@@ -417,6 +422,7 @@ class _PatientListReportPageState extends State<PatientListReportPage> {
       context: context,
       builder: (_) => _pickerDialog(
         title: "Select Day & Month",
+        color: Colors.green.shade400,
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -443,6 +449,7 @@ class _PatientListReportPageState extends State<PatientListReportPage> {
       context: context,
       builder: (_) => _pickerDialog(
         title: "Select Month & Year",
+        color: Colors.lightBlueAccent.shade400,
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -469,6 +476,7 @@ class _PatientListReportPageState extends State<PatientListReportPage> {
       context: context,
       builder: (_) => _pickerDialog(
         title: "Select Year",
+        color: Colors.orangeAccent.shade200,
         content: _yearDropdown(tempYear, (v) => tempYear = v),
         onOk: () => setState(() {
           selectedYear = tempYear;
@@ -541,6 +549,7 @@ class _PatientListReportPageState extends State<PatientListReportPage> {
             title: "DAILY REPORT",
             subtitle: "Select day & month",
             value: "$selectedDay $selectedMonth",
+            color: Colors.green.shade300,
             //showToggle: _currentTabIndex == 1,
             showToggle: _currentTabIndex == 1 ? true : false,
             toggleValue: _includeAllPatientsDaily,
@@ -583,6 +592,7 @@ class _PatientListReportPageState extends State<PatientListReportPage> {
             title: "MONTHLY REPORT",
             subtitle: "Select Mon & year",
             value: "$selectedMonth $selectedYear",
+            color: Colors.lightBlueAccent.shade200,
             //showToggle: _currentTabIndex == 1,
             showToggle: _currentTabIndex == 1 ? true : false,
             toggleValue: _includeAllPatientsMonthly,
@@ -623,6 +633,7 @@ class _PatientListReportPageState extends State<PatientListReportPage> {
             subtitle: "Select Year",
             value: "$selectedYear",
             showToggle: false,
+            color: Colors.orangeAccent.shade200,
             isLoading: _isLoading(ReportType.yearly),
             onPick: _pickYearly,
             onGenerate: (_) async {
@@ -703,6 +714,7 @@ class _PatientListReportPageState extends State<PatientListReportPage> {
   Widget _reportCard({
     required String title,
     required String subtitle,
+    required Color color,
     required String value,
     required VoidCallback onPick,
     required Future<void> Function(bool includeAll) onGenerate,
@@ -748,7 +760,7 @@ class _PatientListReportPageState extends State<PatientListReportPage> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
             decoration: BoxDecoration(
-              color: themeColor,
+              color: color,
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(20),
               ),
@@ -820,7 +832,7 @@ class _PatientListReportPageState extends State<PatientListReportPage> {
                         horizontal: 16,
                       ),
                       decoration: BoxDecoration(
-                        color: themeColor.withValues(alpha: 0.12),
+                        color: color.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Row(
@@ -831,10 +843,10 @@ class _PatientListReportPageState extends State<PatientListReportPage> {
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
-                              color: value.isEmpty ? Colors.grey : themeColor,
+                              color: value.isEmpty ? Colors.grey : color,
                             ),
                           ),
-                          Icon(Icons.calendar_month_rounded, color: themeColor),
+                          Icon(Icons.calendar_month_rounded, color: color),
                         ],
                       ),
                     ),
@@ -848,7 +860,7 @@ class _PatientListReportPageState extends State<PatientListReportPage> {
                   width: double.infinity,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: themeColor,
+                      backgroundColor: color,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
@@ -891,6 +903,7 @@ class _PatientListReportPageState extends State<PatientListReportPage> {
     required String title,
     required Widget content,
     required VoidCallback onOk,
+    required Color color,
   }) {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
@@ -904,7 +917,7 @@ class _PatientListReportPageState extends State<PatientListReportPage> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [themeColor, themeColor.withValues(alpha: 0.85)],
+                colors: [color, color.withValues(alpha: 0.85)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -944,7 +957,7 @@ class _PatientListReportPageState extends State<PatientListReportPage> {
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: themeColor.withValues(alpha: 0.08),
+                    color: color.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: content,
@@ -958,8 +971,8 @@ class _PatientListReportPageState extends State<PatientListReportPage> {
                     Expanded(
                       child: OutlinedButton(
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: themeColor,
-                          side: BorderSide(color: themeColor),
+                          foregroundColor: color,
+                          side: BorderSide(color: color),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
@@ -973,7 +986,7 @@ class _PatientListReportPageState extends State<PatientListReportPage> {
                     Expanded(
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: themeColor,
+                          backgroundColor: color,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(

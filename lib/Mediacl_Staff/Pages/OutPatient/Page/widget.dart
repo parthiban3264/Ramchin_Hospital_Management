@@ -39,6 +39,8 @@ Future<pw.Document> buildPdf({
   required TextEditingController dobController,
   required TextEditingController addressController,
 }) async {
+  // print('fee $fee');
+  // print('feeType ${fee['type']}');
   final consultation = fee['Consultation'];
   // final temperature = consultation['temperature'].toString();
   // final bloodPressure = consultation['bp'] ?? '_';
@@ -124,7 +126,7 @@ Future<pw.Document> buildPdf({
   pw.Widget dateHeader(List charges, ttf, ttfBold) {
     if (charges.isEmpty) return pw.SizedBox.shrink();
 
-    final dates = charges.map((c) => DateTime.parse(c['chargeDate'])).toList();
+    final dates = charges.map((c) => DateTime.parse(c['createdAt'])).toList();
 
     final from = dates.first;
     final to = dates.last;
@@ -948,7 +950,31 @@ Future<pw.Document> buildPdf({
               "THANK YOU!",
               style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
             ),
-            pw.SizedBox(height: 4),
+            pw.SizedBox(height: 2),
+            pw.Align(
+              alignment: pw.Alignment.bottomCenter,
+              child: pw.Container(
+                margin: const pw.EdgeInsets.only(top: 10),
+                padding: const pw.EdgeInsets.symmetric(vertical: 4),
+                // decoration: const pw.BoxDecoration(
+                //   border: pw.Border(
+                //     top: pw.BorderSide(width: 0.5, color: PdfColors.grey300),
+                //   ),
+                // ),
+                child: pw.Text(
+                  "Powered by Ramchin Technologies Pvt Ltd",
+                  style: pw.TextStyle(
+                    fontSize: 7,
+                    color: PdfColors.grey,
+                    //fontWeight: pw.FontWeight.bold,
+                    //letterSpacing: 0.5,
+                  ),
+                  textAlign: pw.TextAlign.center,
+                ),
+              ),
+            ),
+
+            pw.SizedBox(height: 2),
           ],
         );
       },
@@ -978,8 +1004,15 @@ pw.Widget _groupedFeeRow(String title, List<Map<String, dynamic>> items) {
     0,
     (sum, c) => sum + (num.tryParse(c['amount'].toString()) ?? 0),
   );
+  final uniqueDays = <String>{};
+  for (final c in items) {
+    final date = DateTime.parse(c['createdAt']);
+    uniqueDays.add('${date.year}-${date.month}-${date.day}');
+  }
 
-  final days = items.length;
+  final days = uniqueDays.length;
+
+  //final days = items.length;
 
   final displayTitle = (title != 'Others' && days > 1)
       ? "$title × ${days}d"

@@ -214,7 +214,11 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                           setDialogState(() => isPrinting = true);
                           Navigator.pop(ctx);
 
-                          setState(() => _isBuildingPdf = true);
+                          // setState(() => _isBuildingPdf = true);
+                          setState(() {
+                            _isLoading = true;
+                            _isBuildingPdf = true;
+                          });
 
                           try {
                             final pdf = await buildPdf(
@@ -227,15 +231,22 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                               nameController: nameController,
                               logo: logo!,
                             );
-
-                            if (mounted) {
-                              setState(() => _isBuildingPdf = false);
-                            }
-
-                            // 🔑 user may print OR cancel – we don't care
                             await Printing.layoutPdf(
                               onLayout: (format) async => pdf.save(),
                             );
+                            if (mounted) {
+                              // setState(() => _isBuildingPdf = false);
+                              // setState(() => _isLoading = false);
+                              setState(() {
+                                _isLoading = false;
+                                _isBuildingPdf = false;
+                              });
+                            }
+
+                            // 🔑 user may print OR cancel – we don't care
+                            // await Printing.layoutPdf(
+                            //   onLayout: (format) async => pdf.save(),
+                            // );
                           } catch (e) {
                             debugPrint("Print error: $e");
                           } finally {
@@ -876,9 +887,7 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
     Widget dateHeader(List charges) {
       if (charges.isEmpty) return const SizedBox.shrink();
 
-      final dates = charges
-          .map((c) => DateTime.parse(c['chargeDate']))
-          .toList();
+      final dates = charges.map((c) => DateTime.parse(c['createdAt'])).toList();
 
       final from = dates.first;
       final to = dates.last;
@@ -898,13 +907,6 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
       );
     }
 
-    // Map<String, List<Map<String, dynamic>>> groupedCharges = {};
-    //
-    // for (final c in charges) {
-    //   final key = c['description'] ?? 'Charge';
-    //   groupedCharges.putIfAbsent(key, () => []).add(c);
-    // }
-
     const knownCharges = {'ROOM RENT', 'DOCTOR FEE', 'NURSE FEE'};
 
     Map<String, List<Map<String, dynamic>>> grouped = {
@@ -914,18 +916,6 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
       'Others': [],
     };
 
-    // for (final c in charges) {
-    //   final desc = (c['description'] ?? '').toString().toUpperCase();
-    //
-    //   if (knownCharges.contains(desc)) {
-    //     grouped[_normalize(desc)]!.add(c);
-    //   } else {
-    //     if (desc == 'INPATIENT ADVANCE FEE') {
-    //       continue;
-    //     }
-    //     grouped['Others']!.add(c);
-    //   }
-    // }
     for (final c in charges) {
       final desc = (c['description'] ?? '').toString().toUpperCase();
 
@@ -2163,13 +2153,38 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
   //     removable: false,
   //   );
   // }
+  // Widget _groupedFeeRow(String title, List<Map<String, dynamic>> items) {
+  //   final total = items.fold<num>(
+  //     0,
+  //     (sum, c) => sum + (num.tryParse(c['amount'].toString()) ?? 0),
+  //   );
+  //
+  //   final days = items.length;
+  //
+  //   final displayTitle = (title != 'Others' && days > 1)
+  //       ? "$title × ${days}d"
+  //       : title;
+  //
+  //   return feeRowWithRemove(
+  //     title: displayTitle,
+  //     amount: total,
+  //     removable: false,
+  //   );
+  // }
   Widget _groupedFeeRow(String title, List<Map<String, dynamic>> items) {
     final total = items.fold<num>(
       0,
       (sum, c) => sum + (num.tryParse(c['amount'].toString()) ?? 0),
     );
 
-    final days = items.length;
+    // ✅ count UNIQUE days (not number of charges)
+    final uniqueDays = <String>{};
+    for (final c in items) {
+      final date = DateTime.parse(c['createdAt']);
+      uniqueDays.add('${date.year}-${date.month}-${date.day}');
+    }
+
+    final days = uniqueDays.length;
 
     final displayTitle = (title != 'Others' && days > 1)
         ? "$title × ${days}d"

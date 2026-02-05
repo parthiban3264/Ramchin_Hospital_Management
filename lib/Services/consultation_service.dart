@@ -470,11 +470,11 @@ class ConsultationService {
       final filtered = rawList.where((item) {
         if (item is! Map<String, dynamic>) return false;
 
-        final status = item['status']?.toString().toLowerCase();
+        final status = item['patientType']?.toString().toLowerCase();
         final queueStatus = item['queueStatus']?.toString().toLowerCase();
 
         // API uses ADMITTED + DRQUEUE / PENDING
-        final validStatus = status == 'admitted';
+        final validStatus = status == 'ip';
         final validQueue =
             queueStatus == 'drqueue' ||
             queueStatus == 'pending' ||
@@ -595,6 +595,28 @@ class ConsultationService {
       }
     } catch (e) {
       throw Exception('Error fetching fees: $e');
+    }
+  }
+
+  static Future<List<dynamic>> getDispense(int medicineId) async {
+    try {
+      final hospitalId = await getHospitalId();
+
+      final response = await http.get(
+        Uri.parse(
+          '$baseUrl/testing_and_scanning_patient/all/prescriptionDispense/$hospitalId/$medicineId',
+        ),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final decoded = jsonDecode(response.body);
+
+        return decoded;
+      } else {
+        throw Exception('Failed to fetch dispense: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching dispense: $e');
     }
   }
 }

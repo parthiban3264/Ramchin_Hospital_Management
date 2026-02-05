@@ -6,6 +6,7 @@ import '../../../../../Pages/NotificationsPage.dart';
 import '../../../../../Services/Injection_Service.dart';
 import '../../../../../Services/Medicine_Service.dart';
 import '../../../../../Services/Tonic_service.dart';
+import '../../../../../Services/consultation_service.dart';
 import '../../../../../Services/socket_service.dart';
 import '../../widgets/medicine_card.dart';
 
@@ -40,6 +41,8 @@ class DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
   bool tonicsLoaded = false;
   List<Map<String, dynamic>> allInjection = [];
   bool injectionsLoaded = false;
+
+  int _onAddCallCount = 0;
 
   List<Map<String, dynamic>> persistentMedicineEntries = [];
   // List<Map<String, dynamic>> persistentTonicsEntries = [];
@@ -127,19 +130,190 @@ class DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
     }
   }
 
-  void _onAddMedicine(List<Map<String, dynamic>> meds) {
-    setState(() {
-      submittedMedicines = meds.map((m) {
-        return {
-          ...m,
-          'days': m['days'] ?? '0', // ✅ preserve days
-        };
-      }).toList();
+  Future<void> _onAddMedicine(List<Map<String, dynamic>> meds) async {
+    final currentCall = ++_onAddCallCount;
+    // Debounce: wait for user to stop typing
+    await Future.delayed(const Duration(milliseconds: 300));
+    if (currentCall != _onAddCallCount) return;
 
-      persistentMedicineEntries = List<Map<String, dynamic>>.from(
-        submittedMedicines,
+    // 1️⃣ Create a map of current allocations so we can "restore" them in our local calculation
+    // without corrupting the base allMedicines data.
+    Map<int, int> oldAllocMap = {};
+    for (var oldMed in submittedMedicines) {
+      final List allocated = oldMed['allocated_batches'] ?? [];
+      if (allocated.isNotEmpty) {
+        for (var alloc in allocated) {
+          final bId = alloc['batch_id'];
+          final aqty =
+              int.tryParse(alloc['allocated_qty']?.toString() ?? '0') ?? 0;
+          if (bId != null) {
+            oldAllocMap[bId] = (oldAllocMap[bId] ?? 0) + aqty;
+          }
+        }
+      } else {
+        final bId = oldMed['batch_Id'];
+        final qty = int.tryParse(oldMed['quantity']?.toString() ?? '0') ?? 0;
+        if (bId != null) {
+          oldAllocMap[bId] = (oldAllocMap[bId] ?? 0) + qty;
+        }
+      }
+    }
+
+    // 2️⃣ Group incoming meds by medicineId to prevent duplicate processing
+    Map<int, Map<String, dynamic>> groupedMeds = {};
+    for (var med in meds) {
+      // Ensure we check both common keys
+      int? id =
+          int.tryParse(med['medicineId']?.toString() ?? '') ??
+          int.tryParse(med['medicine_Id']?.toString() ?? '');
+      if (id == null) continue;
+
+      int qty = int.tryParse(med['quantity']?.toString() ?? '0') ?? 0;
+      if (qty <= 0) continue;
+
+      if (groupedMeds.containsKey(id)) {
+        groupedMeds[id]!['quantity'] =
+            (groupedMeds[id]!['quantity'] ?? 0) + qty;
+      } else {
+        groupedMeds[id] = Map<String, dynamic>.from(med);
+        groupedMeds[id]!['quantity'] = qty;
+      }
+    }
+
+    final List<Map<String, dynamic>> newlyAllocated = [];
+
+    // 3️⃣ Rebuild from grouped data
+    for (var medEntry in groupedMeds.values) {
+      if (currentCall != _onAddCallCount) return;
+
+      int finalQty = medEntry['quantity'];
+      int medicineId =
+          int.tryParse(medEntry['medicineId']?.toString() ?? '') ??
+          int.tryParse(medEntry['medicine_Id']?.toString() ?? '') ??
+          0;
+
+      var selectedMed = allMedicines.firstWhere(
+        (m) => m['id'] == medicineId,
+        orElse: () => {},
       );
-    });
+      if (selectedMed.isEmpty) continue;
+
+      List batches = List.from(selectedMed['batches'] ?? []);
+
+      // Fetch dispensed quantity
+      Map<int, int> dispensedMapForMed = {};
+      try {
+        final List<dynamic> dispenseData =
+            await ConsultationService.getDispense(medicineId);
+        for (var item in dispenseData) {
+          final bId = item['batch_Id'];
+          final sum = item['_sum'];
+          if (bId != null && sum != null) {
+            dispensedMapForMed[bId] =
+                int.tryParse(sum['dispensed_quantity']?.toString() ?? '0') ?? 0;
+          }
+        }
+      } catch (e) {
+        debugPrint("Error fetching dispense data: $e");
+      }
+
+      // Check Total True Available
+      int totalTrueAvailable = 0;
+      for (var b in batches) {
+        int bId = b['id'];
+        int totalOriginalStock =
+            int.tryParse(b['total_stock']?.toString() ?? '0') ?? 0;
+        // Adjusted Dispensed = DB Dispensed - Our Old Allocation (to restore it locally)
+        int dbDispensed = dispensedMapForMed[bId] ?? 0;
+        int ourOld = oldAllocMap[bId] ?? 0;
+        int adjustedDispensed = (dbDispensed - ourOld).clamp(0, dbDispensed);
+
+        int trueAvailable = (totalOriginalStock - adjustedDispensed).clamp(
+          0,
+          totalOriginalStock,
+        );
+        totalTrueAvailable += trueAvailable;
+      }
+
+      if (finalQty > totalTrueAvailable) {
+        if (mounted && currentCall == _onAddCallCount) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                "Only $totalTrueAvailable stock available for ${medEntry['name']}",
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      int remainingQty = finalQty;
+      List<Map<String, dynamic>> batchesForThisMed = [];
+      double actualTotalPrice = 0;
+
+      for (var batch in batches) {
+        if (remainingQty <= 0) break;
+
+        int bId = batch['id'];
+        int totalOriginalStock =
+            int.tryParse(batch['total_stock']?.toString() ?? '0') ?? 0;
+        int dbDispensed = dispensedMapForMed[bId] ?? 0;
+        int ourOld = oldAllocMap[bId] ?? 0;
+        int adjustedDispensed = (dbDispensed - ourOld).clamp(0, dbDispensed);
+
+        int trueAvailable = (totalOriginalStock - adjustedDispensed).clamp(
+          0,
+          totalOriginalStock,
+        );
+
+        if (trueAvailable <= 0) continue;
+
+        int usedQty = remainingQty <= trueAvailable
+            ? remainingQty
+            : trueAvailable;
+        double unitPrice =
+            double.tryParse(batch['selling_price_unit']?.toString() ?? '0') ??
+            0;
+        double batchTotal = double.parse(
+          (usedQty * unitPrice).toStringAsFixed(2),
+        );
+
+        batchesForThisMed.add({
+          'batch_id': bId,
+          'batch_no': batch['batch_no'],
+          'allocated_qty': usedQty,
+          'unit_price': unitPrice,
+          'batch_total': batchTotal,
+        });
+
+        actualTotalPrice += batchTotal;
+        remainingQty -= usedQty;
+      }
+
+      if (batchesForThisMed.isNotEmpty) {
+        newlyAllocated.add({
+          ...medEntry,
+          'quantity': finalQty,
+          'total': double.parse(actualTotalPrice.toStringAsFixed(2)),
+          'allocated_batches': batchesForThisMed,
+          'batch_Id': batchesForThisMed[0]['batch_id'],
+          'batch_no': batchesForThisMed[0]['batch_no'],
+        });
+      }
+    }
+
+    if (currentCall == _onAddCallCount) {
+      if (mounted) {
+        setState(() {
+          submittedMedicines = newlyAllocated;
+          persistentMedicineEntries = List<Map<String, dynamic>>.from(
+            submittedMedicines,
+          );
+        });
+      }
+    }
   }
 
   Future<void> _handleSubmitPrescription() async {
@@ -147,6 +321,41 @@ class DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
       submittedMedicine: submittedMedicines,
     );
     Navigator.pop(context, true);
+  }
+
+  List<Map<String, dynamic>> allocateBatches(
+    List<dynamic> batches,
+    int requestedQty,
+  ) {
+    List<Map<String, dynamic>> allocated = [];
+    int remainingQty = requestedQty;
+
+    for (var batch in batches) {
+      int available =
+          int.tryParse(batch['total_stock']?.toString() ?? '0') ?? 0;
+
+      if (remainingQty <= 0) break;
+
+      if (available > 0) {
+        int usedQty = remainingQty <= available ? remainingQty : available;
+
+        double unitPrice =
+            double.tryParse(batch['selling_price_unit']?.toString() ?? '0') ??
+            0;
+
+        allocated.add({
+          'batch_id': batch['id'],
+          'batch_no': batch['batch_no'],
+          'allocated_qty': usedQty,
+          'unit_price': unitPrice,
+          'batch_total': usedQty * unitPrice,
+        });
+
+        remainingQty -= usedQty;
+      }
+    }
+
+    return allocated;
   }
 
   @override
@@ -278,6 +487,8 @@ class DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
   }
 
   Widget _buildMedicineTab() {
+    // print(allMedicines);
+    //I/flutter ( 9099): [{id: 1, name: paracitamol, category: Tablets, batches: [{id: 28, hospital_Id: 1, medicine_id: 1, HSN: cd, batch_no: 02, expiry_date: 2026-02-03T00:00:00.000Z, manufacture_date: 2026-02-01T00:00:00.000Z, total_stock: 100, total_quantity: 100, quantity: 100, free_quantity: 0, unit: 1, rack_no: 1, mrp: 20, profit: 50, purchase_price_unit: 10.3, purchase_price_quantity: 10.3, selling_price_quantity: 15.45, selling_price_unit: 15.45, purchase_details: {base_amount: 1000, gst_percent: 3, purchase_date: 2026-02-01, purchase_price: 1030, gst_per_quantity: 0.3, total_gst_amount: 30, rate_per_quantity: 10}, supplier_id: 1, is_active: true, created_at: 2026-01-31T09:41:19.670Z}]}, {id: 3, name: anacin, category: Tablet, batches: [{id: 29, hospital_Id: 1, medicine_id: 3, HSN: null, batch_no: 1, expiry_date: 2026-03-31T00:00:00.000Z, manufacture_date: 2026-01-31T00:00:00.000Z, total_stock: 100, total_quantity: 100, quantity: 100, free_quantity: null, unit: 1, rack_no: 12, mrp: null, profit: null, purchase_price_unit: nu
     return SingleChildScrollView(
       padding: const EdgeInsets.all(4),
       child: Column(
@@ -328,7 +539,7 @@ class DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
     //   0.0,
     //   (sum, item) => sum + parseTotal(item['total']),
     // );
-
+    print(submittedMedicines);
     Widget buildSection(String title, List<Map<String, dynamic>> items) {
       if (items.isEmpty) return const SizedBox.shrink();
 
@@ -496,8 +707,8 @@ class DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
             ),
             const Divider(thickness: 2, color: Colors.grey, height: 24),
             buildSection("Medicines", submittedMedicines),
-            buildSection("Tonics", submittedTonics),
-            buildSection("Injections", submittedInjections),
+            // buildSection("Tonics", submittedTonics),
+            // buildSection("Injections", submittedInjections),
             const SizedBox(height: 12),
           ],
         ),

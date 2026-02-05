@@ -22,11 +22,13 @@ class PatientDescriptionIn extends StatefulWidget {
   final Map<String, dynamic> consultation;
   final int mode; // Tests or Scan or empty
   final String role;
+  final String patientType;
   const PatientDescriptionIn({
     super.key,
     required this.consultation,
     required this.mode,
     required this.role,
+    required this.patientType,
   });
 
   @override
@@ -91,7 +93,6 @@ class PatientDescriptionInState extends State<PatientDescriptionIn>
   }) {
     submittedMedicines = submittedMedicine;
     // print(submittedMedicines);
-    //[{name: paracetamol , price: 1.96, qtyPerDose: 1.0, afterEat: true, morning: true, afternoon: false, night: true, days: 10, weeks: 0, months: 0, total: 39.2, medicineId: 4, route: Tablet, batch_No: 01, medicine_Id: 4, batch_Id: 01, dosage: 1 tablet, frequency: once, total_quantity: 20, after_food: true, instructions: , quantityNeeded: 20.0, quantity: 20}, {name: insulin, price: 382.0, qtyPerDose: 1.0, afterEat: true, morning: true, afternoon: false, night: true, days: 2, weeks: 0, months: 0, total: 1528.0, medicineId: 6, route: INJECTION, batch_No: 01, medicine_Id: 6, batch_Id: 01, dosage: 1 tablet, frequency: once, total_quantity: 4, after_food: true, instructions: , quantityNeeded: 4.0, quantity: 4}, {name: caugh 100 ml, price: 24.96, qtyPerDose: 1.0, afterEat: true, morning: true, afternoon: false, night: true, days: 20, weeks: 0, months: 0, total: 998.4000000000001, medicineId: 5, route: Syrup, batch_No: 01, medicine_Id: 5, batch_Id: 01, dosage: 1 tablet, frequency: once, total_quantity: 40, after_food:
 
     onUpdated?.call();
   }
@@ -110,6 +111,36 @@ class PatientDescriptionInState extends State<PatientDescriptionIn>
     }
     if (isInjection) injection = injections;
     onUpdated?.call();
+  }
+
+  List<dynamic> nurseList = [];
+  List<dynamic> doctorList = [];
+
+  Future<void> loadStaff(String doctorId, String nurseId) async {
+    final data = await AdminService().getMedicalStaff();
+
+    final nurses = data
+        .where(
+          (s) =>
+              s["role"]?.toString().toLowerCase() == "nurse" &&
+              s['user_Id']?.toString() == nurseId,
+        )
+        .toList();
+
+    final doctors = data
+        .where(
+          (s) =>
+              s["role"]?.toString().toLowerCase() == "doctor" &&
+              s['user_Id']?.toString() == doctorId,
+        )
+        .toList();
+
+    if (!mounted) return;
+
+    setState(() {
+      nurseList = nurses;
+      doctorList = doctors;
+    });
   }
 
   @override
@@ -159,7 +190,65 @@ class PatientDescriptionInState extends State<PatientDescriptionIn>
     final bloodGroup = patient['bldGrp'] ?? '_';
     final createdAt = consultation['createdAt'] ?? '';
     final doctorName = consultation['Doctor']?['name'] ?? '_';
+    // ----------------Admission-----------------
+    // -------------Admission Details --------------------
 
+    final admitId = consultation['Admission'][0]['id'].toString();
+    final admission = consultation['Admission']?[0];
+
+    // wardChange list
+    final wardChanges = admission?['wardChange'] as List? ?? [];
+
+    // take last ward change if exists
+    final lastWardChange = wardChanges.isNotEmpty ? wardChanges.last : null;
+
+    // ---------- FINAL VALUES ----------
+    final wardName =
+        lastWardChange?['toWard']?['wardName']?.toString() ??
+        admission?['bed']?['ward']?['name']?.toString() ??
+        '-';
+
+    final wardType = admission?['bed']?['ward']?['type']?.toString() ?? '-';
+
+    final bedId =
+        lastWardChange?['toWard']?['bedId']?.toString() ??
+        admission?['bed']?['id']?.toString() ??
+        '-';
+
+    final bedNo =
+        lastWardChange?['toWard']?['bedNo']?.toString() ??
+        admission?['bed']?['bedNo']?.toString() ??
+        '-';
+
+    // final wardName = consultation['Admission'][0]['bed']['ward']['name']
+    //     .toString();
+    // final wardType = consultation['Admission'][0]['bed']['ward']['type']
+    //     .toString();
+    // final bedId = consultation['Admission'][0]['bed']['id'].toString();
+    // final bedNo = consultation['Admission'][0]['bed']['bedNo'].toString();
+    final admitDate = consultation['Admission'][0]['admitTime']
+        .toString()
+        .split('T')
+        .first;
+    final staffChanges =
+        consultation['Admission']?[0]?['staffChange'] as List? ?? [];
+
+    final lastChange = staffChanges.isNotEmpty ? staffChanges.last : null;
+
+    final assignDoctorId = lastChange?['doctor']?.toString() ?? '';
+    final assignNurseId = lastChange?['nurse']?.toString() ?? '';
+
+    if (assignDoctorId.isNotEmpty || assignNurseId.isNotEmpty) {
+      loadStaff(assignDoctorId, assignNurseId);
+    }
+
+    final assignDoctor = doctorList.isNotEmpty
+        ? '${doctorList[0]['name']} * ${doctorList[0]['specialist']}'
+        : '-';
+
+    final assignNurse = nurseList.isNotEmpty
+        ? nurseList[0]['name'].toString()
+        : '-';
     final temperature = consultation['temperature'].toString();
     final bloodPressure = consultation['bp'] ?? '_';
     final sugar = consultation['sugar'] ?? '_';
@@ -377,7 +466,17 @@ class PatientDescriptionInState extends State<PatientDescriptionIn>
                   bloodGroup: bloodGroup,
                   createdAt: createdAt,
                 ),
-
+                const SizedBox(height: 6),
+                _buildPatientAdmissionDetailsCard(
+                  wardName: wardName,
+                  admitId: admitId,
+                  wardType: wardType,
+                  bedNo: bedNo,
+                  bedId: bedId,
+                  admitDate: admitDate,
+                  assignDoctor: assignDoctor,
+                  assignNurse: assignNurse,
+                ),
                 if (hasAnyVital(
                   temperature: temperature,
                   bloodPressure: bloodPressure,
@@ -1026,6 +1125,9 @@ class PatientDescriptionInState extends State<PatientDescriptionIn>
   }
 
   Future<void> _handleSubmitPrescription() async {
+    print(submittedMedicines);
+    //I/flutter (24558): [{name: paracitamol , price: 7.57, qtyPerDose: 1.0, afterEat: true, morning: true, afternoon: false, night: false, days: 2605, weeks: 0, months: 0, total: 7369.85, medicineId: 1, route: Tablets, batch_No: 1, base_total_stock: 2605, medicine_Id: 1, batch_Id: 1, dosage: 1 tablet, frequency: once, total_quantity: 2605, after_food: true, instructions: , quantityNeeded: 2605.0, quantity: 2605, allocated_batches: [{batch_id: 33, batch_no: 1, allocated_qty: 105, unit_price: 7.57, batch_total: 794.85}, {batch_id: 34, batch_no: 2, allocated_qty: 2500, unit_price: 2.63, batch_total: 6575.0}]}]
+
     if (submittedMedicines.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please add at least one item!")),
@@ -1035,52 +1137,75 @@ class PatientDescriptionInState extends State<PatientDescriptionIn>
 
     setState(() => isLoading = true);
 
-    final List<Map<String, dynamic>> medicineList = submittedMedicines.map((m) {
-      final qtyPerDose = m['qtyPerDose'] == 1 / 2 ? 0.5 : m['qtyPerDose'];
-      return {
-        'medicine_Id': int.parse(m['medicineId'].toString()),
-        'consultation_Id': widget.consultation['id'],
-        'route': m['route'].toString().toUpperCase(),
-        'quantity': qtyPerDose,
-        'afterEat': m['afterEat'],
-        'morning': m['morning'],
-        'afternoon': m['afternoon'],
-        'night': m['night'],
-        'days': m['days'],
-        //'quantityNeeded': m['quantity'],
-        'total_quantity': m['quantity'],
-        'dosage': m['qtyPerDose'].toString(),
-        'total': m['total'],
-      };
-    }).toList();
-
-    final Map<String, dynamic> prescriptionData = {
-      'hospital_Id': widget.consultation['hospital_Id'],
-      'patient_Id': widget.consultation['patient_Id'].toString(),
-      'doctor_Id': widget.consultation['Doctor']?['doctorId'].toString(),
-      'consultation_Id': widget.consultation['id'],
-      'createdAt': dateTime.toString(),
-      'medicines': medicineList,
-      // 'tonics': tonicList,
-      // 'injections': injectionList,
-    };
-
     try {
-      // await PrescriptionService().createPrescription(prescriptionData);
-      final prescription = await PrescriptionService().createPrescription(
-        prescriptionData,
-      );
       final prefs = await SharedPreferences.getInstance();
       final userId = prefs.getString('userId');
 
-      final firstMedicine = submittedMedicines[0];
-      await PrescriptionService().createPrescriptionDispense({
-        "hospital_Id": widget.consultation['hospital_Id'],
-        "prescription_medicine_Id": prescription['medicines'][0]['id'],
-        "batch_Id": firstMedicine['batch_Id'],
-        "dispensed_quantity": firstMedicine['quantity'],
-        "pharmacist_Id": userId,
-      });
+      for (var m in submittedMedicines) {
+        final List allocatedBatches = m['allocated_batches'] ?? [];
+
+        Future<void> submitBatch(
+          Map<String, dynamic> medicineData, {
+          dynamic bId,
+          dynamic dispensedQty,
+          dynamic bTotal,
+        }) async {
+          final qtyPerDose = medicineData['qtyPerDose'] == 1 / 2
+              ? 0.5
+              : medicineData['qtyPerDose'];
+
+          final Map<String, dynamic> singlePrescriptionData = {
+            'hospital_Id': widget.consultation['hospital_Id'],
+            'patient_Id': widget.consultation['patient_Id'].toString(),
+            'doctor_Id': widget.consultation['Doctor']?['doctorId'].toString(),
+            'consultation_Id': widget.consultation['id'],
+            'createdAt': dateTime.toString(),
+            'medicines': [
+              {
+                'medicine_Id': int.parse(medicineData['medicineId'].toString()),
+                'consultation_Id': widget.consultation['id'],
+                'route': medicineData['route'].toString().toUpperCase(),
+                'quantity': qtyPerDose,
+                'afterEat': medicineData['afterEat'],
+                'morning': medicineData['morning'],
+                'afternoon': medicineData['afternoon'],
+                'night': medicineData['night'],
+                'days': medicineData['days'],
+                'total_quantity': dispensedQty ?? medicineData['quantity'],
+                'dosage': medicineData['qtyPerDose'].toString(),
+                'total': bTotal ?? medicineData['total'],
+              },
+            ],
+          };
+
+          final prescription = await PrescriptionService().createPrescription(
+            singlePrescriptionData,
+          );
+
+          final createdMedicineId = prescription['medicines'][0]['id'];
+
+          await PrescriptionService().createPrescriptionDispense({
+            "hospital_Id": widget.consultation['hospital_Id'],
+            "prescription_medicine_Id": createdMedicineId,
+            "batch_Id": bId ?? medicineData['batch_Id'],
+            "dispensed_quantity": dispensedQty ?? medicineData['quantity'],
+            "pharmacist_Id": userId,
+          });
+        }
+
+        if (allocatedBatches.isNotEmpty) {
+          for (var batch in allocatedBatches) {
+            await submitBatch(
+              m,
+              bId: batch['batch_no'],
+              dispensedQty: batch['allocated_qty'],
+              bTotal: batch['batch_total'],
+            );
+          }
+        } else {
+          await submitBatch(m);
+        }
+      }
 
       // await PrescriptionService().createPrescriptionDispense(prescriptionData);
       final consultationId = widget.consultation['id'];
@@ -1750,6 +1875,83 @@ class PatientDescriptionInState extends State<PatientDescriptionIn>
                     infoRow("Age", age),
                     infoRow("DOB", dob),
                     infoRow("Created At", createdAt),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPatientAdmissionDetailsCard({
+    required String admitId,
+    required String wardName,
+    required String wardType,
+    required String bedId,
+    required String bedNo,
+    required String admitDate,
+    required String assignDoctor,
+    required String assignNurse,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _isPatientExpanded = !_isPatientExpanded;
+        });
+      },
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 4,
+        shadowColor: Colors.black26,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              /// 🔹 Header Row (Gender Icon + Name + Expand Icon,
+              Row(
+                children: [
+                  Expanded(
+                    child: Center(
+                      child: Text(
+                        'Admission Details',
+                        style: TextStyle(
+                          color: primaryColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Divider(color: Colors.grey.shade300),
+
+              /// 🔹 Always Visible Info
+              infoRow("Admission Id", admitId),
+              infoRow("ward", wardName),
+              infoRow("ward type", wardType),
+              infoRow("bed No", bedNo),
+
+              /// 🔹 Expandable Section
+              AnimatedCrossFade(
+                duration: const Duration(milliseconds: 300),
+                crossFadeState: _isPatientExpanded
+                    ? CrossFadeState.showSecond
+                    : CrossFadeState.showFirst,
+                firstChild: const SizedBox.shrink(),
+                secondChild: Column(
+                  children: [
+                    const SizedBox(height: 10),
+                    Divider(color: Colors.grey.shade300),
+                    // _infoRow("Gender", gender),
+                    infoRow("Bed Id", bedId),
+                    infoRow("Admit Date", admitDate),
+                    infoRow("Allotted Dr", assignDoctor),
+                    infoRow("Allotted Nurse", assignNurse),
                   ],
                 ),
               ),

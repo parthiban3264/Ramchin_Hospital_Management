@@ -32,7 +32,7 @@ class _AddTestPageState extends State<AddTestPage> {
     if (!mounted) return;
 
     setState(() {
-      allScans = res.where((e) => e['type'] == 'SCAN').toList();
+      allScans = res.where((e) => e['type'] == 'TEST').toList();
       isLoading = false;
     });
   }

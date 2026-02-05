@@ -572,7 +572,9 @@ class _DrOutPatientQueuePageState extends State<DrOutPatientQueuePage> {
                     color: primaryColor,
                     onRefresh: () => _fetchConsultations(showLoading: false),
                     child: selectedIndex == 2
-                        ? EditTestScanTab() // ✅ ALWAYS visible
+                        ? EditTestScanTab(
+                            patientType: 'outpatient',
+                          ) // ✅ ALWAYS visible
                         : _filteredConsultations().isEmpty
                         ? _buildEmptyState(
                             message: selectedIndex == 0
