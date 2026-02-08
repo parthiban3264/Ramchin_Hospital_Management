@@ -31,22 +31,53 @@ class _DrInPatientQueuePageState extends State<DrInPatientQueuePage> {
   String? doctorId;
   int selectedIndex = 0; // 0 = Pending, 1 = Ongoing
   bool isInitialLoad = true;
-  late Timer _refreshTimer;
+  //late Timer _refreshTimer;
+  List<dynamic> doctors = [];
+  String? selectedDoctorId; // always a doctor id
+  bool isDoctorLoading = true;
 
   @override
   void initState() {
     super.initState();
     _fetchConsultations(showLoading: true);
-
-    _refreshTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      _fetchConsultations(showLoading: false);
+    _loadDoctorsAndDefault().then((_) {
+      _fetchConsultations(showLoading: true);
     });
+
+    // _refreshTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+    //   _fetchConsultations(showLoading: false);
+    // });
   }
 
   @override
   void dispose() {
-    _refreshTimer.cancel();
+    //_refreshTimer.cancel();
     super.dispose();
+  }
+
+  Future<void> _loadDoctorsAndDefault() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getString('userId');
+
+    final doctorData = await AdminService().getMedicalStaff();
+
+    doctors = doctorData.where((item) {
+      final role = (item['role'] ?? '').toString().toLowerCase();
+
+      return role.contains('doctor');
+    }).toList();
+
+    if (widget.role == 'doctor') {
+      selectedDoctorId = userId; // ✅ default current doctor
+    } else {
+      final matchedDoctor = doctorData.firstWhere(
+        (item) => item['user_Id'] == userId,
+        orElse: () => null,
+      );
+      selectedDoctorId = matchedDoctor?['assignDoctorId'];
+    }
+
+    isDoctorLoading = false;
   }
 
   Future<void> _fetchConsultations({required bool showLoading}) async {
@@ -70,9 +101,36 @@ class _DrInPatientQueuePageState extends State<DrInPatientQueuePage> {
       final allConsultations = await ConsultationService()
           .getAllDrConsultationDrQueueIP(doctorId: doctorId);
 
+      // if (mounted) {
+      //   setState(() {
+      //     consultations = allConsultations;
+      //     isInitialLoad = false;
+      //   });
+      // }
       if (mounted) {
+        final ipWithDoctor = allConsultations.where((item) {
+          final type = item['patientType']?.toString().toLowerCase() == 'ip';
+          final doctor = item['Doctor'];
+          return type && doctor != null;
+        }).toList();
+
+        final doctorList = _buildDoctorDropdownFromIP(ipWithDoctor);
+
+        final prefs = await SharedPreferences.getInstance();
+        final currentDoctorId = prefs.getString('userId');
+
         setState(() {
-          consultations = allConsultations;
+          consultations = ipWithDoctor;
+          doctors = doctorList;
+
+          // ✅ Default = logged-in doctor if exists
+          selectedDoctorId =
+              doctorList.any((d) => d['doctorId'] == currentDoctorId)
+              ? currentDoctorId
+              : doctorList.isNotEmpty
+              ? doctorList.first['doctorId']
+              : null;
+
           isInitialLoad = false;
         });
       }
@@ -83,75 +141,43 @@ class _DrInPatientQueuePageState extends State<DrInPatientQueuePage> {
     }
   }
 
-  List<dynamic> _filteredConsultations() {
-    if (consultations.isEmpty) return [];
+  // List<dynamic> _filteredConsultations() {
+  //   if (consultations.isEmpty) return [];
+  //
+  //   return consultations.where((c) {
+  //     final paymentType = (c['patientType'] ?? '').toString().toLowerCase();
+  //     final queueStatus = (c['queueStatus'] ?? '').toString().toLowerCase();
+  //
+  //     // IP patients are always ADMITTED
+  //     if (paymentType != 'ip') return false;
+  //
+  //     if (selectedIndex == 0) {
+  //       // 🟡 Pending Patients
+  //       return queueStatus == 'pending' ||
+  //           queueStatus == 'drqueue' ||
+  //           queueStatus == 'ongoing';
+  //     }
+  //
+  //     return false;
+  //   }).toList();
+  // }
 
-    // Edit tab
-    // if (selectedIndex == 1) {
-    //   return [];
-    // }
+  List<dynamic> _filteredConsultations() {
+    if (consultations.isEmpty || selectedDoctorId == null) return [];
 
     return consultations.where((c) {
-      //final status = (c['status'] ?? '').toString().toLowerCase();
       final paymentType = (c['patientType'] ?? '').toString().toLowerCase();
       final queueStatus = (c['queueStatus'] ?? '').toString().toLowerCase();
-
-      // IP patients are always ADMITTED
       if (paymentType != 'ip') return false;
+      final doctor = c['Doctor'];
+      final docId = doctor?['doctorId']?.toString();
 
-      if (selectedIndex == 0) {
-        // 🟡 Pending Patients
-        return queueStatus == 'pending' ||
-            queueStatus == 'drqueue' ||
-            queueStatus == 'ongoing';
-      }
-      //
-      // if (selectedIndex == 1) {
-      //   // 🟢 Consulting Patients
-      //   return queueStatus == 'ongoing';
-      // }
-
-      return false;
+      return (queueStatus == 'pending' ||
+              queueStatus == 'drqueue' ||
+              queueStatus == 'ongoing') &&
+          docId == selectedDoctorId;
     }).toList();
   }
-
-  // Map<String, Map<String, dynamic>> _groupByWardAndRoom(List<dynamic> list) {
-  //   final Map<String, Map<String, dynamic>> grouped = {};
-  //
-  //   for (final item in list) {
-  //     final consultation = Map<String, dynamic>.from(item);
-  //
-  //     final admission = (consultation['Admission'] as List?)?.isNotEmpty == true
-  //         ? consultation['Admission'][0]
-  //         : null;
-  //
-  //     final wardName =
-  //         admission?['bed']?['ward']?['name']?.toString() ?? 'Unknown Ward';
-  //
-  //     final wardType = admission?['bed']?['ward']?['type']?.toString() ?? '-';
-  //
-  //     final bedNo = admission?['bed']?['bedNo']?.toString() ?? 'Unknown Room';
-  //
-  //     // 🟢 Create ward if not exists
-  //     grouped.putIfAbsent(wardName, () {
-  //       return {
-  //         'wardType': wardType,
-  //         'rooms': <String, List<Map<String, dynamic>>>{},
-  //       };
-  //     });
-  //
-  //     final rooms =
-  //         grouped[wardName]!['rooms']
-  //             as Map<String, List<Map<String, dynamic>>>;
-  //
-  //     // 🟢 Create room if not exists
-  //     rooms.putIfAbsent(bedNo, () => []);
-  //
-  //     rooms[bedNo]!.add(consultation);
-  //   }
-  //
-  //   return grouped;
-  // }
 
   Map<String, Map<String, dynamic>> _groupByWardAndRoom(List<dynamic> list) {
     final Map<String, Map<String, dynamic>> grouped = {};
@@ -265,6 +291,156 @@ class _DrInPatientQueuePageState extends State<DrInPatientQueuePage> {
     if (hasTest) return 1; // Only Test
     if (hasScan) return 2; // Only Scan
     return 4; // Default
+  }
+
+  List<Map<String, dynamic>> _buildDoctorDropdownFromIP(
+    List<dynamic> consultationList,
+  ) {
+    final Map<String, Map<String, dynamic>> map = {};
+
+    for (final item in consultationList) {
+      final doctor = item['Doctor'];
+      if (doctor == null || doctor is! Map<String, dynamic>) continue;
+
+      final docId = doctor['doctorId']?.toString();
+      if (docId == null || docId.isEmpty) continue;
+
+      map.putIfAbsent(docId, () {
+        return {
+          'doctorId': docId,
+          'specialist': doctor['specialist'] ?? '-',
+          'name': doctor['name'] ?? 'Doctor',
+          'count': 0,
+        };
+      });
+
+      map[docId]!['count']++;
+    }
+
+    return map.values.toList();
+  }
+
+  // Widget _doctorDropdown() {
+  //   if (selectedDoctorId == null || doctors.isEmpty) {
+  //     return const SizedBox();
+  //   }
+  //
+  //   return DropdownButtonHideUnderline(
+  //     child: DropdownButton<String>(
+  //       value: selectedDoctorId,
+  //       isExpanded: true,
+  //       icon: const Icon(Icons.arrow_drop_down),
+  //       items: doctors.map((doc) {
+  //         return DropdownMenuItem<String>(
+  //           value: doc['doctorId'],
+  //           child: Text(
+  //             "${doc['name']} (${doc['count']})",
+  //             style: const TextStyle(fontWeight: FontWeight.w600),
+  //           ),
+  //         );
+  //       }).toList(),
+  //       onChanged: (value) {
+  //         if (value == null) return;
+  //         setState(() => selectedDoctorId = value);
+  //       },
+  //     ),
+  //   );
+  // }
+
+  Widget _doctorDropdown() {
+    if (selectedDoctorId == null || doctors.isEmpty) {
+      return const SizedBox();
+    }
+
+    return Card(
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            value: selectedDoctorId,
+            isExpanded: true,
+            icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 28),
+            items: doctors.map((doc) {
+              final doctorName = doc['name'] ?? 'Doctor';
+              final doctorSpec = doc['specialist'] ?? 'Specialist';
+              final count = doc['count'] ?? 0;
+
+              return DropdownMenuItem<String>(
+                value: doc['doctorId'],
+                child: Row(
+                  children: [
+                    // 👨‍⚕️ Doctor Avatar
+                    CircleAvatar(
+                      radius: 18,
+                      backgroundColor: Colors.blueGrey.shade100,
+                      child: const Icon(
+                        Icons.medical_services,
+                        color: Colors.blueGrey,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+
+                    // 🧑‍⚕️ Name + Specialization
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            doctorName,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            doctorSpec,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey.shade600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // 🟢 IP Count Badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade100,
+                        borderRadius: BorderRadius.circular(50),
+                      ),
+                      child: Text(
+                        "$count",
+                        style: TextStyle(
+                          color: Colors.green.shade800,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+            onChanged: (value) {
+              if (value == null) return;
+              setState(() => selectedDoctorId = value);
+            },
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildInfoRow(String label, String value) {
@@ -493,31 +669,6 @@ class _DrInPatientQueuePageState extends State<DrInPatientQueuePage> {
               const SizedBox(height: 2),
               const Divider(),
 
-              // Row(
-              //   //crossAxisAlignment: CrossAxisAlignment.center,
-              //   mainAxisAlignment: MainAxisAlignment.center,
-              //   children: [
-              //     Text(
-              //       'Token No: ',
-              //       style: TextStyle(
-              //         fontSize: 16,
-              //         fontWeight: FontWeight.w500,
-              //         color: Colors.grey[700],
-              //       ),
-              //     ),
-              //     Text(
-              //       tokenNo,
-              //       style: const TextStyle(
-              //         fontSize: 18,
-              //         fontWeight: FontWeight.bold,
-              //         color: Colors.black,
-              //       ),
-              //     ),
-              //   ],
-              // ),
-              //const SizedBox(height: 6),
-              //_buildInfoSplitRow("PID:", id, "AId:", admitId),
-              //_buildInfoRow(),
               _buildInfoDoubleRow(
                 leftLabel: "PID:",
                 leftValue: id,
@@ -631,41 +782,42 @@ class _DrInPatientQueuePageState extends State<DrInPatientQueuePage> {
                     ? const SizedBox()
                     : Container(
                         margin: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 10,
+                          horizontal: 10,
+                          vertical: 2,
                         ),
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 14,
+                          horizontal: 6,
+                          vertical: 7,
                         ),
-                        decoration: BoxDecoration(
-                          color: primaryColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: primaryColor),
-                        ),
-                        child: Row(
+                        // decoration: BoxDecoration(
+                        //   color: primaryColor.withValues(alpha: 0.1),
+                        //   borderRadius: BorderRadius.circular(14),
+                        //   border: Border.all(color: primaryColor),
+                        // ),
+                        child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.people_alt_rounded, color: primaryColor),
-                            const SizedBox(width: 8),
-                            Text(
-                              selectedIndex == 0
-                                  ? "Pending Patients"
-                                  : "Edit Patients",
-                              style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.bold,
-                                color: primaryColor,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              "( ${_filteredConsultations().length} )",
-                              style: const TextStyle(
-                                color: Colors.black87,
-                                fontSize: 15,
-                              ),
-                            ),
+                            _doctorDropdown(),
+                            // Icon(Icons.people_alt_rounded, color: primaryColor),
+                            // const SizedBox(width: 8),
+                            // Text(
+                            //   selectedIndex == 0
+                            //       ? "Pending Patients"
+                            //       : "Edit Patients",
+                            //   style: TextStyle(
+                            //     fontSize: 17,
+                            //     fontWeight: FontWeight.bold,
+                            //     color: primaryColor,
+                            //   ),
+                            // ),
+                            // const SizedBox(width: 6),
+                            // Text(
+                            //   "( ${_filteredConsultations().length} )",
+                            //   style: const TextStyle(
+                            //     color: Colors.black87,
+                            //     fontSize: 15,
+                            //   ),
+                            // ),
                           ],
                         ),
                       ),

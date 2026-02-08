@@ -1328,14 +1328,34 @@ class _PatientRegistrationPagesState extends State<PatientRegistrationPages> {
   void selectExistingPatient(Map<String, dynamic> patient) {
     final consultations = patient['Consultation'] as List<dynamic>? ?? [];
 
+    // final hasOngoing = consultations.any((c) {
+    //   final status = c['status']?.toString().toUpperCase() ?? '';
+    //   return status != 'COMPLETED';
+    // });
+    //
+    // if (hasOngoing && mounted) {
+    //   showSnackBar(
+    //     'This patient already has an ongoing consultation.',
+    //     context,
+    //   );
+    //   return;
+    // }
+    final blockedStatuses = {'PENDING', 'ONGOING', 'ENDPROCESSING', 'ADMITTED'};
+
+    String? blockingStatus;
+
     final hasOngoing = consultations.any((c) {
       final status = c['status']?.toString().toUpperCase() ?? '';
-      return status != 'COMPLETED';
+      if (blockedStatuses.contains(status)) {
+        blockingStatus = status; // capture the status
+        return true;
+      }
+      return false;
     });
 
     if (hasOngoing && mounted) {
       showSnackBar(
-        'This patient already has an ongoing consultation.',
+        'This patient already has a $blockingStatus consultation.',
         context,
       );
       return;
@@ -1485,20 +1505,72 @@ class _PatientRegistrationPagesState extends State<PatientRegistrationPages> {
         final consultations =
             existingPatient?['Consultation'] as List<dynamic>? ?? [];
 
+        // final hasOngoing = consultations.any((c) {
+        //   final status = c['status']?.toString().toUpperCase() ?? '';
+        //
+        //   return status != 'COMPLETED';
+        // });
+        //
+        // if (hasOngoing && mounted) {
+        //   showSnackBar(
+        //     'Your consultation is already ongoing. Please complete it before creating a new one.',
+        //     context,
+        //   );
+        //   setState(() => isSubmitting = false);
+        //   return; // 🚫 stop here — do NOT create new consultation
+        // }
+
+        final blockedStatuses = {
+          'PENDING',
+          'ONGOING',
+          'ENDPROCESSING',
+          'ADMITTED',
+        };
+        String? blockingStatus;
+
         final hasOngoing = consultations.any((c) {
           final status = c['status']?.toString().toUpperCase() ?? '';
-
-          return status != 'COMPLETED';
+          if (blockedStatuses.contains(status)) {
+            blockingStatus = status; // capture the status
+            return true;
+          }
+          return false;
         });
+
+        // final hasOngoing = consultations.any((c) {
+        //   final status = c['status']?.toString().toUpperCase() ?? '';
+        //   return blockedStatuses.contains(status);
+        // });
 
         if (hasOngoing && mounted) {
           showSnackBar(
-            'Your consultation is already ongoing. Please complete it before creating a new one.',
+            'Your consultation is already $blockingStatus. Please complete it before creating a new one.',
             context,
           );
           setState(() => isSubmitting = false);
           return; // 🚫 stop here — do NOT create new consultation
         }
+
+        // final blockedStatuses = {
+        //   'PENDING',
+        //   'ONGOING',
+        //   'ENDPROCESSING',
+        //   'ADMITTED',
+        // };
+        //
+        // final hasOngoing = consultations.any((c) {
+        //   final status = c['status']?.toString().toUpperCase() ?? '';
+        //   return blockedStatuses.contains(status);
+        // });
+        //
+        // if (hasOngoing && mounted) {
+        //   showSnackBar(
+        //     'Your consultation is already ongoing. Please complete it before creating a new one.',
+        //     context,
+        //   );
+        //   setState(() => isSubmitting = false);
+        //   return; // 🚫 stop here — do NOT create new consultation
+        // }
 
         // ✅ Step 2: Proceed normally if no ongoing consultations exist
         try {

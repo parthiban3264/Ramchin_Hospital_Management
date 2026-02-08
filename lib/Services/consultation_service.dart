@@ -482,10 +482,19 @@ class ConsultationService {
 
         if (!validStatus || !validQueue) return false;
 
-        // Optional doctor filter
-        if (doctorId != null && item['Doctor'] != null) {
-          final docId = item['Doctor']['doctorId']?.toString();
-          return docId == doctorId;
+        // // Optional doctor filter
+        // if (doctorId != null && item['Doctor'] != null) {
+        //   final docId = item['Doctor']['doctorId']?.toString();
+        //   return docId == doctorId;
+        // }
+        final doctor = item['Doctor'];
+        if (doctor == null || doctor is! Map<String, dynamic>) {
+          return false;
+        }
+
+        final docId = doctor['doctorId']?.toString();
+        if (docId == null || docId.isEmpty) {
+          return false;
         }
 
         return true;

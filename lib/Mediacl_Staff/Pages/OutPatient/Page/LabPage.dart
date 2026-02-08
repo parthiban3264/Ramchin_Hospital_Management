@@ -82,6 +82,7 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
 
   Map<String, String> get optionReferenceMap {
     final record = widget.allTests[widget.currentIndex];
+    print('record: $record');
     final List<dynamic>? testDetails = record['testDetails'];
 
     if (testDetails != null && testDetails.isNotEmpty) {

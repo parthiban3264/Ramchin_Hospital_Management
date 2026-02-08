@@ -105,6 +105,36 @@ class PaymentService {
     }
   }
 
+  Future<Map<String, dynamic>?> updateDecreasePayment(
+    int paymentId,
+    Map<String, dynamic> updates,
+  ) async {
+    try {
+      // final hospitalId = await getHospitalId();
+
+      final response = await http.patch(
+        Uri.parse('$baseUrl/payments/updateById/decreaseAmount/$paymentId'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(updates),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final decoded = jsonDecode(response.body);
+
+        // The backend returns {status, message, data}
+        if (decoded is Map<String, dynamic>) {
+          return decoded;
+        } else {
+          throw Exception('Unexpected response format');
+        }
+      } else {
+        return null;
+      }
+    } catch (e) {
+      return null;
+    }
+  }
+
   Future<String> getHospitalId() async {
     final prefs = await SharedPreferences.getInstance();
     final hospitalId = prefs.getString('hospitalId');

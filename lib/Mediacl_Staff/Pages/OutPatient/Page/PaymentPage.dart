@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:hospitrax/Mediacl_Staff/Pages/OutPatient/Page/widget/inpatient_bill_editor.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -8,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Pages/payment_modal.dart';
+import '../../../../Services/admin_service.dart';
 import '../../../../Services/charge_Service.dart';
 import '../../../../Services/consultation_service.dart';
 import '../../../../Services/payment_service.dart';
@@ -43,6 +45,14 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
   String? hospitalPlace;
   bool _isLoading = false;
   bool _isBuildingPdf = false;
+
+  // Map to track edited charge amounts: chargeId -> newAmount
+  Map<int, num> _editedCharges = {};
+
+  // Lists to track pending test/scan changes (updated on Pay Bill click)
+  List<int> _pendingTestRemovals = [];
+  List<Map<String, dynamic>> _pendingOptionRemovals = [];
+  num? _pendingAdvanceFeeAmount;
 
   late TextEditingController cellController;
   late TextEditingController nameController;
@@ -80,6 +90,16 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
       text: widget.fee['amount']?.toString() ?? '',
     );
     _loadHospitalLogo();
+    loadStaff();
+  }
+
+  List<Map<String, dynamic>> allStaff = [];
+
+  Future<void> loadStaff() async {
+    allStaff = List<Map<String, dynamic>>.from(
+      await AdminService().getMedicalStaff(),
+    );
+    setState(() {});
   }
 
   String? _dateTime;
@@ -302,11 +322,89 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
     setState(() => _isProcessing = true);
     final staffId = prefs.getString('userId');
 
-    // if (widget.fee['type'] == 'ADMISSIONFEE') {
-    //   isDischarged = widget.fee['Admission']?['status'] == 'DISCHARGED';
-    // }
+    // 🔄 Update all edited charges before payment
+    if (_editedCharges.isNotEmpty) {
+      final charges = (widget.fee['Admission']?['charges'] as List?) ?? [];
+      for (final entry in _editedCharges.entries) {
+        final chargeId = entry.key;
+        final newAmount = entry.value;
+
+        // Find the original charge to calculate decrement
+        final charge = charges.firstWhere(
+          (c) => c['id'] == chargeId,
+          orElse: () => null,
+        );
+
+        if (charge != null) {
+          final originalAmount = charge['originalAmount'] ?? charge['amount'];
+          final decrement = (originalAmount as num) - newAmount;
+          if (decrement > 0) {
+            try {
+              await PaymentService().updateDecreasePayment(widget.fee['id'], {
+                'decrementAmount': decrement,
+                'chargeId': charge['id'],
+              });
+            } catch (e) {
+              debugPrint("Error updating charge: $e");
+            }
+          }
+        }
+      }
+      _editedCharges.clear();
+    }
+
+    // 🔄 Process Pending Option Removals
+    for (final removal in _pendingOptionRemovals) {
+      final testId = removal['testId'];
+      final tests = widget.fee['TestingAndScanningPatients'] as List?;
+      final test = tests?.firstWhere(
+        (t) => t['id'] == testId,
+        orElse: () => null,
+      );
+
+      if (test != null) {
+        final updatedOptions = removal['updatedOptions'] as Map;
+        await TestingScanningService().updateTesting(testId, {
+          "selectedOptionAmounts": updatedOptions,
+          "selectedOptions": updatedOptions.keys
+              .map((e) => e.toString())
+              .toList(),
+          "amount": test['amount'],
+        });
+      }
+    }
+    _pendingOptionRemovals.clear();
+
+    // 🔄 Process Pending Test Removals
+    for (final testId in _pendingTestRemovals) {
+      await TestingScanningService().deleteTesting(testId);
+    }
+    _pendingTestRemovals.clear();
+
+    // 🔄 Process Pending Advance Fee Change
+    if (_pendingAdvanceFeeAmount != null &&
+        widget.fee['type'] == 'ADVANCEFEE') {
+      final int admissionId = widget.fee['Admission']['id'];
+      final List<int> chargesIds = (widget.fee['Admission']['charges'] as List)
+          .cast<Map<String, dynamic>>()
+          .where(
+            (charge) =>
+                charge['description'] == 'Inpatient Advance Fee' &&
+                charge['admissionId'] == admissionId,
+          )
+          .map((charge) => charge['id'] as int)
+          .toList();
+
+      await ChargeService().updateAdvanceChargesByAdmission(
+        chargesIds: chargesIds,
+        amount: _pendingAdvanceFeeAmount!,
+      );
+      _pendingAdvanceFeeAmount = null;
+    }
+
     bool isDischarged = widget.fee['Admission']?['status'] == 'DISCHARGED';
     final response = await PaymentService().updatePayment(paymentId, {
+      'amount': widget.fee['amount'],
       'status': (widget.fee['type'] != 'ADMISSIONFEE')
           ? 'PAID'
           : isDischarged == false
@@ -315,7 +413,7 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
       // 'transactionId': paymentResult['transactionId'],
       "staff_Id": staffId.toString(),
       "paymentType": paymentMode,
-      "updatedAt": _dateTime.toString(),
+      "updatedAt": DateTime.now().toString(),
     });
     // if (widget.fee['type'] == 'ADVANCEFEE' ||
     //     widget.fee['type'] == 'DAILYTREATMENTFEE') {
@@ -535,14 +633,20 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text("Cancel"),
+                child: const Text(
+                  "Cancel",
+                  style: TextStyle(color: Colors.black),
+                ),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.redAccent,
                 ),
                 onPressed: () => Navigator.pop(ctx, true),
-                child: const Text("Remove"),
+                child: const Text(
+                  "Remove",
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ],
           ),
@@ -661,38 +765,25 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
       final confirm = await _confirmRemove(optionKey);
       if (!confirm) return;
 
-      try {
-        // 🔹 Remove option from backend test
-        options.remove(optionKey);
-        await TestingScanningService().updateTesting(test['id'], {
-          "selectedOptionAmounts": options,
-          "selectedOptions": options.keys.toList(),
-          "amount": (test['amount'] ?? 0) - optionAmount,
-        });
+      // 🔹 Store removal locally - will be processed on Pay Bill click
+      options.remove(optionKey);
+      _pendingOptionRemovals.add({
+        'testId': test['id'],
+        'optionKey': optionKey,
+        'optionAmount': optionAmount,
+        'updatedOptions': Map.from(options),
+      });
 
-        // 🔹 Update payment
-        final num updatedTotal = (widget.fee['amount'] - optionAmount).clamp(
-          0,
-          double.infinity,
-        );
-        await PaymentService().updatePayment(widget.fee['id'], {
-          'amount': updatedTotal,
-          'updatedAt': DateTime.now().toString(),
-        });
-
-        // 🔹 Update UI
-        test['selectedOptionAmounts'] = options;
-        test['amount'] = (test['amount'] ?? 0) - optionAmount;
-        setState(() {
-          widget.fee['amount'] = updatedTotal;
-        });
-      } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Failed to remove option")),
-          );
-        }
-      }
+      // 🔹 Update UI locally
+      final num updatedTotal = (widget.fee['amount'] - optionAmount).clamp(
+        0,
+        double.infinity,
+      );
+      test['selectedOptionAmounts'] = options;
+      test['amount'] = (test['amount'] ?? 0) - optionAmount;
+      setState(() {
+        widget.fee['amount'] = updatedTotal;
+      });
     }
 
     Future<void> removeTestAt(int index) async {
@@ -712,154 +803,140 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
       final confirm = await _confirmRemove(test['title'] ?? 'Test');
       if (!confirm) return;
 
-      try {
-        // 🔹 Delete from backend
-        await TestingScanningService().deleteTesting(test['id']);
+      // 🔹 Store removal locally - will be processed on Pay Bill click
+      _pendingTestRemovals.add(test['id'] as int);
 
-        // 🔹 Update payment
-        final num updatedTotal = (widget.fee['amount'] - testAmount).clamp(
-          0,
-          double.infinity,
-        );
-        await PaymentService().updatePayment(widget.fee['id'], {
-          'amount': updatedTotal,
-          'updatedAt': DateTime.now().toString(),
-        });
-
-        // 🔹 Update UI locally
-        tests.removeAt(index);
-        setState(() {
-          widget.fee['amount'] = updatedTotal;
-          widget.fee['TestingAndScanningPatients'] = tests;
-        });
-      } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Failed to remove test")),
-          );
-        }
-      }
-    }
-
-    void editAmountDialog(
-      BuildContext context,
-      num currentAmount,
-      Function(num) onSave,
-    ) {
-      final controller = TextEditingController(text: currentAmount.toString());
-
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) {
-          bool isLoading = false;
-
-          return StatefulBuilder(
-            builder: (context, setDialogState) {
-              return AlertDialog(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                title: const Text(
-                  "Edit Amount",
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: controller,
-                      autofocus: true,
-                      keyboardType: TextInputType.number,
-                      enabled: !isLoading,
-                      decoration: InputDecoration(
-                        labelText: "Amount",
-                        prefixText: "₹ ",
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                actionsPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: isLoading ? null : () => Navigator.pop(context),
-                    child: const Text("Cancel"),
-                  ),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
-                    ),
-                    onPressed: isLoading
-                        ? null
-                        : () async {
-                            final paymentId = widget.fee['id'];
-                            final int admissionId =
-                                widget.fee['Admission']['id'];
-
-                            final List<int> chargesIds =
-                                (widget.fee['Admission']['charges'] as List)
-                                    .cast<Map<String, dynamic>>()
-                                    .where(
-                                      (charge) =>
-                                          charge['description'] ==
-                                              'Inpatient Advance Fee' &&
-                                          charge['admissionId'] == admissionId,
-                                    )
-                                    .map((charge) => charge['id'] as int)
-                                    .toList();
-                            final value = num.tryParse(controller.text);
-
-                            if (value == null) return;
-
-                            setDialogState(() => isLoading = true);
-
-                            try {
-                              await PaymentService().updatePayment(paymentId, {
-                                'amount': value,
-                                'updatedAt': _dateTime.toString(),
-                              });
-                              await ChargeService()
-                                  .updateAdvanceChargesByAdmission(
-                                    chargesIds: chargesIds,
-                                    amount: value,
-                                  );
-
-                              onSave(value);
-                              if (context.mounted) Navigator.pop(context);
-                            } catch (e) {
-                              setDialogState(() => isLoading = false);
-                            }
-                          },
-                    child: isLoading
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text("Update"),
-                  ),
-                ],
-              );
-            },
-          );
-        },
+      // 🔹 Update UI locally
+      final num updatedTotal = (widget.fee['amount'] - testAmount).clamp(
+        0,
+        double.infinity,
       );
+      tests.removeAt(index);
+      setState(() {
+        widget.fee['amount'] = updatedTotal;
+        widget.fee['TestingAndScanningPatients'] = tests;
+      });
     }
+
+    // void editAmountDialog(
+    //   BuildContext context,
+    //   num currentAmount,
+    //   Function(num) onSave,
+    // ) {
+    //   final controller = TextEditingController(text: currentAmount.toString());
+    //
+    //   showDialog(
+    //     context: context,
+    //     barrierDismissible: false,
+    //     builder: (_) {
+    //       bool isLoading = false;
+    //
+    //       return StatefulBuilder(
+    //         builder: (context, setDialogState) {
+    //           return AlertDialog(
+    //             shape: RoundedRectangleBorder(
+    //               borderRadius: BorderRadius.circular(16),
+    //             ),
+    //             title: const Text(
+    //               "Edit Amount",
+    //               style: TextStyle(fontWeight: FontWeight.w600),
+    //             ),
+    //             content: Column(
+    //               mainAxisSize: MainAxisSize.min,
+    //               children: [
+    //                 TextField(
+    //                   controller: controller,
+    //                   autofocus: true,
+    //                   keyboardType: TextInputType.number,
+    //                   enabled: !isLoading,
+    //                   decoration: InputDecoration(
+    //                     labelText: "Amount",
+    //                     prefixText: "₹ ",
+    //                     border: OutlineInputBorder(
+    //                       borderRadius: BorderRadius.circular(12),
+    //                     ),
+    //                   ),
+    //                 ),
+    //               ],
+    //             ),
+    //             actionsPadding: const EdgeInsets.symmetric(
+    //               horizontal: 16,
+    //               vertical: 12,
+    //             ),
+    //             actions: [
+    //               TextButton(
+    //                 onPressed: isLoading ? null : () => Navigator.pop(context),
+    //                 child: const Text("Cancel"),
+    //               ),
+    //               ElevatedButton(
+    //                 style: ElevatedButton.styleFrom(
+    //                   shape: RoundedRectangleBorder(
+    //                     borderRadius: BorderRadius.circular(10),
+    //                   ),
+    //                   padding: const EdgeInsets.symmetric(
+    //                     horizontal: 24,
+    //                     vertical: 12,
+    //                   ),
+    //                 ),
+    //                 onPressed: isLoading
+    //                     ? null
+    //                     : () async {
+    //                         final paymentId = widget.fee['id'];
+    //                         final int admissionId =
+    //                             widget.fee['Admission']['id'];
+    //
+    //                         final List<int> chargesIds =
+    //                             (widget.fee['Admission']['charges'] as List)
+    //                                 .cast<Map<String, dynamic>>()
+    //                                 .where(
+    //                                   (charge) =>
+    //                                       charge['description'] ==
+    //                                           'Inpatient Advance Fee' &&
+    //                                       charge['admissionId'] == admissionId,
+    //                                 )
+    //                                 .map((charge) => charge['id'] as int)
+    //                                 .toList();
+    //                         final value = num.tryParse(controller.text);
+    //
+    //                         if (value == null) return;
+    //
+    //                         setDialogState(() => isLoading = true);
+    //
+    //                         try {
+    //                           await PaymentService().updatePayment(paymentId, {
+    //                             'amount': value,
+    //                             'updatedAt': _dateTime.toString(),
+    //                           });
+    //                           await ChargeService()
+    //                               .updateAdvanceChargesByAdmission(
+    //                                 chargesIds: chargesIds,
+    //                                 amount: value,
+    //                               );
+    //
+    //                           onSave(value);
+    //                           if (context.mounted) Navigator.pop(context);
+    //                         } catch (e) {
+    //                           setDialogState(() => isLoading = false);
+    //                         }
+    //                       },
+    //                 child: isLoading
+    //                     ? const SizedBox(
+    //                         width: 18,
+    //                         height: 18,
+    //                         child: CircularProgressIndicator(
+    //                           strokeWidth: 2,
+    //                           color: Colors.white,
+    //                         ),
+    //                       )
+    //                     : const Text("Update"),
+    //               ),
+    //             ],
+    //           );
+    //         },
+    //       );
+    //     },
+    //   );
+    // }
 
     //// ===================== Daily charges cal..---------------------
     final charges = (admission?['charges'] ?? [])
@@ -878,6 +955,37 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
 
       return parse(a).compareTo(parse(b));
     });
+    Map<String, List<Map<String, dynamic>>> groupByDate(List charges) {
+      Map<String, List<Map<String, dynamic>>> dayWise = {};
+
+      for (final c in charges) {
+        // Skip advance fee
+        if ((c['description'] ?? '').toString().toUpperCase() ==
+            'INPATIENT ADVANCE FEE')
+          continue;
+
+        final date = c['createdAt'] ?? c['chargeDate'];
+        if (date == null) continue;
+
+        final day = DateTime.tryParse(date.toString());
+        if (day == null) continue;
+
+        final dateKey =
+            "${day.day.toString().padLeft(2, '0')} "
+            "${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][day.month - 1]} "
+            "${day.year}";
+
+        if (!dayWise.containsKey(dateKey)) {
+          dayWise[dateKey] = [];
+        }
+        dayWise[dateKey]!.add(c);
+      }
+
+      return dayWise;
+    }
+
+    // In your widget
+    final dayWiseCharges = groupByDate(charges);
 
     String formatDate(DateTime d) =>
         "${d.day.toString().padLeft(2, '0')} "
@@ -915,6 +1023,59 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
       'Nurse Fee': [],
       'Others': [],
     };
+
+    // Group by category (your existing logic)
+    // Map<String, List<Map<String, dynamic>>> _groupByCategory(
+    //   List<Map<String, dynamic>> charges,
+    // ) {
+    //   const knownCharges = {'ROOM RENT', 'DOCTOR FEE', 'NURSE FEE'};
+    //
+    //   Map<String, List<Map<String, dynamic>>> grouped = {
+    //     'Room Rent': [],
+    //     'Doctor Fee': [],
+    //     'Nurse Fee': [],
+    //     'Others': [],
+    //   };
+    //
+    //   for (final c in charges) {
+    //     final desc = (c['description'] ?? '').toString().toUpperCase();
+    //     if (knownCharges.contains(desc)) {
+    //       if (desc == 'ROOM RENT') grouped['Room Rent']!.add(c);
+    //       if (desc == 'DOCTOR FEE') grouped['Doctor Fee']!.add(c);
+    //       if (desc == 'NURSE FEE') grouped['Nurse Fee']!.add(c);
+    //     } else {
+    //       grouped['Others']!.add(c);
+    //     }
+    //   }
+    //
+    //   return grouped;
+    // }
+
+    Map<String, List<Map<String, dynamic>>> _groupByCategory(
+      List<Map<String, dynamic>> charges,
+    ) {
+      const knownCharges = {'ROOM RENT', 'DOCTOR FEE', 'NURSE FEE'};
+
+      Map<String, List<Map<String, dynamic>>> grouped = {
+        'Room Rent': [],
+        'Doctor Fee': [],
+        'Nurse Fee': [],
+        'Others': [],
+      };
+
+      for (final c in charges) {
+        final desc = (c['description'] ?? '').toString().toUpperCase();
+        if (knownCharges.contains(desc)) {
+          if (desc == 'ROOM RENT') grouped['Room Rent']!.add(c);
+          if (desc == 'DOCTOR FEE') grouped['Doctor Fee']!.add(c);
+          if (desc == 'NURSE FEE') grouped['Nurse Fee']!.add(c);
+        } else {
+          grouped['Others']!.add(c);
+        }
+      }
+
+      return grouped;
+    }
 
     for (final c in charges) {
       final desc = (c['description'] ?? '').toString().toUpperCase();
@@ -1418,15 +1579,19 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                       title: "Inpatient Advance",
                       amount: widget.fee['amount'],
                       removable: false,
-                      onEdit: () => editAmountDialog(
-                        context,
-                        widget.fee['amount'],
-                        (newAmount) {
-                          setState(() {
-                            widget.fee['amount'] = newAmount;
-                          });
-                        },
-                      ),
+                      originalAmount:
+                          widget.fee['originalAmount'] ?? widget.fee['amount'],
+                      onAmountChanged: (newAmount) {
+                        // Store original amount if not already stored
+                        widget.fee['originalAmount'] ??= widget.fee['amount'];
+
+                        // Store new amount locally - will be saved on Pay Bill click
+                        _pendingAdvanceFeeAmount = newAmount;
+
+                        setState(() {
+                          widget.fee['amount'] = newAmount;
+                        });
+                      },
                     ),
                   ],
 
@@ -1472,14 +1637,66 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                     //   ],
                     // ),
                     Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        dateHeader(charges),
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: dayWiseCharges.entries.map((entry) {
+                        final grouped = _groupByCategory(entry.value);
+                        final total = grouped.values
+                            .expand((e) => e)
+                            .fold<num>(
+                              0,
+                              (sum, c) =>
+                                  sum +
+                                  (num.tryParse(c['amount'].toString()) ?? 0),
+                            );
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Date Header
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Row(
+                                children: [
+                                  Text(
+                                    entry.key,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 20,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  Text(
+                                    '₹$total',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 20,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
 
-                        for (final entry in grouped.entries)
-                          if (entry.value.isNotEmpty)
-                            _groupedFeeRow(entry.key, entry.value),
-                      ],
+                            // Categories
+                            if (grouped['Room Rent']!.isNotEmpty)
+                              _groupedFeeRow(
+                                'Room Rent',
+                                grouped['Room Rent']!,
+                              ),
+                            if (grouped['Doctor Fee']!.isNotEmpty)
+                              _groupedFeeRow(
+                                'Doctor Fee',
+                                grouped['Doctor Fee']!,
+                              ),
+                            if (grouped['Nurse Fee']!.isNotEmpty)
+                              _groupedFeeRow(
+                                'Nurse Fee',
+                                grouped['Nurse Fee']!,
+                              ),
+                            if (grouped['Others']!.isNotEmpty)
+                              _groupedFeeRow('Others', grouped['Others']!),
+                          ],
+                        );
+                      }).toList(),
                     ),
                   ],
 
@@ -2171,29 +2388,263 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
   //     removable: false,
   //   );
   // }
+  // Widget _groupedFeeRow(String title, List<Map<String, dynamic>> items) {
+  //   final total = items.fold<num>(
+  //     0,
+  //     (sum, c) => sum + (num.tryParse(c['amount'].toString()) ?? 0),
+  //   );
+  //
+  //   // ✅ count UNIQUE days (not number of charges)
+  //   final uniqueDays = <String>{};
+  //   for (final c in items) {
+  //     final date = DateTime.parse(c['createdAt']);
+  //     uniqueDays.add('${date.year}-${date.month}-${date.day}');
+  //   }
+  //
+  //   final days = uniqueDays.length;
+  //
+  //   final displayTitle = (title != 'Others' && days > 1)
+  //       ? "$title × ${days}d"
+  //       : title;
+  //
+  //   return feeRowWithRemove(
+  //     title: displayTitle,
+  //     amount: total,
+  //     removable: false,
+  //   );
+  // }
+
+  Future<void> _updateCharge(Map<String, dynamic> charge, num decrement) async {
+    ;
+    try {
+      // 🔽 Payment update
+      await PaymentService().updateDecreasePayment(widget.fee['id'], {
+        'decrementAmount': decrement,
+        'chargeId': charge['id'],
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Amount updated successfully')),
+      );
+    } catch (e) {
+      _showError('Failed to update amount');
+    }
+  }
+
+  void _showError(String msg) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
+  }
+
   Widget _groupedFeeRow(String title, List<Map<String, dynamic>> items) {
+    //print('items $items');
     final total = items.fold<num>(
       0,
       (sum, c) => sum + (num.tryParse(c['amount'].toString()) ?? 0),
     );
 
-    // ✅ count UNIQUE days (not number of charges)
-    final uniqueDays = <String>{};
-    for (final c in items) {
-      final date = DateTime.parse(c['createdAt']);
-      uniqueDays.add('${date.year}-${date.month}-${date.day}');
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        feeRowWithRemove(title: title, amount: total, removable: false),
+
+        ...items.map((c) => _breakupRow(c)),
+      ],
+    );
+  }
+
+  DateTime parseStaffDate(String value) {
+    // Format: yyyy-MM-dd hh:mm a
+    final parts = value.split(' ');
+    final date = parts[0];
+    final time = parts[1];
+    final period = parts[2];
+
+    final d = DateTime.parse(date);
+    final t = time.split(':');
+
+    int hour = int.parse(t[0]);
+    final minute = int.parse(t[1]);
+
+    if (period == 'PM' && hour != 12) hour += 12;
+    if (period == 'AM' && hour == 12) hour = 0;
+
+    return DateTime(d.year, d.month, d.day, hour, minute);
+  }
+
+  Map<String, dynamic>? getStaffForCharge(
+    Map<String, dynamic> admission,
+    DateTime chargeDate,
+  ) {
+    final List staffChanges = admission['staffChange'] ?? [];
+
+    if (staffChanges.isEmpty) return null;
+
+    // Sort by dateTime
+    staffChanges.sort((a, b) {
+      return parseStaffDate(
+        a['dateTime'],
+      ).compareTo(parseStaffDate(b['dateTime']));
+    });
+
+    Map<String, dynamic>? staff;
+
+    for (final change in staffChanges) {
+      final changeTime = parseStaffDate(change['dateTime']);
+      if (!chargeDate.isBefore(changeTime)) {
+        staff = change;
+      }
     }
 
-    final days = uniqueDays.length;
+    return staff;
+  }
 
-    final displayTitle = (title != 'Others' && days > 1)
-        ? "$title × ${days}d"
-        : title;
+  Map<String, dynamic>? getWardForCharge(
+    Map<String, dynamic> admission,
+    DateTime chargeDate,
+  ) {
+    final List wardChanges = admission['wardChange'] ?? [];
 
-    return feeRowWithRemove(
-      title: displayTitle,
-      amount: total,
-      removable: false,
+    // If no ward change → use current bed ward
+    if (wardChanges.isEmpty) {
+      return admission['bed']?['ward'];
+    }
+
+    // Sort ward changes by movedAt (ASC)
+    wardChanges.sort((a, b) {
+      return DateTime.parse(
+        a['movedAt'],
+      ).compareTo(DateTime.parse(b['movedAt']));
+    });
+
+    // 🔑 Initial ward = fromWard of first change
+    Map<String, dynamic>? currentWard = {
+      'name': wardChanges.first['fromWard']['wardName'],
+      'type': admission['bed']?['ward']?['type'],
+      'bedNo': admission['bed']?['bedNo'],
+    };
+
+    // Apply changes if chargeDate >= movedAt
+    for (final change in wardChanges) {
+      final movedAt = DateTime.parse(change['movedAt']);
+
+      if (!chargeDate.isBefore(movedAt)) {
+        currentWard = {
+          'name': change['toWard']['wardName'],
+          'type': admission['bed']?['ward']?['type'],
+          'bedNo': admission['bed']?['bedNo'],
+        };
+      }
+    }
+
+    return currentWard;
+  }
+
+  String getStaffDisplayName(String? userId) {
+    if (userId == null || allStaff.isEmpty) return '';
+
+    final staff = allStaff.firstWhere(
+      (s) => s['user_Id'].toString() == userId.toString(),
+      orElse: () => {},
+    );
+
+    if (staff.isEmpty) return '';
+
+    final role = (staff['role'] ?? '').toString().toUpperCase();
+    final name = staff['name'] ?? '';
+
+    if (role == 'DOCTOR') {
+      final specialist = staff['specialist'];
+      return specialist != null && specialist.toString().isNotEmpty
+          ? '$name ($specialist)'
+          : name;
+    }
+
+    if (role == 'NURSE') {
+      return name;
+    }
+
+    return name;
+  }
+
+  Widget _breakupRow(Map<String, dynamic> charge) {
+    final desc = (charge['description'] ?? '').toString().toUpperCase();
+    final admission = widget.fee['Admission'];
+    // print('admission $admission');
+    // print('admission ${admission['staffChanges']}');
+
+    String title;
+
+    // ⏰ Charge date
+    final chargeDate = DateTime.parse(
+      (charge['createdAt'] ?? charge['chargeDate']).toString(),
+    );
+
+    /// ROOM RENT → resolve ward by date
+    if (desc == 'ROOM RENT') {
+      final ward = getWardForCharge(admission, chargeDate);
+      title =
+          '${ward?['name'] ?? 'Ward'} - ${ward?['type'] ?? ''} • ${ward?['bedNo'] ?? ''}'
+              .trim();
+    }
+    /// DOCTOR FEE
+    else if (desc == 'DOCTOR FEE') {
+      final staff = getStaffForCharge(admission, chargeDate);
+      title = getStaffDisplayName(staff?['doctor']);
+    } else if (desc == 'NURSE FEE') {
+      final staff = getStaffForCharge(admission, chargeDate);
+      title = getStaffDisplayName(staff?['nurse']);
+    }
+    /// OTHERS
+    else {
+      title = charge['description'] ?? 'Charge';
+    }
+
+    final num currentAmount =
+        num.tryParse(charge['amount']?.toString() ?? '0') ?? 0;
+    // Store original amount if not already stored
+    charge['originalAmount'] ??= currentAmount;
+    final num maxAmount = charge['originalAmount'];
+
+    return Padding(
+      padding: const EdgeInsets.only(left: 8, bottom: 3, right: 8, top: 3),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+              '• $title',
+              style: TextStyle(
+                fontSize: 13,
+                overflow: TextOverflow.ellipsis,
+                color: Colors.grey.shade600,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          // Editable amount field for pending payments
+          if (widget.index != 1)
+            SizedBox(
+              width: 80,
+              child: _EditableAmountField(
+                initialAmount: currentAmount,
+                maxAmount: maxAmount,
+                onAmountChanged: (newAmount) {
+                  // Store changes locally - will be saved on Pay Bill click
+                  final chargeId = charge['id'] as int;
+                  setState(() {
+                    _editedCharges[chargeId] = newAmount;
+                    charge['amount'] = newAmount;
+                  });
+                },
+              ),
+            )
+          else
+            Text('₹${charge['amount']}', style: const TextStyle(fontSize: 13)),
+        ],
+      ),
     );
   }
 
@@ -2306,35 +2757,62 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
     required bool removable,
     VoidCallback? onRemove,
     VoidCallback? onEdit,
+    num? originalAmount,
+    Function(num)? onAmountChanged,
   }) {
-    if (amount == null || amount == 0) return const SizedBox.shrink();
+    if (amount == null || amount < 0) return const SizedBox.shrink();
+
+    // Use original amount if provided, otherwise use current amount as original
+    final num maxAmount = originalAmount ?? amount;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 0),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          /// Amount Row (tap to edit)
+          /// Title
           Expanded(
-            child: InkWell(onTap: onEdit, child: feeRow(title, amount)),
+            flex: 2,
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: Colors.grey[800],
+              ),
+            ),
           ),
 
-          /// Action Icon (Edit OR Remove)
-          if (widget.index != 1)
+          /// Editable Amount Text Field (only for pending payments)
+          if (widget.index != 1 && onAmountChanged != null)
+            SizedBox(
+              width: 100,
+              child: _EditableAmountField(
+                initialAmount: amount,
+                maxAmount: maxAmount,
+                onAmountChanged: onAmountChanged,
+              ),
+            )
+          else
+            Text(
+              "₹ ${amount.toStringAsFixed(0)}",
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+
+          /// Remove Icon (only if removable and no edit callback)
+          if (widget.index != 1 && onEdit == null && removable)
             IconButton(
               icon: Icon(
-                onEdit != null
-                    ? Icons.edit_outlined
-                    : Icons.remove_circle_outline,
+                Icons.remove_circle_outline,
                 size: 20,
-                color: onEdit != null
-                    ? const Color(0xFFBF955E)
-                    : (removable ? Colors.redAccent : Colors.grey),
+                color: Colors.redAccent,
               ),
-              onPressed: onEdit ?? (removable ? onRemove : null),
-              tooltip: onEdit != null
-                  ? "Edit $title"
-                  : (removable ? "Remove $title" : null),
+              onPressed: onRemove,
+              tooltip: "Remove $title",
             ),
         ],
       ),
@@ -2408,7 +2886,7 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
               title,
               style: TextStyle(
                 fontSize: isTotal ? 17 : 15,
-                fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
+                fontWeight: isTotal ? FontWeight.w800 : FontWeight.w700,
                 color: isTotal ? Colors.black : Colors.grey[800],
               ),
             ),
@@ -2684,5 +3162,135 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
       return '$first $last'.trim();
     }
     return name.toString();
+  }
+}
+
+/// Editable Amount Field Widget for Fee Summary
+class _EditableAmountField extends StatefulWidget {
+  final num initialAmount;
+  final num maxAmount;
+  final Function(num) onAmountChanged;
+
+  const _EditableAmountField({
+    required this.initialAmount,
+    required this.maxAmount,
+    required this.onAmountChanged,
+  });
+
+  @override
+  State<_EditableAmountField> createState() => _EditableAmountFieldState();
+}
+
+class _EditableAmountFieldState extends State<_EditableAmountField> {
+  late TextEditingController _controller;
+  bool _hasError = false;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(
+      text: widget.initialAmount.toStringAsFixed(0),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _validateAndUpdate(String value) {
+    final newAmount = num.tryParse(value);
+
+    if (newAmount == null) {
+      setState(() {
+        _hasError = true;
+        _errorMessage = 'Invalid';
+      });
+      return;
+    }
+
+    if (newAmount > widget.maxAmount) {
+      setState(() {
+        _hasError = true;
+        _errorMessage = 'Max: ₹${widget.maxAmount.toStringAsFixed(0)}';
+      });
+      // Revert to max amount
+      _controller.text = widget.maxAmount.toStringAsFixed(0);
+      widget.onAmountChanged(widget.maxAmount);
+      return;
+    }
+
+    if (newAmount < 0) {
+      setState(() {
+        _hasError = true;
+        _errorMessage = 'Min: ₹0';
+      });
+      _controller.text = '0';
+      widget.onAmountChanged(0);
+      return;
+    }
+
+    setState(() {
+      _hasError = false;
+      _errorMessage = null;
+    });
+    widget.onAmountChanged(newAmount);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          height: 36,
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: _hasError ? Colors.red : Colors.grey.shade300,
+              width: 1,
+            ),
+          ),
+          child: TextField(
+            controller: _controller,
+            keyboardType: TextInputType.number,
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: _hasError ? Colors.red : Colors.black87,
+            ),
+            decoration: InputDecoration(
+              prefixText: '₹ ',
+              prefixStyle: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 10,
+                vertical: 8,
+              ),
+              border: InputBorder.none,
+              isDense: true,
+            ),
+            onChanged: _validateAndUpdate,
+            onSubmitted: _validateAndUpdate,
+          ),
+        ),
+        if (_hasError && _errorMessage != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(
+              _errorMessage!,
+              style: const TextStyle(color: Colors.red, fontSize: 10),
+            ),
+          ),
+      ],
+    );
   }
 }
