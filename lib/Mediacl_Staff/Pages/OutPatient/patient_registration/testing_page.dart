@@ -87,7 +87,10 @@ class TestingPageState extends State<TestingPage> {
 
     return PopScope(
       canPop: false,
-      onPopInvokedWithResult: (_, __) => _submitAllTests(),
+      onPopInvokedWithResult: (didPop, __) {
+        if (didPop) return;
+        _submitAllTests();
+      },
       child: Scaffold(
         appBar: PreferredSize(
           preferredSize: const Size.fromHeight(100),
@@ -194,86 +197,143 @@ class TestingPageState extends State<TestingPage> {
 
     final displayedOptions = showAll ? options : options.take(4).toList();
 
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 5,
-      child: ExpansionTile(
-        key: ValueKey('test_$index'),
-        title: Center(
-          child: Text(
-            testName,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-        ),
-        initiallyExpanded: _expandedIndex == index,
-        onExpansionChanged: (v) {
-          setState(() => _expandedIndex = v ? index : -1);
-        },
-        children: [
-          ...displayedOptions.map((opt) {
-            final name = opt['optionName'];
-            final price = opt['price'];
-            final selected = selectedOptionsAmount.containsKey(name);
+        ],
+      ),
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 0,
+        child: ExpansionTile(
+          key: ValueKey('test_$index'),
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          initiallyExpanded: _expandedIndex == index,
+          onExpansionChanged: (v) {
+            setState(() => _expandedIndex = v ? index : -1);
+          },
+          leading: CircleAvatar(
+            backgroundColor: primaryColor.withOpacity(0.15),
+            child: Icon(Icons.science, color: primaryColor, size: 20),
+          ),
+          title: Text(
+            testName,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
+          subtitle: selectedOptionsAmount.isNotEmpty
+              ? Text(
+                  "Selected: ${selectedOptionsAmount.length}",
+                  style: TextStyle(color: primaryColor),
+                )
+              : const Text("Tap to select tests"),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          children: [
+            /// Options
+            ...displayedOptions.map((opt) {
+              final String name = opt['optionName'];
+              final int price = opt['price'];
+              final bool selected = selectedOptionsAmount.containsKey(name);
 
-            return CheckboxListTile(
-              value: selected,
-              activeColor: primaryColor,
-              title: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(name, style: const TextStyle(fontSize: 16)),
-                  Text(
-                    "₹ $price",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: primaryColor,
-                    ),
+              return Container(
+                margin: const EdgeInsets.symmetric(vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: selected
+                      ? primaryColor.withOpacity(0.08)
+                      : Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: selected ? primaryColor : Colors.grey.shade300,
                   ),
-                ],
-              ),
-              onChanged: (v) {
-                setState(() {
-                  if (v == true) {
-                    selectedOptionsAmount[name] = price;
-                  } else {
-                    selectedOptionsAmount.remove(name);
-                  }
-
-                  if (selectedOptionsAmount.isEmpty) {
-                    savedTests.remove(testName);
-                  } else {
-                    savedTests[testName] = {
-                      'options': selectedOptionsAmount.keys.toSet(),
-                      'selectedOptionsAmount': selectedOptionsAmount,
-                      'description': descControllers[testName]!.text,
-                      'totalAmount': selectedOptionsAmount.values.fold<int>(
-                        0,
-                        (a, b) => a + b,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(name, style: const TextStyle(fontSize: 15)),
+                    ),
+                    Chip(
+                      label: Text("₹ $price"),
+                      backgroundColor: primaryColor.withOpacity(0.15),
+                      labelStyle: TextStyle(
+                        color: primaryColor,
+                        fontWeight: FontWeight.w500,
                       ),
-                    };
-                  }
-                });
-              },
-            );
-          }),
-          if (options.length > 4)
-            TextButton(
-              onPressed: () => setState(() => showAllMap[testName] = !showAll),
-              child: Text(
-                showAll ? "Show Less" : "Show All",
-                style: TextStyle(color: primaryColor),
+                    ),
+                    Checkbox(
+                      value: selected,
+                      activeColor: primaryColor,
+                      onChanged: (v) {
+                        setState(() {
+                          if (v == true) {
+                            selectedOptionsAmount[name] = price;
+                          } else {
+                            selectedOptionsAmount.remove(name);
+                          }
+
+                          if (selectedOptionsAmount.isEmpty) {
+                            savedTests.remove(testName);
+                          } else {
+                            savedTests[testName] = {
+                              'options': selectedOptionsAmount.keys.toSet(),
+                              'selectedOptionsAmount': selectedOptionsAmount,
+                              'description': descControllers[testName]!.text,
+                              'totalAmount': selectedOptionsAmount.values
+                                  .fold<int>(0, (a, b) => a + b),
+                            };
+                          }
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              );
+            }),
+
+            /// Show All / Less
+            if (options.length > 4)
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () =>
+                      setState(() => showAllMap[testName] = !showAll),
+                  child: Text(
+                    showAll ? "Show Less" : "Show All",
+                    style: TextStyle(color: primaryColor),
+                  ),
+                ),
+              ),
+
+            const SizedBox(height: 12),
+
+            /// Description Section
+            Text(
+              "Description / Notes",
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: primaryColor,
               ),
             ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: TextField(
+            const SizedBox(height: 6),
+            TextField(
               controller: descControllers[testName],
               maxLines: 2,
               decoration: InputDecoration(
-                labelText: "Description / Notes",
+                hintText: "Enter notes...",
+                filled: true,
+                fillColor: Colors.grey.shade100,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
                 ),
               ),
               onChanged: (v) {
@@ -282,8 +342,8 @@ class TestingPageState extends State<TestingPage> {
                 }
               },
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

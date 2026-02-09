@@ -52,7 +52,9 @@ class _MedicalStaffDashboardPageState extends State<MedicalStaffDashboardPage> {
   @override
   void initState() {
     super.initState();
-    loadAccessAndInitPages();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      loadAccessAndInitPages();
+    });
   }
 
   // ===================== LOAD ROLE (FIXED) =====================

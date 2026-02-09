@@ -86,7 +86,10 @@ class ScanningPageState extends State<ScanningPage> {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      onPopInvokedWithResult: (_, __) => _submitAllScans(),
+      onPopInvokedWithResult: (didPop, __) {
+        if (didPop) return;
+        _submitAllScans();
+      },
       child: Scaffold(
         appBar: _buildAppBar(),
         body: _isLoading
@@ -196,87 +199,134 @@ class ScanningPageState extends State<ScanningPage> {
     final bool showAll = showAllMap[scanName] ?? false;
     final displayedOptions = showAll ? options : options.take(5).toList();
 
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ExpansionTile(
-        key: ValueKey(scanName),
-        leading: Icon(FontAwesomeIcons.vials, color: primaryColor),
-        title: Center(
-          child: Text(
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          leading: CircleAvatar(
+            backgroundColor: primaryColor.withOpacity(0.15),
+            child: Icon(FontAwesomeIcons.vials, color: primaryColor, size: 18),
+          ),
+          title: Text(
             scanName,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
           ),
-        ),
-        initiallyExpanded: _expandedScanName == scanName,
-        onExpansionChanged: (expanded) {
-          setState(() {
-            _expandedScanName = expanded ? scanName : null;
-          });
-        },
-        children: [
-          Divider(
-            thickness: 1.5,
-            color: primaryColor.withValues(alpha: 0.6),
-            indent: 30,
-            endIndent: 30,
-          ),
-          ...displayedOptions.map((opt) {
-            final String name = opt['optionName'] ?? '';
-            final int price = opt['price'] ?? 0;
-            final bool selected = selectedAmounts.containsKey(name);
+          subtitle: selectedAmounts.isNotEmpty
+              ? Text(
+                  "Selected: ${selectedAmounts.length}",
+                  style: TextStyle(color: primaryColor),
+                )
+              : const Text("Tap to select scans"),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          children: [
+            ...displayedOptions.map((opt) {
+              final String name = opt['optionName'] ?? '';
+              final int price = opt['price'] ?? 0;
+              final bool selected = selectedAmounts.containsKey(name);
 
-            return CheckboxListTile(
-              value: selected,
-              activeColor: primaryColor,
-              title: Text('$name ( ₹ $price )'),
-              controlAffinity: ListTileControlAffinity.trailing,
-              onChanged: (v) {
-                setState(() {
-                  if (v == true) {
-                    selectedAmounts[name] = price;
-                  } else {
-                    selectedAmounts.remove(name);
-                  }
+              return Container(
+                margin: const EdgeInsets.symmetric(vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: selected
+                      ? primaryColor.withOpacity(0.08)
+                      : Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: selected ? primaryColor : Colors.grey.shade300,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(name, style: const TextStyle(fontSize: 15)),
+                    ),
+                    Chip(
+                      label: Text("₹ $price"),
+                      backgroundColor: primaryColor.withOpacity(0.15),
+                      labelStyle: TextStyle(color: primaryColor),
+                    ),
+                    Checkbox(
+                      value: selected,
+                      activeColor: primaryColor,
+                      onChanged: (v) {
+                        setState(() {
+                          if (v == true) {
+                            selectedAmounts[name] = price;
+                          } else {
+                            selectedAmounts.remove(name);
+                          }
 
-                  if (selectedAmounts.isEmpty) {
-                    savedScans.remove(scanName);
-                  } else {
-                    savedScans[scanName] = {
-                      'amounts': selectedAmounts,
-                      'description': _descControllers[scanName]!.text,
-                      'totalAmount': selectedAmounts.values.fold(
-                        0,
-                        (a, b) => a + b,
-                      ),
-                    };
-                  }
-                });
-              },
-            );
-          }),
-          if (options.length > 5)
-            TextButton(
-              onPressed: () {
-                setState(() => showAllMap[scanName] = !showAll);
-              },
-              child: Text(
-                showAll ? 'Show Less' : 'Show All',
-                style: TextStyle(color: primaryColor),
+                          if (selectedAmounts.isEmpty) {
+                            savedScans.remove(scanName);
+                          } else {
+                            savedScans[scanName] = {
+                              'amounts': selectedAmounts,
+                              'description': _descControllers[scanName]!.text,
+                              'totalAmount': selectedAmounts.values.fold(
+                                0,
+                                (a, b) => a + b,
+                              ),
+                            };
+                          }
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              );
+            }),
+
+            if (options.length > 5)
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () =>
+                      setState(() => showAllMap[scanName] = !showAll),
+                  child: Text(
+                    showAll ? "Show Less" : "Show All",
+                    style: TextStyle(color: primaryColor),
+                  ),
+                ),
+              ),
+
+            const SizedBox(height: 12),
+
+            /// Description Section
+            Text(
+              "Notes / Findings",
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: primaryColor,
               ),
             ),
-          Padding(
-            padding: const EdgeInsets.all(8),
-            child: TextField(
+            const SizedBox(height: 6),
+            TextField(
               controller: _descControllers[scanName],
               maxLines: 3,
               decoration: InputDecoration(
-                hintText: "Enter findings or notes...",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+                hintText: "Enter clinical notes...",
                 filled: true,
-                fillColor: Colors.grey.shade50,
+                fillColor: Colors.grey.shade100,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
               ),
               onChanged: (val) {
                 if (savedScans.containsKey(scanName)) {
@@ -284,8 +334,8 @@ class ScanningPageState extends State<ScanningPage> {
                 }
               },
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

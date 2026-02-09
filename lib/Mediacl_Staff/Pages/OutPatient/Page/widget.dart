@@ -1082,11 +1082,11 @@ Future<pw.Document> buildPdf({
               "THANK YOU!",
               style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
             ),
-            pw.SizedBox(height: 2),
+            //pw.SizedBox(height: 2),
             pw.Align(
-              alignment: pw.Alignment.bottomCenter,
+              alignment: pw.Alignment.center,
               child: pw.Container(
-                margin: const pw.EdgeInsets.only(top: 10),
+                margin: const pw.EdgeInsets.only(top: 5),
                 padding: const pw.EdgeInsets.symmetric(vertical: 4),
                 // decoration: const pw.BoxDecoration(
                 //   border: pw.Border(
@@ -1096,8 +1096,8 @@ Future<pw.Document> buildPdf({
                 child: pw.Text(
                   "Powered by Ramchin Technologies Pvt Ltd",
                   style: pw.TextStyle(
-                    fontSize: 7,
-                    color: PdfColors.grey,
+                    fontSize: 8,
+                    color: PdfColors.black,
                     //fontWeight: pw.FontWeight.bold,
                     //letterSpacing: 0.5,
                   ),
@@ -1106,7 +1106,7 @@ Future<pw.Document> buildPdf({
               ),
             ),
 
-            pw.SizedBox(height: 2),
+            pw.SizedBox(height: 10),
           ],
         );
       },

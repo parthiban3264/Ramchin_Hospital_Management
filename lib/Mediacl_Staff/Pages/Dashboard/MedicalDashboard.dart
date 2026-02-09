@@ -475,8 +475,10 @@ class _MedicalDashboardPageState extends State<MedicalDashboardPage> {
   @override
   void initState() {
     super.initState();
+    //WidgetsBinding.instance.addPostFrameCallback((_) {
     _loadHospitalInfo();
     _loadMedicalData();
+    //});
   }
 
   Future<void> _loadHospitalInfo() async {

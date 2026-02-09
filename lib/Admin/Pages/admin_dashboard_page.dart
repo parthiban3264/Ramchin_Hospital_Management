@@ -56,6 +56,7 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
   @override
   void initState() {
     super.initState();
+
     _loadHospitalInfo();
     _loadDrOpData();
   }
