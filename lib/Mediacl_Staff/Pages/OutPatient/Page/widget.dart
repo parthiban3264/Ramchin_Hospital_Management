@@ -6,6 +6,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
+import '../../../../Services/admin_service.dart';
 import 'PaymentPage.dart';
 
 Future<Uint8List> fetchImageBytes(String imageUrl) async {
@@ -38,6 +39,7 @@ Future<pw.Document> buildPdf({
   required TextEditingController cellController,
   required TextEditingController dobController,
   required TextEditingController addressController,
+  required List<Map<String, dynamic>> loadStaff,
 }) async {
   // print('fee $fee');
   // print('feeType ${fee['type']}');
@@ -210,6 +212,64 @@ Future<pw.Document> buildPdf({
   final num displayAmount = isDischarge
       ? diff.abs()
       : FeesPaymentPageState.calculateTotal(fee['amount']);
+
+  Map<String, List<Map<String, dynamic>>> groupByDate(List charges) {
+    Map<String, List<Map<String, dynamic>>> dayWise = {};
+
+    for (final c in charges) {
+      // Skip advance fee
+      if ((c['description'] ?? '').toString().toUpperCase() ==
+          'INPATIENT ADVANCE FEE')
+        continue;
+
+      final date = c['createdAt'] ?? c['chargeDate'];
+      if (date == null) continue;
+
+      final day = DateTime.tryParse(date.toString());
+      if (day == null) continue;
+
+      final dateKey =
+          "${day.day.toString().padLeft(2, '0')} "
+          "${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][day.month - 1]} "
+          "${day.year}";
+
+      if (!dayWise.containsKey(dateKey)) {
+        dayWise[dateKey] = [];
+      }
+      dayWise[dateKey]!.add(c);
+    }
+
+    return dayWise;
+  }
+
+  // In your widget
+  final dayWiseCharges = groupByDate(charges);
+
+  Map<String, List<Map<String, dynamic>>> _groupByCategory(
+    List<Map<String, dynamic>> charges,
+  ) {
+    const knownCharges = {'ROOM RENT', 'DOCTOR FEE', 'NURSE FEE'};
+
+    Map<String, List<Map<String, dynamic>>> grouped = {
+      'Room Rent': [],
+      'Doctor Fee': [],
+      'Nurse Fee': [],
+      'Others': [],
+    };
+
+    for (final c in charges) {
+      final desc = (c['description'] ?? '').toString().toUpperCase();
+      if (knownCharges.contains(desc)) {
+        if (desc == 'ROOM RENT') grouped['Room Rent']!.add(c);
+        if (desc == 'DOCTOR FEE') grouped['Doctor Fee']!.add(c);
+        if (desc == 'NURSE FEE') grouped['Nurse Fee']!.add(c);
+      } else {
+        grouped['Others']!.add(c);
+      }
+    }
+
+    return grouped;
+  }
 
   final pdf = pw.Document();
   final blue = PdfColor.fromHex("#0A3D91");
@@ -734,15 +794,87 @@ Future<pw.Document> buildPdf({
             ],
             if (fee['type'] == 'DAILYTREATMENTFEE' ||
                 fee['type'] == 'DISCHARGEFEE') ...[
+              // pw.Column(
+              //   crossAxisAlignment: pw.CrossAxisAlignment.center,
+              //   children: [
+              //     dateHeader(charges, ttf, ttfBold),
+              //
+              //     for (final entry in grouped.entries)
+              //       if (entry.value.isNotEmpty)
+              //         _groupedFeeRow(entry.key, entry.value),
+              //   ],
+              // ),
               pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.center,
-                children: [
-                  dateHeader(charges, ttf, ttfBold),
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: dayWiseCharges.entries.map((entry) {
+                  final grouped = _groupByCategory(entry.value);
+                  final total = grouped.values
+                      .expand((e) => e)
+                      .fold<num>(
+                        0,
+                        (sum, c) =>
+                            sum + (num.tryParse(c['amount'].toString()) ?? 0),
+                      );
+                  return pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      // Date Header
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.symmetric(vertical: 8),
+                        child: pw.Row(
+                          children: [
+                            pw.Text(
+                              entry.key,
+                              style: pw.TextStyle(
+                                fontWeight: pw.FontWeight.bold,
+                                fontSize: 16,
+                                color: PdfColors.black,
+                              ),
+                            ),
+                            pw.Spacer(),
+                            pw.Text(
+                              '₹$total',
+                              style: pw.TextStyle(
+                                fontWeight: pw.FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
 
-                  for (final entry in grouped.entries)
-                    if (entry.value.isNotEmpty)
-                      _groupedFeeRow(entry.key, entry.value),
-                ],
+                      // Categories
+                      if (grouped['Room Rent']!.isNotEmpty)
+                        _groupedFeeRow(
+                          'Room Rent',
+                          grouped['Room Rent']!,
+                          fee,
+                          loadStaff,
+                        ),
+                      if (grouped['Doctor Fee']!.isNotEmpty)
+                        _groupedFeeRow(
+                          'Doctor Fee',
+                          grouped['Doctor Fee']!,
+                          fee,
+                          loadStaff,
+                        ),
+                      if (grouped['Nurse Fee']!.isNotEmpty)
+                        _groupedFeeRow(
+                          'Nurse Fee',
+                          grouped['Nurse Fee']!,
+                          fee,
+                          loadStaff,
+                        ),
+                      if (grouped['Others']!.isNotEmpty)
+                        _groupedFeeRow(
+                          'Others',
+                          grouped['Others']!,
+                          fee,
+                          loadStaff,
+                        ),
+                    ],
+                  );
+                }).toList(),
               ),
             ],
 
@@ -984,6 +1116,221 @@ Future<pw.Document> buildPdf({
   return pdf;
 }
 
+pw.Widget _groupedFeeRow(
+  String title,
+  List<Map<String, dynamic>> items,
+  Map<String, dynamic> fee,
+  List<Map<String, dynamic>> loadStaff,
+) {
+  //print('items $items');
+  final total = items.fold<num>(
+    0,
+    (sum, c) => sum + (num.tryParse(c['amount'].toString()) ?? 0),
+  );
+
+  return pw.Column(
+    crossAxisAlignment: pw.CrossAxisAlignment.start,
+    children: [
+      feeRowWithRemove(title: title, amount: total),
+
+      ...items.map((c) => _breakupRow(c, fee, loadStaff)),
+    ],
+  );
+}
+
+DateTime parseStaffDate(String value) {
+  // Format: yyyy-MM-dd hh:mm a
+  final parts = value.split(' ');
+  final date = parts[0];
+  final time = parts[1];
+  final period = parts[2];
+
+  final d = DateTime.parse(date);
+  final t = time.split(':');
+
+  int hour = int.parse(t[0]);
+  final minute = int.parse(t[1]);
+
+  if (period == 'PM' && hour != 12) hour += 12;
+  if (period == 'AM' && hour == 12) hour = 0;
+
+  return DateTime(d.year, d.month, d.day, hour, minute);
+}
+
+Map<String, dynamic>? getStaffForCharge(
+  Map<String, dynamic> admission,
+  DateTime chargeDate,
+) {
+  final List staffChanges = admission['staffChange'] ?? [];
+
+  if (staffChanges.isEmpty) return null;
+
+  // Sort by dateTime
+  staffChanges.sort((a, b) {
+    return parseStaffDate(
+      a['dateTime'],
+    ).compareTo(parseStaffDate(b['dateTime']));
+  });
+
+  Map<String, dynamic>? staff;
+
+  for (final change in staffChanges) {
+    final changeTime = parseStaffDate(change['dateTime']);
+    if (!chargeDate.isBefore(changeTime)) {
+      staff = change;
+    }
+  }
+
+  return staff;
+}
+
+Map<String, dynamic>? getWardForCharge(
+  Map<String, dynamic> admission,
+  DateTime chargeDate,
+) {
+  final List wardChanges = admission['wardChange'] ?? [];
+
+  // If no ward change → use current bed ward
+  if (wardChanges.isEmpty) {
+    return admission['bed']?['ward'];
+  }
+
+  // Sort ward changes by movedAt (ASC)
+  wardChanges.sort((a, b) {
+    return DateTime.parse(a['movedAt']).compareTo(DateTime.parse(b['movedAt']));
+  });
+
+  // 🔑 Initial ward = fromWard of first change
+  Map<String, dynamic>? currentWard = {
+    'name': wardChanges.first['fromWard']['wardName'],
+    'type': admission['bed']?['ward']?['type'],
+    'bedNo': admission['bed']?['bedNo'],
+  };
+
+  // Apply changes if chargeDate >= movedAt
+  for (final change in wardChanges) {
+    final movedAt = DateTime.parse(change['movedAt']);
+
+    if (!chargeDate.isBefore(movedAt)) {
+      currentWard = {
+        'name': change['toWard']['wardName'],
+        'type': admission['bed']?['ward']?['type'],
+        'bedNo': admission['bed']?['bedNo'],
+      };
+    }
+  }
+
+  return currentWard;
+}
+
+// List<Map<String, dynamic>> allStaff = [];
+//
+// Future<void> loadStaff() async {
+//   allStaff = List<Map<String, dynamic>>.from(
+//     await AdminService().getMedicalStaff(),
+//   );
+// }
+
+String getStaffDisplayName(
+  String? userId,
+  List<Map<String, dynamic>> allStaff,
+) {
+  if (userId == null || allStaff.isEmpty) return '';
+
+  final staff = allStaff.firstWhere(
+    (s) => s['user_Id'].toString() == userId.toString(),
+    orElse: () => {},
+  );
+
+  if (staff.isEmpty) return '';
+
+  final role = (staff['role'] ?? '').toString().toUpperCase();
+  final name = staff['name'] ?? '';
+
+  if (role == 'DOCTOR') {
+    final specialist = staff['specialist'];
+    return specialist != null && specialist.toString().isNotEmpty
+        ? '$name ($specialist)'
+        : name;
+  }
+
+  if (role == 'NURSE') {
+    return name;
+  }
+
+  return name;
+}
+
+pw.Widget _breakupRow(
+  Map<String, dynamic> charge,
+  Map<String, dynamic> fee,
+  loadStaff,
+) {
+  final desc = (charge['description'] ?? '').toString().toUpperCase();
+  final admission = fee['Admission'];
+  // print('admission $admission');
+  // print('admission ${admission['staffChanges']}');
+
+  String title;
+
+  // ⏰ Charge date
+  final chargeDate = DateTime.parse(
+    (charge['createdAt'] ?? charge['chargeDate']).toString(),
+  );
+
+  /// ROOM RENT → resolve ward by date
+  if (desc == 'ROOM RENT') {
+    final ward = getWardForCharge(admission, chargeDate);
+    title =
+        '${ward?['name'] ?? 'Ward'} - ${ward?['type'] ?? ''} • ${ward?['bedNo'] ?? ''}'
+            .trim();
+  }
+  /// DOCTOR FEE
+  else if (desc == 'DOCTOR FEE') {
+    final staff = getStaffForCharge(admission, chargeDate);
+    title = getStaffDisplayName(staff?['doctor'], loadStaff);
+  } else if (desc == 'NURSE FEE') {
+    final staff = getStaffForCharge(admission, chargeDate);
+    title = getStaffDisplayName(staff?['nurse'], loadStaff);
+  }
+  /// OTHERS
+  else {
+    title = charge['description'] ?? 'Charge';
+  }
+
+  final num currentAmount =
+      num.tryParse(charge['amount']?.toString() ?? '0') ?? 0;
+  // Store original amount if not already stored
+  charge['originalAmount'] ??= currentAmount;
+  final num maxAmount = charge['originalAmount'];
+
+  return pw.Padding(
+    padding: pw.EdgeInsets.only(left: 8, bottom: 3, right: 8, top: 3),
+    child: pw.Row(
+      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+      children: [
+        pw.Expanded(
+          flex: 2,
+          child: pw.Text(
+            '• $title',
+            style: pw.TextStyle(
+              fontSize: 13,
+              //overflow: TextOverflow.ellipsis,
+              color: PdfColors.grey500,
+              fontWeight: pw.FontWeight.bold,
+            ),
+          ),
+        ),
+        // Editable amount field for pending payments
+        pw.Text(
+          '₹${charge['amount']}',
+          style: const pw.TextStyle(fontSize: 13),
+        ),
+      ],
+    ),
+  );
+}
+
 pw.Widget feeRowAdvance({required String title, required num? amount}) {
   if (amount == null || amount == 0) return pw.SizedBox.shrink();
 
@@ -999,27 +1346,27 @@ pw.Widget feeRowAdvance({required String title, required num? amount}) {
   );
 }
 
-pw.Widget _groupedFeeRow(String title, List<Map<String, dynamic>> items) {
-  final total = items.fold<num>(
-    0,
-    (sum, c) => sum + (num.tryParse(c['amount'].toString()) ?? 0),
-  );
-  final uniqueDays = <String>{};
-  for (final c in items) {
-    final date = DateTime.parse(c['createdAt']);
-    uniqueDays.add('${date.year}-${date.month}-${date.day}');
-  }
-
-  final days = uniqueDays.length;
-
-  //final days = items.length;
-
-  final displayTitle = (title != 'Others' && days > 1)
-      ? "$title × ${days}d"
-      : title;
-
-  return feeRowWithRemove(title: displayTitle, amount: total);
-}
+// pw.Widget _groupedFeeRow(String title, List<Map<String, dynamic>> items) {
+//   final total = items.fold<num>(
+//     0,
+//     (sum, c) => sum + (num.tryParse(c['amount'].toString()) ?? 0),
+//   );
+//   final uniqueDays = <String>{};
+//   for (final c in items) {
+//     final date = DateTime.parse(c['createdAt']);
+//     uniqueDays.add('${date.year}-${date.month}-${date.day}');
+//   }
+//
+//   final days = uniqueDays.length;
+//
+//   //final days = items.length;
+//
+//   final displayTitle = (title != 'Others' && days > 1)
+//       ? "$title × ${days}d"
+//       : title;
+//
+//   return feeRowWithRemove(title: displayTitle, amount: total);
+// }
 
 pw.Widget feeRowWithRemove({required String title, required num? amount}) {
   if (amount == null || amount == 0) {
@@ -1050,7 +1397,7 @@ pw.Widget feeRow(String title, num? amount, {bool isTotal = false}) {
             title,
             style: pw.TextStyle(
               fontSize: isTotal ? 11 : 12,
-              fontWeight: isTotal ? pw.FontWeight.bold : pw.FontWeight.normal,
+              fontWeight: isTotal ? pw.FontWeight.bold : pw.FontWeight.bold,
               color: isTotal ? PdfColors.black : PdfColors.grey800,
             ),
           ),

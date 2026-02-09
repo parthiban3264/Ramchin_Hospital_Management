@@ -250,6 +250,7 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                               hospitalPlace: hospitalPlace!,
                               nameController: nameController,
                               logo: logo!,
+                              loadStaff: allStaff,
                             );
                             await Printing.layoutPdf(
                               onLayout: (format) async => pdf.save(),
@@ -2053,6 +2054,7 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                                           hospitalPlace: hospitalPlace!,
                                           nameController: nameController,
                                           logo: logo!,
+                                          loadStaff: allStaff,
                                         );
 
                                         await Printing.layoutPdf(

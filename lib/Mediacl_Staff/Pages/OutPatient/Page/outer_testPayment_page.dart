@@ -217,6 +217,7 @@ class FeesTestPaymentPageState extends State<FeesTestPaymentPage> {
                               hospitalPlace: hospitalPlace!,
                               nameController: nameController,
                               logo: logo!,
+                              loadStaff: [],
                             );
 
                             if (mounted) {
@@ -965,6 +966,7 @@ class FeesTestPaymentPageState extends State<FeesTestPaymentPage> {
                                           hospitalPlace: hospitalPlace!,
                                           nameController: nameController,
                                           logo: logo!,
+                                          loadStaff: [],
                                         );
 
                                         await Printing.layoutPdf(
