@@ -13,7 +13,7 @@ import '../../../../Services/consultation_service.dart';
 import '../../../../Services/patient_service.dart';
 import '../../../../Services/payment_service.dart';
 import '../../../../Widgets/AgeDobField.dart';
-import '../Page/PaymentPage.dart';
+import '../../Payment/PaymentPage.dart';
 import './widget/widget.dart' hide onPhoneChanged;
 import 'patient_registration_widget.dart';
 

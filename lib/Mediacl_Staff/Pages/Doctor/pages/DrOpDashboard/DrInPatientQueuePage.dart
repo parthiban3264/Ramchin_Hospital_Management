@@ -10,7 +10,7 @@ import '../../../../../Services/admin_service.dart';
 import '../../../../../Services/consultation_service.dart';
 import '../../../../../Services/socket_service.dart';
 import '../../widgets/doctor_description_edit.dart';
-import '../patient_description_in_patient/patient_description_page.dart';
+import '../patient_description_in_patient/inpatient_description_page.dart';
 
 class DrInPatientQueuePage extends StatefulWidget {
   final String role;
@@ -266,32 +266,32 @@ class _DrInPatientQueuePageState extends State<DrInPatientQueuePage> {
     }
   }
 
-  int getModeFromType(dynamic list) {
-    if (list == null || list is! List || list.isEmpty) return 4;
-
-    bool hasTest = false;
-    bool hasScan = false;
-
-    for (var item in list) {
-      final type = (item['type'] ?? '').toString().toLowerCase();
-
-      if (type.contains('tests')) hasTest = true;
-      if (type.contains('x-ray') ||
-          type.contains('ct-scan') ||
-          type.contains('pet scan') ||
-          type.contains('mri-scan') ||
-          type.contains('ultrasound') ||
-          type.contains('ecg') ||
-          type.contains('eeg')) {
-        hasScan = true;
-      }
-    }
-
-    if (hasTest && hasScan) return 3; // Both Test + Scan
-    if (hasTest) return 1; // Only Test
-    if (hasScan) return 2; // Only Scan
-    return 4; // Default
-  }
+  // int getModeFromType(dynamic list) {
+  //   if (list == null || list is! List || list.isEmpty) return 4;
+  //
+  //   bool hasTest = false;
+  //   bool hasScan = false;
+  //
+  //   for (var item in list) {
+  //     final type = (item['type'] ?? '').toString().toLowerCase();
+  //
+  //     if (type.contains('tests')) hasTest = true;
+  //     if (type.contains('x-ray') ||
+  //         type.contains('ct-scan') ||
+  //         type.contains('pet scan') ||
+  //         type.contains('mri-scan') ||
+  //         type.contains('ultrasound') ||
+  //         type.contains('ecg') ||
+  //         type.contains('eeg')) {
+  //       hasScan = true;
+  //     }
+  //   }
+  //
+  //   if (hasTest && hasScan) return 3; // Both Test + Scan
+  //   if (hasTest) return 1; // Only Test
+  //   if (hasScan) return 2; // Only Scan
+  //   return 4; // Default
+  // }
 
   List<Map<String, dynamic>> _buildDoctorDropdownFromIP(
     List<dynamic> consultationList,
@@ -567,7 +567,7 @@ class _DrInPatientQueuePageState extends State<DrInPatientQueuePage> {
         : '';
 
     // final mode = getModeFromType(type);
-    final mode = getModeFromType(consultation['TeatingAndScanningPatient']);
+    //final mode = getModeFromType(consultation['TeatingAndScanningPatient']);
 
     return GestureDetector(
       onTap: () async {
@@ -591,7 +591,7 @@ class _DrInPatientQueuePageState extends State<DrInPatientQueuePage> {
             MaterialPageRoute(
               builder: (_) => PatientDescriptionIn(
                 consultation: consultation,
-                mode: mode,
+                //mode: mode,
                 role: widget.role,
                 patientType: 'IN',
               ),
@@ -644,26 +644,26 @@ class _DrInPatientQueuePageState extends State<DrInPatientQueuePage> {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  if (type.toString().isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 8.0),
-                      child: Chip(
-                        label: Text(
-                          mode == 1
-                              ? "Test"
-                              : mode == 2
-                              ? "Scan"
-                              : mode == 3
-                              ? "Test+Scan"
-                              : "",
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        backgroundColor: primaryColor,
-                      ),
-                    ),
+                  // if (type.toString().isNotEmpty)
+                  //   Padding(
+                  //     padding: const EdgeInsets.only(left: 8.0),
+                  //     child: Chip(
+                  //       label: Text(
+                  //         mode == 1
+                  //             ? "Test"
+                  //             : mode == 2
+                  //             ? "Scan"
+                  //             : mode == 3
+                  //             ? "Test+Scan"
+                  //             : "",
+                  //         style: const TextStyle(
+                  //           color: Colors.white,
+                  //           fontWeight: FontWeight.bold,
+                  //         ),
+                  //       ),
+                  //       backgroundColor: primaryColor,
+                  //     ),
+                  //   ),
                 ],
               ),
               const SizedBox(height: 2),

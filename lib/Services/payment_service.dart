@@ -191,6 +191,53 @@ class PaymentService {
     }
   }
 
+  Future<List<dynamic>> getAllOnlyCtScanPendingFees() async {
+    try {
+      final hospitalId = await getHospitalId();
+      final response = await http.get(
+        Uri.parse('$baseUrl/payments/all/ct-scan/pendingFee/$hospitalId'),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final decoded = jsonDecode(response.body);
+
+        // Handle different backend JSON formats
+        final List<dynamic> rawList;
+        if (decoded is Map<String, dynamic> && decoded.containsKey('data')) {
+          rawList = decoded['data'];
+        } else if (decoded is List) {
+          rawList = decoded;
+        } else {
+          throw Exception('Unexpected JSON structure: $decoded');
+        }
+
+        // Filter only Pending payments
+        final pending = rawList.where((item) {
+          final status = item['status']?.toString().toLowerCase();
+          return status == 'pending' ||
+              status == 'paid' ||
+              status == 'cancelled' ||
+              status == 'partially_paid';
+        }).toList();
+
+        // Sort by createdAt (oldest first)
+        pending.sort((b, a) {
+          final aTime =
+              DateTime.tryParse(a['createdAt'] ?? '') ?? DateTime.now();
+          final bTime =
+              DateTime.tryParse(b['createdAt'] ?? '') ?? DateTime.now();
+          return bTime.compareTo(aTime);
+        });
+
+        return pending;
+      } else {
+        throw Exception('Failed to fetch payments: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching payments: $e');
+    }
+  }
+
   // Future<List<dynamic>> getAllPendingLimitedFees() async {
   //   try {
   //     final hospitalId = await getHospitalId();

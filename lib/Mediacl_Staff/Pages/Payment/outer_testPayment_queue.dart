@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
-import '../../../../Pages/NotificationsPage.dart';
-import '../../../../Services/payment_service.dart';
+import '../../../Pages/NotificationsPage.dart';
+import '../../../Services/payment_service.dart';
 
-import '../Page/outer_testPayment_page.dart';
+import 'outer_testPayment_page.dart';
 
 class FeesTestQueuePage extends StatefulWidget {
   const FeesTestQueuePage({super.key});

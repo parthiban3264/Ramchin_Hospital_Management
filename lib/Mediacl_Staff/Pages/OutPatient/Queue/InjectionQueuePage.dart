@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/consultation_service.dart';
 import '../Page/injection_page.dart';
@@ -23,11 +22,13 @@ class _InjectionQueuePageState extends State<InjectionQueuePage> {
 
   @override
   Widget build(BuildContext context) {
+    print(consultationsFuture);
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(100),
+        preferredSize: const Size.fromHeight(90),
         child: Container(
+          height: 100,
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [primaryColor, primaryColor],
@@ -40,7 +41,7 @@ class _InjectionQueuePageState extends State<InjectionQueuePage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
+                color: Colors.black.withOpacity(0.1),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),
@@ -104,17 +105,16 @@ class _InjectionQueuePageState extends State<InjectionQueuePage> {
             );
           }
 
-          final consultations = (snapshot.data ?? []).where((c) {
-            final injections = c['InjectionPatient'] as List?;
-            if (injections == null || injections.isEmpty) return false;
-
-            // Check if any injection is NOT cancelled
-            final hasValidInjection = injections.any(
-              (inj) => inj['status'] != 'CANCELLED',
-            );
-
-            return hasValidInjection;
-          }).toList();
+          final consultations = (snapshot.data ?? [])
+              .where(
+                (c) =>
+                    c['Injection'] == true &&
+                    c['status'] != 'CANCELLED' &&
+                    c['status'] != 'ABANDONED' &&
+                    c['status'] != 'COMPLETED' &&
+                    c['patientType'] == 'OP',
+              )
+              .toList();
 
           if (consultations.isEmpty) {
             return const Center(
@@ -135,13 +135,14 @@ class _InjectionQueuePageState extends State<InjectionQueuePage> {
               final patientId = c['patient_Id'] ?? '';
               final address = patient?['address']?['Address'] ?? 'N/A';
               final cell = patient?['phone']?['mobile'] ?? 'N/A';
+              final tokenNo = c['tokenNo'] ?? '-';
               final doctor = c['Doctor']?['name'] ?? 'Unknown Doctor';
-              // final queueStatus = c['queueStatus'] ?? 'PENDING';
-              // final statusColor = queueStatus == 'COMPLETED'
-              //     ? Colors.green
-              //     : queueStatus == 'ONGOING'
-              //     ? Colors.orange
-              //     : Colors.blueGrey;
+              final queueStatus = c['queueStatus'] ?? 'PENDING';
+              final statusColor = queueStatus == 'COMPLETED'
+                  ? Colors.green
+                  : queueStatus == 'ONGOING'
+                  ? Colors.orange
+                  : Colors.blueGrey;
 
               return GestureDetector(
                 onTap: () async {
@@ -166,7 +167,7 @@ class _InjectionQueuePageState extends State<InjectionQueuePage> {
                     color: Colors.white,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
+                        color: Colors.black.withOpacity(0.05),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),
@@ -242,6 +243,20 @@ class _InjectionQueuePageState extends State<InjectionQueuePage> {
                                         ),
                                       ),
                                     ],
+                                  ),
+                                  const SizedBox(height: 4),
+
+                                  Align(
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      "Token No : $tokenNo",
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.grey[800],
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
                                   ),
 
                                   const SizedBox(height: 8),

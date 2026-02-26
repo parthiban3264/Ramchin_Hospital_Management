@@ -7,7 +7,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
 import '../../../../Services/admin_service.dart';
-import 'PaymentPage.dart';
+import '../../Payment/PaymentPage.dart';
 
 Future<Uint8List> fetchImageBytes(String imageUrl) async {
   try {
@@ -35,6 +35,7 @@ Future<pw.Document> buildPdf({
   required String hospitalName,
   required String hospitalPlace,
   required Map<String, dynamic> fee,
+  required PaperSizeType pageFormat,
   required TextEditingController nameController,
   required TextEditingController cellController,
   required TextEditingController dobController,
@@ -52,7 +53,7 @@ Future<pw.Document> buildPdf({
   // final BMI = consultation['BMI'].toString() ?? '_';
   // final PK = consultation['PK'].toString() ?? '_';
   // final SpO2 = consultation['SPO2'].toString() ?? '_';
-  final tokenNo = fee['Consultation']?['tokenNo'];
+  final tokenNo = fee['Consultation']?['displayToken'];
   final bool isTestOnly = consultation?['isTestOnly'] ?? false;
   final referredDoctorName =
       consultation?['referredByDoctorName'].toString() ?? '-';
@@ -276,7 +277,11 @@ Future<pw.Document> buildPdf({
   // final lightBlue = PdfColor.fromHex("#1E5CC4");
 
   // THERMAL PAGE FORMAT
-  const double receiptWidth = 72 * PdfPageFormat.mm; // ~72mm
+
+  final double receiptWidth = pageFormat == PaperSizeType.a4
+      ? PdfPageFormat.a4.availableWidth
+      : 72 * PdfPageFormat.mm;
+  // ~72mm
 
   final ttf = await PdfGoogleFonts.notoSansRegular();
   final ttfBold = await PdfGoogleFonts.notoSansBold();
@@ -532,30 +537,9 @@ Future<pw.Document> buildPdf({
                       ),
                     ),
                     pw.SizedBox(width: 1),
-                    pw.Container(
-                      width: 18,
-                      height: 18,
-                      alignment: pw.Alignment.center,
-                      decoration: pw.BoxDecoration(
-                        shape: pw.BoxShape.circle,
-                        color: PdfColors.black,
-                      ),
-                      child: pw.Container(
-                        width: 16,
-                        height: 16,
-                        alignment: pw.Alignment.center,
-                        decoration: pw.BoxDecoration(
-                          shape: pw.BoxShape.circle,
-                          color: PdfColors.white,
-                        ),
-                        child: pw.Text(
-                          tokenText,
-                          style: pw.TextStyle(
-                            fontSize: 9,
-                            fontWeight: pw.FontWeight.bold,
-                          ),
-                        ),
-                      ),
+                    pw.Align(
+                      alignment: pw.Alignment.centerLeft,
+                      child: buildTokenBadge(tokenText, pageFormat),
                     ),
                   ],
                 ),
@@ -1114,6 +1098,29 @@ Future<pw.Document> buildPdf({
   );
 
   return pdf;
+}
+
+pw.Widget buildTokenBadge(String tokenText, PaperSizeType paperType) {
+  final bool isA4 = paperType == PaperSizeType.a4;
+
+  return pw.Container(
+    padding: pw.EdgeInsets.symmetric(
+      horizontal: isA4 ? 10 : 2,
+      vertical: isA4 ? 4 : 2,
+    ),
+    decoration: pw.BoxDecoration(
+      border: pw.Border.all(color: PdfColors.black, width: isA4 ? 1.5 : 1),
+      borderRadius: pw.BorderRadius.circular(isA4 ? 4 : 2),
+    ),
+    child: pw.Text(
+      tokenText,
+      textAlign: pw.TextAlign.center,
+      style: pw.TextStyle(
+        fontSize: isA4 ? 11 : 6,
+        fontWeight: pw.FontWeight.bold,
+      ),
+    ),
+  );
 }
 
 pw.Widget _groupedFeeRow(

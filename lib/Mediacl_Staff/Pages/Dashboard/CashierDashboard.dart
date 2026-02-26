@@ -9,9 +9,11 @@ import '../../../Admin/Pages/Accounts/income_expense_page.dart';
 import '../../../Admin/Pages/Accounts/accounts_report.dart';
 import '../../../Admin/Pages/Accounts/patient_list_report_page.dart';
 import '../../../Services/admin_service.dart';
-import '../OutPatient/Queue/FeesQueuePage.dart';
+import '../Payment/FeesQueuePage.dart';
 
 import '../OutPatient/patient_registration/patient_registration_payment_page.dart';
+import '../Payment/ct-scan_payment_page.dart';
+import '../Payment/ct-scan_payment_queue.dart';
 import '../inpatient/add_admission_charges_page.dart';
 import '../inpatient/admit_patient.dart';
 import '../inpatient/assign_change_detail.dart';
@@ -187,19 +189,50 @@ class _CashierDashboardPageState extends State<CashierDashboardPage> {
                           // Existing buttons (unchanged logic)
                           //-----------------------------------
                           if (cashierPermissionIds.contains(12) ||
-                              cashierPermissionIds.contains(26))
+                              cashierPermissionIds.contains(26) ||
+                              cashierPermissionIds.contains(36))
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
+                                if (cashierPermissionIds.contains(26))
+                                  _buildActionItem(
+                                    Icons.how_to_reg,
+                                    "REGISTER &\n PAYMENT",
+                                    () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              const PatientRegistrationAndPaymentPage(),
+                                        ),
+                                      );
+                                    },
+                                  ),
+
                                 if (cashierPermissionIds.contains(12))
                                   _buildActionItem(
                                     Icons.currency_rupee,
-                                    "PAYMENT\n ",
+                                    "PAYMENT\n",
                                     () {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
                                           builder: (_) => const FeesQueuePage(),
+                                        ),
+                                      );
+                                    },
+                                  ),
+
+                                if (cashierPermissionIds.contains(36))
+                                  _buildActionItem(
+                                    Icons.currency_rupee,
+                                    "CT-SCAN\nPAYMENT",
+                                    () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              const CtScanFeesQueuePage(),
                                         ),
                                       );
                                     },
@@ -219,20 +252,6 @@ class _CashierDashboardPageState extends State<CashierDashboardPage> {
                                 //       );
                                 //     },
                                 //   ),
-                                if (cashierPermissionIds.contains(26))
-                                  _buildActionItem(
-                                    Icons.how_to_reg,
-                                    "REGISTER &\n PAYMENT",
-                                    () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) =>
-                                              const PatientRegistrationAndPaymentPage(),
-                                        ),
-                                      );
-                                    },
-                                  ),
                               ],
                             ),
 

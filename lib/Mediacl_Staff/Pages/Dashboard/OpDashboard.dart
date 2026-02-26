@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../Services/admin_service.dart';
+import '../Nurse/in_patient_notes_instruction_queue.dart';
 import '../OutPatient/patient_registration/PatientRegistrationPage.dart';
 import '../OutPatient/Queue/InjectionQueuePage.dart';
 import '../OutPatient/Queue/op_queue_page.dart';
@@ -151,7 +152,8 @@ class _OpDashboardPageState extends State<OpDashboardPage> {
                           if (!opPermissionIds.contains(1) &&
                               !opPermissionIds.contains(2) &&
                               !opPermissionIds.contains(14) &&
-                              !opPermissionIds.contains(15))
+                              !opPermissionIds.contains(15) &&
+                              !opPermissionIds.contains(35))
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 vertical: 12,
@@ -185,7 +187,8 @@ class _OpDashboardPageState extends State<OpDashboardPage> {
                           if (opPermissionIds.contains(1) ||
                               opPermissionIds.contains(2) ||
                               opPermissionIds.contains(14) ||
-                              opPermissionIds.contains(15)) ...[
+                              opPermissionIds.contains(15) ||
+                              opPermissionIds.contains(35)) ...[
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
@@ -243,6 +246,16 @@ class _OpDashboardPageState extends State<OpDashboardPage> {
                                       );
                                     },
                                   ),
+                                if (opPermissionIds.contains(35))
+                                  _buildActionItem(Icons.queue, "InPatient", () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            const NurseInPatientNotesAndInstructionQueuePage(),
+                                      ),
+                                    );
+                                  }),
                               ],
                             ),
                           ],

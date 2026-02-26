@@ -543,9 +543,10 @@ class _LabPageState extends State<LabPage> with SingleTickerProviderStateMixin {
     final doctorName = patient['doctor']?['name'].toString() ?? 'N/A';
 
     final doctorId = patient['doctor']?['id']?.toString() ?? 'N/A';
-    final tokenNo = (patient['tokenNo'] == null || patient['tokenNo'] == 0)
+    final tokenNo =
+        (patient['displayToken'] == null || patient['displayToken'] == 0)
         ? '-'
-        : patient['tokenNo'].toString();
+        : patient['displayToken'].toString();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F4F4),

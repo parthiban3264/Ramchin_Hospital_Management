@@ -247,9 +247,10 @@ class _ScanPageState extends State<ScanPage>
     final bool isTestOnly = patient['isTestOnly'] ?? false;
 
     final bloodGroup = patient['bldGrp'] ?? '-';
-    final tokenNo = (patient['tokenNo'] == null || patient['tokenNo'] == 0)
+    final tokenNo =
+        (patient['displayToken'] == null || patient['displayToken'] == 0)
         ? '-'
-        : patient['tokenNo'].toString();
+        : patient['displayToken'].toString();
 
     final selectedOptions = List<String>.from(record['selectedOptions'] ?? []);
 

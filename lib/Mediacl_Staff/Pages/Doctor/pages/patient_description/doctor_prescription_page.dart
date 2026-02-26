@@ -333,6 +333,7 @@ class DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
     // );
 
     Widget buildSection(String title, List<Map<String, dynamic>> items) {
+      print('item $items');
       if (items.isEmpty) return const SizedBox.shrink();
 
       return Padding(

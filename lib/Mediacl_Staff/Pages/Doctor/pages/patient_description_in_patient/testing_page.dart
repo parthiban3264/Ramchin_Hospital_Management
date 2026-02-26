@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hospitrax/Mediacl_Staff/Pages/Doctor/pages/patient_description_in_patient/patient_description_page.dart';
+import 'package:hospitrax/Mediacl_Staff/Pages/Doctor/pages/patient_description_in_patient/inpatient_description_page.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../../Pages/NotificationsPage.dart';

@@ -88,6 +88,7 @@ class _AddMedicineFormState extends State<AddMedicineForm> {
     final defaultCategories = [
       "Tablets",
       "Syrups",
+      "Injections",
       "Drops",
       "Ointments",
       "Creams",

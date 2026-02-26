@@ -208,9 +208,10 @@ class _DrOutPatientQueuePageState extends State<DrOutPatientQueuePage> {
     final patient = consultation['Patient'] ?? {};
     final name = patient['name'] ?? 'Unknown';
     final tokenNo =
-        (consultation['tokenNo'] == null || consultation['tokenNo'] == 0)
+        (consultation['displayToken'] == null ||
+            consultation['displayToken'] == 0)
         ? '-'
-        : consultation['tokenNo'].toString();
+        : consultation['displayToken'].toString();
     final id = consultation['patient_Id'].toString();
 
     final phone = patient['phone'] ?? '-';

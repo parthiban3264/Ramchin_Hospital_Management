@@ -10,8 +10,10 @@ import '../../../Services/Medicine_Service.dart';
 import '../../../Services/consultation_service.dart';
 import '../../../Services/payment_service.dart';
 import '../../../Services/socket_service.dart';
+import 'Widget/medical_bill_pdf.dart';
 import 'Widget/pdf_bill_service.dart';
 import 'Widget/whatsapp_Bill.dart';
+import '../../../Services/prescription_service.dart';
 
 class MedicalFeePage extends StatefulWidget {
   final Map<String, dynamic> consultation;
@@ -43,6 +45,7 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
   void initState() {
     super.initState();
     consultation = Map<String, dynamic>.from(widget.consultation);
+
     // medicines = consultation['MedicinePatient'] ?? [];
     // injections = consultation['InjectionPatient'] ?? [];
     // tonics = consultation['TonicPatient'] ?? [];
@@ -70,18 +73,30 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
     }
   }
 
+  // List<Map<String, dynamic>> getAllPrescriptionMedicines() {
+  //   final prescriptions = consultation ?? [];
+  //
+  //   List<Map<String, dynamic>> allMedicines = [];
+  //
+  //   for (var p in consultation) {
+  //     final meds = p['medicines'] ?? [];
+  //     for (var m in meds) {
+  //       allMedicines.add(m);
+  //     }
+  //   }
+  //   return allMedicines;
+  // }
+
   List<Map<String, dynamic>> getAllPrescriptionMedicines() {
-    final prescriptions = consultation['Prescription'] ?? [];
+    final meds = consultation['medicines'];
 
-    List<Map<String, dynamic>> allMedicines = [];
-
-    for (var p in prescriptions) {
-      final meds = p['medicines'] ?? [];
-      for (var m in meds) {
-        allMedicines.add(m);
-      }
+    if (meds is List) {
+      return meds
+          .map<Map<String, dynamic>>((m) => Map<String, dynamic>.from(m))
+          .toList();
     }
-    return allMedicines;
+
+    return [];
   }
 
   double calculateMedicineTotal(List meds) {
@@ -114,11 +129,21 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
   }
 
   double _listTotal(List items) {
+    print('items $items');
     double sum = 0;
-    for (var item in items) {
-      if (item['selected'] == true) {
-        final val = item['total'] ?? 0;
-        sum += val is int ? val.toDouble() : val;
+    if (widget.index == 1) {
+      for (var item in items) {
+        if (item['selected'] == true) {
+          final val = item['total_amount'] - item['total'] ?? 0;
+          sum += val is int ? val.toDouble() : val;
+        }
+      }
+    } else {
+      for (var item in items) {
+        if (item['selected'] == true) {
+          final val = item['total'] ?? 0;
+          sum += val is int ? val.toDouble() : val;
+        }
       }
     }
     return sum;
@@ -159,10 +184,8 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
   Future<void> updateStockAfterPayment({
     required List<Map<String, dynamic>> medicines,
   }) async {
-    // Medicines
     for (var med in medicines) {
       if (med['selected'] != true) continue;
-
       final stock = ((med['Medician']['stock'] ?? 0) as num).toInt();
       final used = ((med['quantityNeeded'] ?? 0) as num).toInt();
       final newStock = stock - used;
@@ -200,7 +223,8 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
       // }
       await ConsultationService().updateConsultation(consultationId, {
         'status': newStatus,
-        'medicineTonic': false,
+        'medicineQueue': injection == true ? 'ONGOING' : 'COMPLETED',
+        //'medicineTonic': false,
         'updatedAt': _dateTime.toString(),
       });
 
@@ -245,6 +269,393 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
     }
   }
 
+  // Future<void> _updateDispenseQuantity() async {
+  //   try {
+  //     final service = PrescriptionService();
+  //     for (var med in medicines) {
+  //       if (med['selected'] != true) continue;
+  //
+  //       final dispenses = med['dispenses'] as List?;
+  //       if (dispenses == null || dispenses.isEmpty) continue;
+  //
+  //       // Assuming we update the first dispense record associated with this medicine for this prescription
+  //       final dispenseId = dispenses[0]['id'];
+  //       final int quantity = (med['quantityNeeded'] as num).toInt();
+  //       final double amount = (med['total'] as num).toDouble();
+  //       final String batchNo = dispenses[0]['batch_Id'].toString();
+  //
+  //       await service.updatePrescriptionDispenseQuantity(
+  //         id: dispenseId,
+  //         dispensedQuantity: quantity,
+  //         days: med['currentDays'],
+  //         amount: amount,
+  //         batchId: batchNo,
+  //       );
+  //     }
+  //   } catch (e) {
+  //     debugPrint("Error updating dispense quantity: $e");
+  //     // Optional: rethrow or handle specific errors if needed
+  //   }
+  // }
+
+  Future<void> _updateDispenseQuantity() async {
+    try {
+      print('work1');
+      final service = PrescriptionService();
+
+      for (var med in medicines) {
+        print('work2');
+        if (med['selected'] != true) continue;
+
+        final dispenses = med['dispenses'] as List?;
+        if (dispenses == null || dispenses.isEmpty) continue;
+        print('work3');
+        final int dispenseId = (dispenses[0]['id'] as num).toInt();
+        final int quantity = (med['quantityNeeded'] as num).toInt();
+        print('work4');
+        final double amount = (med['total'] as num).toDouble();
+        print('work5');
+        final int days = (med['currentDays'] as num).toInt(); // 🔥 FIX HERE
+        final String batchNo = dispenses[0]['batch_Id'].toString();
+        print('work6');
+        await service.updatePrescriptionDispenseQuantity(
+          id: dispenseId,
+          dispensedQuantity: quantity,
+          days: days, // now int
+          amount: amount,
+          batchId: batchNo,
+        );
+      }
+    } catch (e) {
+      debugPrint("Error updating dispense quantity: $e");
+    }
+  }
+
+  // Future<void> updatePrescriptionCreateMedicineAdministration() async {
+  //   print('updateAndCreateMedicineAdministration this work');
+  //   try {
+  //     final service = PrescriptionService();
+  //     print('work1');
+  //
+  //     // Determine if any medicine quantity was decreased
+  //     bool hasDecreasedQuantity = false;
+  //     for (var med in medicines) {
+  //       if (med['selected'] == true) {
+  //         final doctorDays = (med['doctorDays'] as num?)?.toDouble() ?? 0;
+  //         final currentDays = (med['currentDays'] as num?)?.toDouble() ?? 0;
+  //         final dispenses = med['dispenses'] as List?;
+  //         if (dispenses == null || dispenses.isEmpty) continue;
+  //         print('work3');
+  //         final int dispenseId = (dispenses[0]['id'] as num).toInt();
+  //         final int quantity = (med['quantityNeeded'] as num).toInt();
+  //         print('work4');
+  //         final double amount = (med['total'] as num).toDouble();
+  //         print('work5');
+  //         final int days = (med['currentDays'] as num).toInt(); // 🔥 FIX HERE
+  //         final String batchNo = dispenses[0]['batch_Id'].toString();
+  //         final String mediStatus = med['status'];
+  //         print('work6');
+  //
+  //         if (currentDays < doctorDays) {
+  //           hasDecreasedQuantity = true;
+  //           break;
+  //         }
+  //       }
+  //     }
+  //     print('work2');
+  //
+  //     // Set status based on whether any medicine quantity was decreased
+  //     final String status = hasDecreasedQuantity
+  //         ? 'PARTIALLY_DISPENSED'
+  //         : 'DISPENSED';
+  //
+  //     await service.updatePrescriptionCreateMedicineAdministration(
+  //       prescriptionId: consultation['Prescription'][0]['id'],
+  //       hospitalId: consultation['hospital_Id'],
+  //       patientId: consultation['patient_Id'],
+  //       status: status,
+  //       dispenseId: dispenseId,
+  //       dispensedQuantity: quantity,
+  //       days: days, // now int
+  //       amount: amount,
+  //       batchId: batchNo,
+  //       mediStatus: mediStatus,
+  //       patientType: consultation['patientType'],
+  //     );
+  //     print('work3');
+  //   } catch (e) {
+  //     debugPrint('Error: $e');
+  //   }
+  // }
+
+  Future<void> updatePrescriptionCreateMedicineAdministration() async {
+    try {
+      final service = PrescriptionService();
+
+      bool hasPartial = false;
+      print('work1');
+      // 1️⃣ First pass → determine overall prescription status
+      for (var med in medicines) {
+        if (med['selected'] != true) continue;
+
+        final doctorDays = (med['doctorDays'] as num?)?.toDouble() ?? 0;
+        final currentDays = (med['currentDays'] as num?)?.toDouble() ?? 0;
+
+        if (currentDays < doctorDays) {
+          hasPartial = true;
+          break;
+        }
+      }
+      print('work2');
+      final String status = hasPartial ? 'PARTIALLY_DISPENSED' : 'DISPENSED';
+
+      // 2️⃣ Second pass → update each selected medicine
+      for (var med in medicines) {
+        if (med['selected'] != true) continue;
+
+        final dispenses = med['dispenses'] as List?;
+        if (dispenses == null || dispenses.isEmpty) continue;
+
+        final int dispenseId = (dispenses[0]['id'] as num).toInt();
+
+        final int quantity = (med['quantityNeeded'] as num?)?.toInt() ?? 0;
+
+        final double amount = (med['total'] as num?)?.toDouble() ?? 0.0;
+
+        final int days = (med['currentDays'] as num?)?.toInt() ?? 0;
+
+        final String batchNo = dispenses[0]['batch_Id'].toString();
+
+        final String mediStatus = med['status'] ?? 'COMPLETED';
+        print(
+          'all data $dispenseId $quantity $days $amount $batchNo $mediStatus',
+        );
+        print('work1');
+        await service.updatePrescriptionCreateMedicineAdministration(
+          prescriptionId: consultation['id'],
+          hospitalId: consultation['hospital_Id'],
+          patientId: consultation['patient_Id'],
+          status: status,
+          dispenseId: dispenseId,
+          dispensedQuantity: quantity,
+          days: days,
+          amount: amount,
+          batchId: batchNo,
+          mediStatus: mediStatus,
+          patientType: consultation['consultation']['patientType'],
+        );
+      }
+    } catch (e) {
+      debugPrint('Error: $e');
+    }
+  }
+
+  // ==================== PAYMENT DIALOG ====================
+
+  void showPrintDialog(BuildContext context) {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierLabel: "Print",
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return const SizedBox.shrink();
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        final curvedValue =
+            Curves.easeInOutBack.transform(animation.value) - 1.0;
+
+        return Transform.scale(
+          scale: animation.value,
+          child: Opacity(
+            opacity: animation.value,
+            child: Dialog(
+              elevation: 0,
+              backgroundColor: Colors.transparent,
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.15),
+                      blurRadius: 25,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Gradient Icon Container
+                    Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [Colors.blue.shade400, Colors.blue.shade700],
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.print_rounded,
+                        size: 32,
+                        color: Colors.white,
+                      ),
+                    ),
+
+                    const SizedBox(height: 22),
+
+                    const Text(
+                      "Print Bill",
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    const Text(
+                      "The bill has been generated successfully.\nWould you like to print it now?",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 15,
+                        height: 1.5,
+                        color: Colors.black54,
+                      ),
+                    ),
+
+                    const SizedBox(height: 28),
+
+                    Row(
+                      children: [
+                        // Cancel Button
+                        Expanded(
+                          child: TextButton(
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            onPressed: () {
+                              Navigator.pop(context, true);
+                            },
+                            child: const Text(
+                              "No",
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(width: 14),
+
+                        // Print Button
+                        Expanded(
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              elevation: 5,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              backgroundColor: Colors.blue.shade600,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            onPressed: () {
+                              final medicalBillSelectedMedicines =
+                                  widget.index == 1
+                                  ? medicines
+                                        .where(
+                                          (m) =>
+                                              m['selected'] == true &&
+                                              m['status'] != 'CANCELLED',
+                                        )
+                                        .map(
+                                          (m) => {
+                                            'name':
+                                                m['medicine']?['name'] ??
+                                                'Medicine',
+                                            'quantityNeeded':
+                                                m['quantityNeeded'] -
+                                                m['dispensed_quantity'],
+                                            'total':
+                                                m['total_amount'] -
+                                                m['dispenses'][0]['amount'],
+                                            'batchNo':
+                                                m['dispenses'][0]['batch_Id'],
+                                            'days': m['days'],
+                                            'after_Eat': m['after_Eat'],
+                                            'morning': m['morning'],
+                                            'afternoon': m['afternoon'],
+                                            'night': m['night'],
+                                            'category':
+                                                m['medicine']['category'],
+                                            'medicine': m['medicine'],
+                                          },
+                                        )
+                                        .toList()
+                                  : medicines
+                                        .where(
+                                          (m) =>
+                                              m['selected'] == true &&
+                                              m['status'] != 'CANCELLED',
+                                        )
+                                        .map(
+                                          (m) => {
+                                            'name':
+                                                m['medicine']?['name'] ??
+                                                'Medicine',
+                                            'quantityNeeded':
+                                                m['quantityNeeded'],
+                                            'total': m['total'],
+                                            'batchNo':
+                                                m['dispenses'][0]['batch_Id'],
+                                            'days': m['days'],
+                                            'after_Eat': m['after_Eat'],
+                                            'morning': m['morning'],
+                                            'afternoon': m['afternoon'],
+                                            'night': m['night'],
+                                            'category':
+                                                m['medicine']['category'],
+                                            'medicine': m['medicine'],
+                                          },
+                                        )
+                                        .toList();
+
+                              MedicalPdfBillMaker.generateMedicalBillPdf(
+                                patientData: widget.consultation['patient'],
+                                allConsultation: widget.consultation,
+                                totalAmount: totalCharges,
+                                medicines: medicalBillSelectedMedicines,
+                              );
+                              // Your print logic here
+                              print("Printing Bill...");
+                            },
+                            child: const Text(
+                              "Yes, Print",
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
   // ==================== PAYMENT HANDLER ====================
 
   void _showHandlePayment() async {
@@ -255,8 +666,12 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
       // final consultationId = consultation['id'];
       int? paymentId;
 
-      if (consultation['Prescription']?.isNotEmpty ?? false) {
-        paymentId = consultation['Prescription'][0]['payment_Id'];
+      // if (consultation['Prescription']?.isNotEmpty ?? false) {
+      //   paymentId = consultation['Prescription'][0]['payment_Id'];
+      // }
+
+      if (consultation.isNotEmpty) {
+        paymentId = consultation['payment_Id'];
       }
 
       if (paymentId == null) {
@@ -290,7 +705,7 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
       final String paymentMode = paymentResult?['paymentMode'] ?? 'unknown';
       final staffId = prefs.getString('userId');
 
-      await PaymentService().updatePayment(paymentId, {'amount': totalCharges});
+      // await PaymentService().updatePayment(paymentId, {'amount': totalCharges});
       await PaymentService().updatePayment(paymentId, {
         'status': 'PAID',
         'staff_Id': staffId.toString(),
@@ -302,16 +717,19 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
       // await updateStockAfterPayment(
       //   medicines: (medicines).cast<Map<String, dynamic>>(),
       // );
-
+      await updatePrescriptionCreateMedicineAdministration(); //1
+      _updateStatus(); //2
+      setState(() => paymentSuccess = true);
+      Navigator.pop(context, true);
       if (mounted) {
-        setState(() => paymentSuccess = true);
+        showPrintDialog(context); //3
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Payment successful!'),
             backgroundColor: Colors.green,
           ),
         );
-        //await updateMedicationStatus();
       }
     } catch (e) {
       if (mounted) {
@@ -333,10 +751,12 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
 
   @override
   Widget build(BuildContext context) {
+    print('consultation ${widget.consultation}');
+    print('medicine $medicines');
     // final Prescription = consultation['Prescription'];
 
-    final patient = consultation['Patient'] ?? {};
-    final doctor = consultation['Doctor'] ?? {};
+    final patient = consultation['patient'] ?? {};
+    final doctor = consultation['consultation']['Doctor'] ?? {};
     // final drAllocatedDays =
     //     (consultation['MedicinePatient'] != null &&
     //         consultation['MedicinePatient'].isNotEmpty)
@@ -494,7 +914,6 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
     );
   }
 
-  //----------------------medicine table--------------------
   Widget _buildMedicineTable() {
     if (medicines.isEmpty) return const SizedBox();
 
@@ -506,50 +925,90 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
         "Medicine",
         "Days",
         "Qty",
+        "AC/PC",
+        "Sessions",
         "Unit Price",
         "Total",
       ],
-      rows: medicines.map((med) {
+      rows: medicines.map<List<dynamic>>((med) {
         final name = med['medicine']?['name'] ?? 'Medicine';
-        // final dispenses = med['dispenses'] ?? [];
-        // int totalQty = 0;
-        // double totalAmt = 0;
-        // final price = (med['Medician']?['amount'] as num?)?.toDouble() ?? 0;
-        // for (var d in dispenses) {
-        //   totalQty += (d['dispensed_quantity'] ?? 0) as int;
-        //   totalAmt += (d['amount'] ?? 0).toDouble();
-        // }
-        //
-        // final unitPrice = totalQty == 0 ? 0 : totalAmt / totalQty;
+        print('medi $med');
 
-        // final int totalQty = med['total_quantity'] ?? 0;
-        // final double totalAmt = (med['dispenses'][0]['amount'] ?? 0).toDouble();
-        //
-        // final double unitPrice = totalQty == 0 ? 0 : totalAmt / totalQty;
+        // Use normalized values that are updated by _updateDays
+        final int totalQty = (med['quantityNeeded'] as num?)?.toInt() ?? 0;
+        final double totalAmount = (med['total'] as num?)?.toDouble() ?? 0;
+        // final double unitPrice =
+        //     med['medicine']['batches'][0]['selling_price_unit'];
 
-        final int totalQty = med['quantityNeeded'] ?? 0;
-        final double totalAmt = (med['total'] ?? 0).toDouble();
-        final double unitPrice = totalQty == 0 ? 0 : totalAmt / totalQty;
+        final int batchId = med['dispenses'][0]['batch_Id'];
+
+        final batch = med['medicine']['batches'].firstWhere(
+          (b) => b['id'] == batchId,
+        );
+
+        final double unitPrice = (batch['selling_price_unit'] as num)
+            .toDouble();
+
+        String getDosePattern(Map<String, dynamic> med) {
+          final int morning = med['morning'] == true ? 1 : 0;
+          final int afternoon = med['afternoon'] == true ? 1 : 0;
+          final int night = med['night'] == true ? 1 : 0;
+
+          return '$morning - $afternoon - $night';
+        }
+
+        String getEatType(Map<String, dynamic> med) {
+          final bool? afterEat = med['after_food'];
+
+          if (afterEat == null) return '';
+          return afterEat ? 'PC' : 'AC';
+        }
+
+        final String dosePattern = getDosePattern(med); // e.g. 1-0-1
+        final String eatType = getEatType(med); // AC / PC
 
         return [
           _selectToggleButton(med),
           name,
-          // _dayControls(med),
           _buildDaysCell(med),
           totalQty,
+          eatType,
+          dosePattern,
           "₹ ${unitPrice.toStringAsFixed(1)}",
-          "₹ ${totalAmt.toStringAsFixed(1)}",
+          "₹ ${totalAmount.toStringAsFixed(1)}",
         ];
       }).toList(),
     );
   }
 
+  // Widget _buildDaysCell(Map<String, dynamic> med) {
+  //   final category =
+  //       med['medicine']?['category']?.toString().toLowerCase() ?? '';
+  //
+  //   if (category.toLowerCase() != 'tablets') {
+  //     return Center(
+  //       child: Text(
+  //         '${med['currentDays'] ?? med['days'] ?? 0}',
+  //         style: const TextStyle(fontWeight: FontWeight.bold),
+  //       ),
+  //     );
+  //   }
+  //
+  //   return _dayControls(med);
+  // }
   Widget _buildDaysCell(Map<String, dynamic> med) {
     final category =
         med['medicine']?['category']?.toString().toLowerCase() ?? '';
 
-    if (category != 'tablet') {
-      return const Text('-', style: TextStyle(fontWeight: FontWeight.bold));
+    if (category != 'tablets') {
+      final days = med['days'];
+
+      return Center(
+        child: Text(
+          (days == null || days == 0) ? '-' : days.toString(),
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+      );
     }
 
     return _dayControls(med);
@@ -587,21 +1046,52 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
 
   List<Map<String, dynamic>> _normalizeMedicines(List list) {
     return list.map<Map<String, dynamic>>((m) {
-      int days = m['days'] ?? 1;
+      double days = double.parse(m['days'].toString()) ?? 1.0;
 
       int sessionCount = 0;
       if (m['morning'] == true) sessionCount++;
       if (m['afternoon'] == true) sessionCount++;
       if (m['night'] == true) sessionCount++;
 
-      final qtyPerTime = (m['dosage']).toString();
-      final qtyPerTimes = double.parse(qtyPerTime.toString());
+      double qtyPerTimes = 1.0;
+      final rawDosage = m['dosage']?.toString() ?? '1';
+      // Try parsing directly first
+      if (double.tryParse(rawDosage) != null) {
+        qtyPerTimes = double.parse(rawDosage);
+      } else {
+        // Extract first number if present
+        final match = RegExp(r"([0-9]*\.?[0-9]+)").firstMatch(rawDosage);
+        if (match != null) {
+          qtyPerTimes = double.tryParse(match.group(0)!) ?? 1.0;
+        }
+      }
 
-      final qtyPerDay = qtyPerTimes * sessionCount;
-      final totalQty = (qtyPerDay * days).ceil();
+      // final qtyPerDay = qtyPerTimes * sessionCount;
+      // final totalQty = (qtyPerDay * days).ceil();
+      final String category = (m['medicine']?['category'] ?? '')
+          .toString()
+          .toLowerCase();
+
+      int totalQty;
+
+      if (category == 'tablets') {
+        // Tablets → calculated
+        final double qtyPerDay = qtyPerTimes * sessionCount;
+        totalQty = (qtyPerDay * days).ceil();
+      } else {
+        // Other categories → direct quantity
+        totalQty = (m['total_quantity'] as num?)?.toInt() ?? 0;
+      }
 
       final price = (m['dispenses'] != null && m['dispenses'].isNotEmpty)
-          ? (m['dispenses'][0]['amount'] as num).toDouble() / totalQty
+          ? (totalQty > 0
+                ? (m['dispenses'][0]['amount'] as num).toDouble() / totalQty
+                : 0.0)
+          : (m['medicine'] != null &&
+                m['medicine']['batches'] != null &&
+                m['medicine']['batches'].isNotEmpty)
+          ? (m['medicine']['batches'][0]['selling_price_unit'] as num)
+                .toDouble()
           : (m['Medician']?['amount'] as num?)?.toDouble() ?? 0;
 
       return {
@@ -612,70 +1102,53 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
         'allowedMax': days,
         'quantityNeeded': totalQty,
         'total': totalQty * price,
+        'unitPrice': price,
       };
     }).toList();
   }
 
-  // void _updateDays(Map<String, dynamic> med, int newDays) {
-  //   final maxDays = med['allowedMax'];
-  //   if (newDays < 1 || newDays > maxDays) return;
-  //
-  //   setState(() {
-  //     med['currentDays'] = newDays;
-  //
-  //     int sessionCount = 0;
-  //     if (med['morning'] == true) sessionCount++;
-  //     if (med['afternoon'] == true) sessionCount++;
-  //     if (med['night'] == true) sessionCount++;
-  //
-  //     // final qtyPerTime =
-  //     //     double.tryParse(med['quantity']?.toString() ?? '0') ?? 0;
-  //     final qtyPerTime = (med['dosage'] as num?)?.toDouble() ?? 0;
-  //
-  //     final qtyPerDay = qtyPerTime * sessionCount;
-  //     final totalQty = (qtyPerDay * newDays).ceil();
-  //
-  //     final price =
-  //         double.tryParse(med['Medician']?['amount']?.toString() ?? '0') ?? 0;
-  //
-  //     med['quantityNeeded'] = totalQty;
-  //     med['total'] = totalQty * price;
-  //   });
-  // }
-
-  void _updateDays(Map<String, dynamic> med, int newDays) {
+  void _updateDays(Map<String, dynamic> med, double newDays) {
     final maxDays = med['allowedMax'];
     if (newDays < 1 || newDays > maxDays) return;
 
+    // Update the values first
+    med['currentDays'] = newDays;
+
+    int sessionCount = 0;
+    if (med['morning'] == true) sessionCount++;
+    if (med['afternoon'] == true) sessionCount++;
+    if (med['night'] == true) sessionCount++;
+
+    double qtyPerTimes = 1.0;
+    final rawDosage = med['dosage']?.toString() ?? '1';
+    if (double.tryParse(rawDosage) != null) {
+      qtyPerTimes = double.parse(rawDosage);
+    } else {
+      final match = RegExp(r"([0-9]*\.?[0-9]+)").firstMatch(rawDosage);
+      if (match != null) {
+        qtyPerTimes = double.tryParse(match.group(0)!) ?? 1.0;
+      }
+    }
+
+    final qtyPerDay = qtyPerTimes * sessionCount;
+    final totalQty = (qtyPerDay * newDays).ceil();
+
+    // Use stored unitPrice
+    final unitPrice = (med['unitPrice'] as num?)?.toDouble() ?? 0.0;
+
+    med['quantityNeeded'] = totalQty;
+    med['total'] = totalQty * unitPrice;
+
+    // Force rebuild by creating a new list reference
     setState(() {
-      med['currentDays'] = newDays;
-
-      int sessionCount = 0;
-      if (med['morning'] == true) sessionCount++;
-      if (med['afternoon'] == true) sessionCount++;
-      if (med['night'] == true) sessionCount++;
-
-      // final qtyPerTime = (med['dosage'] as num?)?.toDouble() ?? 0;
-      //
-      // final qtyPerDay = qtyPerTime * sessionCount;
-      final qtyPerTime = (med['dosage']).toString();
-      final qtyPerTimes = double.parse(qtyPerTime.toString());
-
-      final qtyPerDay = qtyPerTimes * sessionCount;
-      final totalQty = (qtyPerDay * newDays).ceil();
-
-      final unitPrice = totalQty == 0
-          ? 0
-          : (med['total'] / med['quantityNeeded']);
-
-      med['quantityNeeded'] = totalQty;
-      med['total'] = totalQty * unitPrice;
+      medicines = List.from(medicines);
     });
   }
 
   Widget _dayControls(Map<String, dynamic> med) {
-    int currentDays = med['currentDays'];
-    int maxDays = med['allowedMax'];
+    // Use state-managed currentDays and allowedMax
+    final double currentDays = (med['currentDays'] as num?)?.toDouble() ?? 1;
+    final double maxDays = (med['allowedMax'] as num?)?.toDouble() ?? 1;
 
     bool canDec = currentDays > 1;
     bool canInc = currentDays < maxDays;
@@ -688,7 +1161,7 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
           onPressed: canDec ? () => _updateDays(med, currentDays - 1) : null,
         ),
         Text(
-          currentDays.toString(),
+          currentDays.toInt().toString(),
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         IconButton(
@@ -838,34 +1311,62 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
   // -------------------- BILL SUMMARY --------------------
 
   Widget _buildBillSummaryCard(Map patient) {
-    // final allMeds = getAllPrescriptionMedicines();
-    //final medicineTotal = calculateMedicineTotal(allMeds);
     final patientName = patient['name'] ?? '';
     final phoneNumber = patient['phone']?['mobile'] ?? '';
-    // final selectedMedicines = medicines
-    //     .where((m) => m['selected'] == true && m['status'] != 'CANCELLED')
-    //     .toList();
+    print('selectedMedicines $medicines');
     final selectedMedicines = medicines
         .where((m) => m['selected'] == true && m['status'] != 'CANCELLED')
         .map(
           (m) => {
             'name': m['medicine']?['name'] ?? 'Medicine',
-            'quantityNeeded': m['quantityNeeded'],
-            'total': m['total'],
+            'quantityNeeded': m['quantityNeeded'] - m['dispensed_quantity'],
+            'total': m['total_amount'] - m['dispenses'][0]['amount'],
           },
         )
         .toList();
 
-    // for (var m in medicines) {}
-    //
-    // final selectedTonics = tonics
-    //     .where((t) => t['selected'] == true && t['status'] != 'CANCELLED')
-    //     .toList();
-    // final selectedInjections = injections
-    //     .where((i) => i['selected'] == true && i['status'] != 'CANCELLED')
-    //     .toList();
+    final medicalBillSelectedMedicines = widget.index == 1
+        ? medicines
+              .where((m) => m['selected'] == true && m['status'] != 'CANCELLED')
+              .map(
+                (m) => {
+                  'name': m['medicine']?['name'] ?? 'Medicine',
+                  'quantityNeeded':
+                      m['quantityNeeded'] - m['dispensed_quantity'],
+                  'total': m['total_amount'] - m['dispenses'][0]['amount'],
+                  'batchNo': m['dispenses'][0]['batch_Id'],
+                  'days': m['days'],
+                  'after_Eat': m['after_Eat'],
+                  'morning': m['morning'],
+                  'afternoon': m['afternoon'],
+                  'night': m['night'],
+                  'category': m['medicine']['category'],
+                  'medicine': m['medicine'],
+                },
+              )
+              .toList()
+        : medicines
+              .where((m) => m['selected'] == true && m['status'] != 'CANCELLED')
+              .map(
+                (m) => {
+                  'name': m['medicine']?['name'] ?? 'Medicine',
+                  'quantityNeeded': m['quantityNeeded'],
+                  'total': m['total'],
+                  'batchNo': m['dispenses'][0]['batch_Id'],
+                  'days': m['days'],
+                  'after_Eat': m['after_Eat'],
+                  'morning': m['morning'],
+                  'afternoon': m['afternoon'],
+                  'night': m['night'],
+                  'category': m['medicine']['category'],
+                  'medicine': m['medicine'],
+                },
+              )
+              .toList();
 
     if (paymentSuccess || widget.index == 1) {
+      // ✅ Prescription Bill layout shown after payment success
+
       // ✅ Prescription Bill layout shown after payment success
       return Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -894,33 +1395,13 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
                   style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
                 ),
                 const SizedBox(height: 6),
-                // _buildSimpleTable(
-                //   headers: ["Medicine", "Qty", "Amount"],
-                //   rows: allMeds.map((m) {
-                //     final name = m['medicine']?['name'] ?? 'Medicine';
-                //
-                //     int qty = 0;
-                //     double amt = 0;
-                //
-                //     for (var d in (m['dispenses'] ?? [])) {
-                //       qty += (d['dispensed_quantity'] ?? 0) as int;
-                //       amt += (d['amount'] ?? 0).toDouble();
-                //     }
-                //
-                //     return [
-                //       name,
-                //       qty.toString(),
-                //       "₹ ${amt.toStringAsFixed(2)}",
-                //     ];
-                //   }).toList(),
-                // ),
                 _buildSimpleTable(
                   headers: ["Medicine", "Qty", "Amount"],
                   rows: selectedMedicines.map((m) {
                     return [
                       m['name'],
                       m['quantityNeeded'],
-                      "₹ ${m['total'].toStringAsFixed(2)}",
+                      "₹ ${m['total'].toStringAsFixed(1)}",
                     ];
                   }).toList(),
                 ),
@@ -946,6 +1427,25 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
                   ),
                 ],
               ),
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "Amount",
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+                  ),
+                  Text(
+                    totalCharges.toStringAsFixed(1),
+                    // "₹ ${totalCharges.toStringAsFixed(2)}",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: Colors.green.shade700,
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 20),
 
               // ✅ Buttons
@@ -954,18 +1454,36 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    ElevatedButton.icon(
+                    IconButton(
+                      onPressed: () =>
+                          MedicalPdfBillMaker.generateMedicalBillPdf(
+                            patientData: widget.consultation['patient'],
+                            allConsultation: widget.consultation,
+                            totalAmount: totalCharges,
+                            medicines: medicalBillSelectedMedicines,
+                          ),
+                      icon: FaIcon(
+                        FontAwesomeIcons.filePdf,
+                        color: Colors.white,
+                        size: 25,
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    IconButton(
                       icon: const FaIcon(
                         FontAwesomeIcons.whatsapp,
                         color: Colors.white,
                         size: 26,
-                      ),
-                      label: const Text(
-                        "Send ",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
@@ -988,65 +1506,38 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
                         totalAmount: totalCharges,
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    IconButton(
-                      onPressed: () => PdfBillService.pdfBill(
-                        //phoneNumber: phoneNumber,
-                        patientName: patientName,
-                        allConsultation: widget.consultation,
-                        totalAmount: totalCharges,
-                        medicines: selectedMedicines,
-                        // tonics: selectedTonics,
-                        // injections: selectedInjections,
-                      ),
-                      icon: FaIcon(
-                        FontAwesomeIcons.share,
-                        color: Colors.white,
-                        size: 18,
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                    ),
-                    Spacer(),
-                    ElevatedButton.icon(
-                      icon: _isLoading
-                          ? const SizedBox(
-                              height: 18,
-                              width: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Icon(Icons.check_circle, color: Colors.white),
-                      label: Text(
-                        _isLoading ? "Updating..." : "OK ",
-
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      onPressed: _isLoading ? null : _updateStatus,
-                    ),
+                    //Spacer(),
+                    // ElevatedButton.icon(
+                    //   icon: _isLoading
+                    //       ? const SizedBox(
+                    //           height: 18,
+                    //           width: 18,
+                    //           child: CircularProgressIndicator(
+                    //             strokeWidth: 2.2,
+                    //             color: Colors.white,
+                    //           ),
+                    //         )
+                    //       : const Icon(Icons.check_circle, color: Colors.white),
+                    //   label: Text(
+                    //     _isLoading ? "Updating..." : "OK ",
+                    //
+                    //     style: const TextStyle(
+                    //       color: Colors.white,
+                    //       fontWeight: FontWeight.w600,
+                    //     ),
+                    //   ),
+                    //   style: ElevatedButton.styleFrom(
+                    //     backgroundColor: primaryColor,
+                    //     padding: const EdgeInsets.symmetric(
+                    //       horizontal: 18,
+                    //       vertical: 12,
+                    //     ),
+                    //     shape: RoundedRectangleBorder(
+                    //       borderRadius: BorderRadius.circular(10),
+                    //     ),
+                    //   ),
+                    //   onPressed: _isLoading ? null : _updateStatus,
+                    // ),
                   ],
                 ),
               ),
@@ -1077,42 +1568,7 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
             const Divider(height: 20),
             _info("Medicines Total", "₹ ${totalCharges.toStringAsFixed(2)}"),
 
-            // if (medicines.isNotEmpty) ...[
-            //   _info(
-            //     "Medicines Total",
-            //     "₹ ${_listTotal(medicines).toStringAsFixed(1)}",
-            //   ),
-            // ],
-            // if (tonics.isNotEmpty) ...[
-            //   _info(
-            //     "Tonics Total",
-            //     "₹ ${_listTotal(tonics).toStringAsFixed(1)}",
-            //   ),
-            // ],
-            // if (injections.isNotEmpty) ...[
-            //   _info(
-            //     "Injections Total",
-            //     "₹ ${_listTotal(injections).toStringAsFixed(1)}",
-            //   ),
-            // ],
             const Divider(height: 15),
-            // Row(
-            //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            //   children: [
-            //     const Text(
-            //       "Grand Total",
-            //       style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17),
-            //     ),
-            //     Text(
-            //       "₹ ${medicineTotal.toStringAsFixed(2)}",
-            //       style: const TextStyle(
-            //         fontWeight: FontWeight.bold,
-            //         fontSize: 16,
-            //         color: Colors.green,
-            //       ),
-            //     ),
-            //   ],
-            // ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -1137,9 +1593,6 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
                 Align(
                   alignment: Alignment.center,
                   child: ElevatedButton.icon(
-                    // onPressed: (_isLoading || totalCharges == 0)
-                    //     ? null
-                    //     : _showHandlePayment,
                     onPressed: (_isLoading || !hasSelectedItems)
                         ? null
                         : _showHandlePayment,
@@ -1168,7 +1621,7 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
                       //     : primaryColor,
                       backgroundColor: (_isLoading || !hasSelectedItems)
                           ? Colors.grey
-                          : primaryColor,
+                          : Colors.blueAccent,
 
                       padding: const EdgeInsets.symmetric(
                         horizontal: 18,

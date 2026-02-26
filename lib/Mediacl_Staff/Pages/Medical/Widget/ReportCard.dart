@@ -879,7 +879,7 @@ class ReportCardWidget extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  record['patient_Id'] ?? '-',
+                  record['patient_Id'].toString() ?? '-',
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hospitrax/Mediacl_Staff/Pages/Doctor/pages/patient_description_in_patient/patient_description_page.dart';
+import 'package:hospitrax/Mediacl_Staff/Pages/Doctor/pages/patient_description_in_patient/inpatient_description_page.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../../Pages/NotificationsPage.dart';
@@ -249,9 +249,15 @@ class DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
         return;
       }
 
-      int remainingQty = finalQty;
       List<Map<String, dynamic>> batchesForThisMed = [];
       double actualTotalPrice = 0;
+
+      int remainingQty = finalQty;
+      double qpd = (medEntry['qtyPerDose'] as num).toDouble();
+      int sds = [medEntry['morning'], medEntry['afternoon'], medEntry['night']]
+          .where((v) => v == true)
+          .length;
+      double qtyPerDay = qpd * sds;
 
       for (var batch in batches) {
         if (remainingQty <= 0) break;
@@ -280,28 +286,32 @@ class DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
           (usedQty * unitPrice).toStringAsFixed(2),
         );
 
+        double batchDays = usedQty / (qtyPerDay > 0 ? qtyPerDay : 1.0);
+
         batchesForThisMed.add({
           'batch_id': bId,
           'batch_no': batch['batch_no'],
           'allocated_qty': usedQty,
           'unit_price': unitPrice,
           'batch_total': batchTotal,
+          'batch_days': batchDays.toStringAsFixed(2),
         });
 
         actualTotalPrice += batchTotal;
         remainingQty -= usedQty;
       }
 
-      if (batchesForThisMed.isNotEmpty) {
-        newlyAllocated.add({
-          ...medEntry,
-          'quantity': finalQty,
-          'total': double.parse(actualTotalPrice.toStringAsFixed(2)),
-          'allocated_batches': batchesForThisMed,
-          'batch_Id': batchesForThisMed[0]['batch_id'],
-          'batch_no': batchesForThisMed[0]['batch_no'],
-        });
-      }
+      int medIdToSubmit = medicineId;
+      newlyAllocated.add({
+        ...medEntry,
+        'medicineId': medIdToSubmit,
+        'medicine_Id': medIdToSubmit,
+        'total': double.parse(actualTotalPrice.toStringAsFixed(2)),
+        'allocated_batches': batchesForThisMed,
+        'batch_Id': batchesForThisMed[0]['batch_id'],
+        'batch_no': batchesForThisMed[0]['batch_no'],
+        'qtyPerDay': qtyPerDay,
+      });
     }
 
     if (currentCall == _onAddCallCount) {
@@ -326,6 +336,7 @@ class DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
   List<Map<String, dynamic>> allocateBatches(
     List<dynamic> batches,
     int requestedQty,
+    double qtyPerDay,
   ) {
     List<Map<String, dynamic>> allocated = [];
     int remainingQty = requestedQty;
@@ -342,6 +353,8 @@ class DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
         double unitPrice =
             double.tryParse(batch['selling_price_unit']?.toString() ?? '0') ??
             0;
+            
+        double batchDays = usedQty / (qtyPerDay > 0 ? qtyPerDay : 1.0);
 
         allocated.add({
           'batch_id': batch['id'],
@@ -349,6 +362,7 @@ class DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
           'allocated_qty': usedQty,
           'unit_price': unitPrice,
           'batch_total': usedQty * unitPrice,
+          'batch_days': batchDays.toStringAsFixed(2),
         });
 
         remainingQty -= usedQty;

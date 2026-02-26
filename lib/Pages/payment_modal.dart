@@ -99,71 +99,159 @@ class _PaymentModalState extends State<PaymentModal> {
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
+    // return Dialog(
+    //   backgroundColor: Colors.white,
+    //   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+    //   elevation: 8,
+    //   insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 100),
+    //   child: SingleChildScrollView(
+    //     padding: EdgeInsets.only(
+    //       left: 24,
+    //       right: 24,
+    //       top: 24,
+    //       bottom: bottomInset + 24,
+    //     ),
+    //     child: Column(
+    //       mainAxisSize: MainAxisSize.min,
+    //       children: [
+    //         Text(
+    //           "Choose Payment Method",
+    //           style: TextStyle(
+    //             color: hospitalAccentColor,
+    //             fontWeight: FontWeight.bold,
+    //             fontSize: 20,
+    //           ),
+    //         ),
+    //         const SizedBox(height: 12),
+    //         Text(
+    //           "Booking Fees: ₹ ${widget.registrationFee.toStringAsFixed(0)}",
+    //           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+    //         ),
+    //         const SizedBox(height: 28),
+    //         _buildCardOption(
+    //           title: "Online",
+    //           icon: Icons.payment,
+    //           onTap: () {
+    //             Navigator.pop(context, {
+    //               'paymentStatus': true,
+    //               'paymentMode': 'OnlinePay',
+    //               'amount': widget.registrationFee,
+    //             });
+    //           },
+    //         ),
+    //         const SizedBox(height: 16),
+    //         _buildCardOption(
+    //           title: "Cash",
+    //           icon: Icons.handshake,
+    //           onTap: () {
+    //             Navigator.pop(context, {
+    //               'paymentStatus': true,
+    //               'paymentMode': 'ManualPay',
+    //               'amount': widget.registrationFee,
+    //             });
+    //           },
+    //           cardColor: Colors.green.shade50,
+    //           iconColor: Colors.green.shade700,
+    //         ),
+    //
+    //         // const SizedBox(height: 16),
+    //         // _buildCardOption(
+    //         //   title: "Final Pay (Later)",
+    //         //   icon: Icons.schedule,
+    //         //   onTap: _finalPayDialog,
+    //         //   cardColor: Colors.grey.shade100,
+    //         //   iconColor: Colors.grey.shade700,
+    //         // ),
+    //       ],
+    //     ),
+    //   ),
+    // );
     return Dialog(
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       elevation: 8,
       insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 100),
-      child: SingleChildScrollView(
-        padding: EdgeInsets.only(
-          left: 24,
-          right: 24,
-          top: 24,
-          bottom: bottomInset + 24,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              "Choose Payment Method",
-              style: TextStyle(
-                color: hospitalAccentColor,
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
+      child: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: EdgeInsets.only(
+              left: 24,
+              right: 24,
+              top: 15,
+              bottom: bottomInset + 24,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 16), // space for close icon
+                Text(
+                  "Choose Payment Method",
+                  style: TextStyle(
+                    color: hospitalAccentColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  "Amount: ₹ ${widget.registrationFee.toStringAsFixed(0)}",
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 28),
+                _buildCardOption(
+                  title: "Online",
+                  icon: Icons.payment,
+                  onTap: () {
+                    Navigator.pop(context, {
+                      'paymentStatus': true,
+                      'paymentMode': 'OnlinePay',
+                      'amount': widget.registrationFee,
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+                _buildCardOption(
+                  title: "Cash",
+                  icon: Icons.handshake,
+                  onTap: () {
+                    Navigator.pop(context, {
+                      'paymentStatus': true,
+                      'paymentMode': 'ManualPay',
+                      'amount': widget.registrationFee,
+                    });
+                  },
+                  cardColor: Colors.green.shade50,
+                  iconColor: Colors.green.shade700,
+                ),
+              ],
+            ),
+          ),
+
+          /// ❌ Close Button
+          Positioned(
+            top: 8,
+            right: 8,
+            child: GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade400,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.close,
+                  size: 18,
+                  color: Colors.white,
+                  weight: 10,
+                ),
               ),
             ),
-            const SizedBox(height: 12),
-            Text(
-              "Booking Fees: ₹ ${widget.registrationFee.toStringAsFixed(0)}",
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 28),
-            _buildCardOption(
-              title: "Online",
-              icon: Icons.payment,
-              onTap: () {
-                Navigator.pop(context, {
-                  'paymentStatus': true,
-                  'paymentMode': 'OnlinePay',
-                  'amount': widget.registrationFee,
-                });
-              },
-            ),
-            const SizedBox(height: 16),
-            _buildCardOption(
-              title: "Cash",
-              icon: Icons.handshake,
-              onTap: () {
-                Navigator.pop(context, {
-                  'paymentStatus': true,
-                  'paymentMode': 'ManualPay',
-                  'amount': widget.registrationFee,
-                });
-              },
-              cardColor: Colors.green.shade50,
-              iconColor: Colors.green.shade700,
-            ),
-
-            // const SizedBox(height: 16),
-            // _buildCardOption(
-            //   title: "Final Pay (Later)",
-            //   icon: Icons.schedule,
-            //   onTap: _finalPayDialog,
-            //   cardColor: Colors.grey.shade100,
-            //   iconColor: Colors.grey.shade700,
-            // ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

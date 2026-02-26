@@ -64,6 +64,7 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFFF7E6),
+      //backgroundColor: const Color(0xFFF4DFB2),
       body: LayoutBuilder(
         builder: (context, constraints) {
           return SingleChildScrollView(

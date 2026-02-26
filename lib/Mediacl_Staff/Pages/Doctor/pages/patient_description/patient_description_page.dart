@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../../Services/admin_service.dart';
 import '../../../../../Services/consultation_service.dart';
+import '../../../../../Services/Medicine_Service.dart';
 import '../../../../../Services/prescription_service.dart';
 import '../../../../../Services/socket_service.dart';
 import '../../../../../utils/utils.dart';
@@ -150,9 +151,10 @@ class PatientDescriptionPageState extends State<PatientDescriptionPage>
 
     final complaint = consultation['purpose'] ?? '_';
     final tokenNo =
-        (consultation['tokenNo'] == null || consultation['tokenNo'] == 0)
+        (consultation['displayToken'] == null ||
+            consultation['displayToken'] == 0)
         ? '-'
-        : consultation['tokenNo'].toString();
+        : consultation['displayToken'].toString();
     final phone = patient['phone'] ?? '_';
     final address = patient['address']?['Address'] ?? '-';
     final gender = patient['gender'] ?? '_';
@@ -1053,6 +1055,7 @@ class PatientDescriptionPageState extends State<PatientDescriptionPage>
         'afternoon': m['afternoon'],
         'night': m['night'],
         'days': m['days'],
+        'batch_No': m['batch_Id'],
         //'quantityNeeded': m['quantity'],
         'total_quantity': m['quantity'],
         'dosage': m['qtyPerDose'].toString(),
@@ -1072,21 +1075,14 @@ class PatientDescriptionPageState extends State<PatientDescriptionPage>
     };
 
     try {
-      // await PrescriptionService().createPrescription(prescriptionData);
       final prescription = await PrescriptionService().createPrescription(
         prescriptionData,
       );
       final prefs = await SharedPreferences.getInstance();
       final userId = prefs.getString('userId');
 
-      final firstMedicine = submittedMedicines[0];
-      await PrescriptionService().createPrescriptionDispense({
-        "hospital_Id": widget.consultation['hospital_Id'],
-        "prescription_medicine_Id": prescription['medicines'][0]['id'],
-        "batch_Id": firstMedicine['batch_Id'],
-        "dispensed_quantity": firstMedicine['quantity'],
-        "pharmacist_Id": userId,
-      });
+      // Load all medicines to allocate batches
+      final allMedicines = await MedicineService().getAllMedicines();
 
       // await PrescriptionService().createPrescriptionDispense(prescriptionData);
       final consultationId = widget.consultation['id'];
@@ -1101,10 +1097,16 @@ class PatientDescriptionPageState extends State<PatientDescriptionPage>
         // if (submittedInjections.isNotEmpty) {
         //   injection = true; // once true, stays true
         // }
-
+        print('submittedMedicines $submittedMedicines');
         // permanent flag for medicine/tonic/injection combined
         if (submittedMedicines.isNotEmpty) {
           medicineTonicInjection = true; // once true, stays true
+        }
+        for (final med in submittedMedicines) {
+          if (med['route']?.toString().toLowerCase() == 'injections') {
+            injection = true;
+            break; // once true, stop checking
+          }
         }
       });
 

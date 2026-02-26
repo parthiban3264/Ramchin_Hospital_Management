@@ -603,9 +603,9 @@ class _OutpatientQueuePageState extends State<OutpatientQueuePage>
     // final Color endProcessingTextColor = Colors.green.shade700;
 
     final cancelReason = item['cancelReason'] ?? 'No reason provided';
-    final tokenNo = (item['tokenNo'] == null || item['tokenNo'] == 0)
+    final tokenNo = (item['displayToken'] == null || item['displayToken'] == 0)
         ? '-'
-        : item['tokenNo'].toString();
+        : item['displayToken'].toString();
 
     return AnimatedBuilder(
       animation: _glowController,

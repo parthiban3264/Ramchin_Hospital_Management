@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hospitrax/Mediacl_Staff/Pages/Doctor/pages/patient_description_in_patient/patient_description_page.dart';
+import 'package:hospitrax/Mediacl_Staff/Pages/Doctor/pages/patient_description_in_patient/inpatient_description_page.dart';
 
 import '../../../../../Admin/Pages/admin_edit_profile_page.dart';
 import '../../../../../Services/admin_service.dart';
@@ -458,41 +458,41 @@ Widget buildSectionCard({
     shadowColor: primaryColor.withValues(alpha: 0.25),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
     child: Padding(
-      padding: const EdgeInsets.all(15),
+      padding: const EdgeInsets.all(10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFBF955E), Color(0xFFD7B980)],
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-              ),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Row(
-              children: [
-                Icon(
-                  Icons.medical_services_rounded,
-                  color: Colors.white,
-                  size: 24,
-                ),
-                SizedBox(width: 8),
-                Text(
-                  'Consultation Actions',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          // Container(
+          //   width: double.infinity,
+          //   padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+          //   decoration: BoxDecoration(
+          //     gradient: const LinearGradient(
+          //       colors: [Color(0xFFBF955E), Color(0xFFD7B980)],
+          //       begin: Alignment.centerLeft,
+          //       end: Alignment.centerRight,
+          //     ),
+          //     borderRadius: BorderRadius.circular(12),
+          //   ),
+          //   child: const Row(
+          //     children: [
+          //       Icon(
+          //         Icons.medical_services_rounded,
+          //         color: Colors.white,
+          //         size: 24,
+          //       ),
+          //       SizedBox(width: 8),
+          //       Text(
+          //         'Consultation Actions',
+          //         style: TextStyle(
+          //           fontSize: 18,
+          //           color: Colors.white,
+          //           fontWeight: FontWeight.bold,
+          //           letterSpacing: 0.3,
+          //         ),
+          //       ),
+          //     ],
+          //   ),
+          // ),
           const SizedBox(height: 20),
           if (showOnlyPrescription)
             Center(

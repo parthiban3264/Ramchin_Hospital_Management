@@ -444,11 +444,11 @@ class _ScanQueueState extends State<ScanQueue>
             ? record['title']
             : record['type'];
         final tokenNo =
-            (patient['tokenNo'] == null ||
-                patient['tokenNo'] == 0 ||
-                patient['tokenNo'] == 'N/A')
+            (patient['displayToken'] == null ||
+                patient['displayToken'] == 0 ||
+                patient['displayToken'] == 'N/A')
             ? '-'
-            : patient['tokenNo'].toString();
+            : patient['displayToken'].toString();
         final gender = patient['gender'] ?? 'other';
         final color = genderColor(gender);
         final queueStatus = record['queueStatus'];

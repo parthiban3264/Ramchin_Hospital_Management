@@ -9,13 +9,11 @@ import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
 
 class PdfBillService {
-  static Future<void> pdfBill({
+  static Future<void> generatePdfBill({
     required String patientName,
     required double totalAmount,
     required Map<String, dynamic> allConsultation,
     required List<dynamic> medicines,
-    // required List<dynamic> tonics,
-    // required List<dynamic> injections,
   }) async {
     final hospital = allConsultation['Hospital'] ?? {};
     final patient = allConsultation['Patient'] ?? {};
@@ -233,48 +231,6 @@ class PdfBillService {
         );
       }
     }
-
-    /// TONICS
-    // for (var t in tonics) {
-    //   if (t['selected'] == true) {
-    //     final dose = t['Doase'].toString().split('.')[0];
-    //     rows.add(
-    //       pw.TableRow(
-    //         children: [
-    //           _cell('${i++}'),
-    //           _cell('${t['Tonic']?['tonicName']} (Tonic)'),
-    //           _cell(doseValue(t['morning'] == true, '$dose ml')),
-    //           _cell(doseValue(t['afternoon'] == true, '$dose ml')),
-    //           _cell(doseValue(t['night'] == true, '$dose ml')),
-    //           _cell('After'),
-    //           _cell('${t['days'] ?? '-'}'),
-    //           _cell('₹${t['total'] ?? 0}'),
-    //         ],
-    //       ),
-    //     );
-    //   }
-    // }
-
-    /// INJECTIONS
-    // for (var inj in injections) {
-    //   if (inj['selected'] == true) {
-    //     final dose = '${inj['Doase']}';
-    //     rows.add(
-    //       pw.TableRow(
-    //         children: [
-    //           _cell('${i++}'),
-    //           _cell('${inj['Injection']?['injectionName']} (Inj)'),
-    //           _cell(doseValue(inj['morning'] == true, dose)),
-    //           _cell(doseValue(inj['afternoon'] == true, dose)),
-    //           _cell(doseValue(inj['night'] == true, dose)),
-    //           _cell('After'),
-    //           _cell('${inj['days'] ?? '-'}'),
-    //           _cell('₹${inj['total'] ?? 0}'),
-    //         ],
-    //       ),
-    //     );
-    //   }
-    // }
 
     return rows;
   }

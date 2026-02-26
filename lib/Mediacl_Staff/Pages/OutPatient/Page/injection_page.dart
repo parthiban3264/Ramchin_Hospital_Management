@@ -25,7 +25,7 @@ class _InjectionPageState extends State<InjectionPage> {
     super.initState();
     _updateTime();
 
-    final injectionList = widget.consultation['InjectionPatient'] ?? [];
+    final injectionList = widget.consultation['Prescription'] ?? [];
     injectionChecks = List.generate(injectionList.length, (_) => false);
   }
 
@@ -243,6 +243,8 @@ class _InjectionPageState extends State<InjectionPage> {
                 ),
               ],
             ),
+
+            //_buildInfoRow("Token No", consultation['tokenNo'].toString()),
             _buildInfoRow("Patient ID", consultation['patient_Id'].toString()),
             _buildInfoRow("Phone", patient['phone']?['mobile'] ?? "-"),
             _buildInfoRow("Address", patient['address']?['Address'] ?? "-"),
@@ -265,7 +267,8 @@ class _InjectionPageState extends State<InjectionPage> {
   // ALL INJECTIONS INSIDE ONE CARD WITH CHECKBOXES
   // --------------------------------------------------------------
   Widget _buildInjectionCard(Map<String, dynamic> consultation) {
-    final injectionList = consultation['InjectionPatient'] ?? [];
+    final injectionList = consultation['Prescription'] ?? [];
+    print('injectionList $injectionList');
 
     // Ensure injectionChecks length matches list length (in case consultation changed)
     if (injectionChecks.length != injectionList.length) {
@@ -300,8 +303,8 @@ class _InjectionPageState extends State<InjectionPage> {
 
             ...List.generate(injectionList.length, (index) {
               final injData = injectionList[index];
-              final inj = injData['Injection'] ?? {};
-
+              final inj = injData['medicines'][0]['medicine'] ?? {};
+              print('inj $inj');
               return Column(
                 children: [
                   Row(
@@ -311,7 +314,7 @@ class _InjectionPageState extends State<InjectionPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              inj['injectionName'] ?? 'Unknown Injection',
+                              inj['name'] ?? 'Unknown Injection',
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -320,7 +323,7 @@ class _InjectionPageState extends State<InjectionPage> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              "Dose: ${injData['quantity']}",
+                              "Dose: ${injData['medicines'][0]['dosage']}",
                               style: const TextStyle(fontSize: 14),
                             ),
                             const SizedBox(height: 2),

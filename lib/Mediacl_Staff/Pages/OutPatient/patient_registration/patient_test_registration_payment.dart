@@ -15,7 +15,7 @@ import '../../../../Services/patient_service.dart';
 import '../../../../Services/payment_service.dart';
 import '../../../../Widgets/AgeDobField.dart';
 import '../../../../utils/utils.dart';
-import '../Page/PaymentPage.dart';
+import '../../Payment/PaymentPage.dart';
 import 'scanning_page.dart';
 import 'testing_page.dart';
 

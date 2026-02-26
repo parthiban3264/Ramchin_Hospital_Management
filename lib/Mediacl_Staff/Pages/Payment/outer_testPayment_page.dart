@@ -6,14 +6,14 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../../Pages/NotificationsPage.dart';
-import '../../../../Pages/payment_modal.dart';
-import '../../../../Services/consultation_service.dart';
-import '../../../../Services/payment_service.dart';
-import '../../../../Services/socket_service.dart';
-import '../../../../Services/testing&scanning_service.dart';
-import '../../Medical/Widget/whatsApp_Send_PaymentBill.dart';
-import 'widget.dart';
+import '../../../Pages/NotificationsPage.dart';
+import '../../../Pages/payment_modal.dart';
+import '../../../Services/consultation_service.dart';
+import '../../../Services/payment_service.dart';
+import '../../../Services/socket_service.dart';
+import '../../../Services/testing&scanning_service.dart';
+import '../Medical/Widget/whatsApp_Send_PaymentBill.dart';
+import '../OutPatient/Page/widget.dart';
 
 class FeesTestPaymentPage extends StatefulWidget {
   final Map<String, dynamic> fee;

@@ -280,10 +280,10 @@ class _SymptomsQueuePageState extends State<SymptomsQueuePage>
                           final createdAt = item['createdAt'];
 
                           final tokenNo =
-                              consultation['tokenNo'] == null ||
-                                  consultation['tokenNo'] == 0
+                              consultation['displayToken'] == null ||
+                                  consultation['displayToken'] == 0
                               ? '-'
-                              : consultation['tokenNo'].toString();
+                              : consultation['displayToken'].toString();
 
                           return GestureDetector(
                             onTap: () async {

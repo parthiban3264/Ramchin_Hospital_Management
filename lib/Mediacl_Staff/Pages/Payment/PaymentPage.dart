@@ -7,16 +7,18 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../../Pages/NotificationsPage.dart';
-import '../../../../Pages/payment_modal.dart';
-import '../../../../Services/admin_service.dart';
-import '../../../../Services/charge_Service.dart';
-import '../../../../Services/consultation_service.dart';
-import '../../../../Services/payment_service.dart';
-import '../../../../Services/socket_service.dart';
-import '../../../../Services/testing&scanning_service.dart';
-import '../../Medical/Widget/whatsApp_Send_PaymentBill.dart';
-import 'widget.dart';
+import '../../../Pages/NotificationsPage.dart';
+import '../../../Pages/payment_modal.dart';
+import '../../../Services/admin_service.dart';
+import '../../../Services/charge_Service.dart';
+import '../../../Services/consultation_service.dart';
+import '../../../Services/payment_service.dart';
+import '../../../Services/socket_service.dart';
+import '../../../Services/testing&scanning_service.dart';
+import '../Medical/Widget/whatsApp_Send_PaymentBill.dart';
+import '../OutPatient/Page/widget.dart';
+
+enum PaperSizeType { receipt3inch, a4 }
 
 class FeesPaymentPage extends StatefulWidget {
   final Map<String, dynamic> fee;
@@ -38,6 +40,9 @@ class FeesPaymentPage extends StatefulWidget {
 
 class FeesPaymentPageState extends State<FeesPaymentPage> {
   final prefs = SharedPreferences.getInstance();
+  PaperSizeType _selectedPaperSize = PaperSizeType.receipt3inch;
+  bool _isPaperLoaded = false;
+
   bool _isProcessing = false;
   final socketService = SocketService();
   String? logo;
@@ -91,6 +96,27 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
     );
     _loadHospitalLogo();
     loadStaff();
+    _loadPaperSize();
+  }
+
+  Future<void> _loadPaperSize() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedValue = prefs.getString('paper_size');
+
+    if (savedValue != null) {
+      setState(() {
+        _selectedPaperSize = savedValue == 'a4'
+            ? PaperSizeType.a4
+            : PaperSizeType.receipt3inch;
+        _isPaperLoaded = true;
+      });
+    } else {
+      // If nothing stored → default 3 inch
+      setState(() {
+        _selectedPaperSize = PaperSizeType.receipt3inch;
+        _isPaperLoaded = true;
+      });
+    }
   }
 
   List<Map<String, dynamic>> allStaff = [];
@@ -197,101 +223,235 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) {
+      builder: (dialogContext) {
         bool isPrinting = false;
 
+        // ✅ Default 3 Inch
+        PaperSizeType tempPaperSize = PaperSizeType.receipt3inch;
+
         return StatefulBuilder(
-          builder: (ctx, setDialogState) {
-            return AlertDialog(
+          builder: (context, setDialogState) {
+            final isA4 = tempPaperSize == PaperSizeType.a4;
+
+            return Dialog(
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(22),
               ),
-              title: const Text(
-                "Payment Successfully",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              content: const Text("Do you want to print the bill now?"),
-              actions: [
-                /// ❌ NO → refresh
-                TextButton(
-                  onPressed: isPrinting
-                      ? null
-                      : () {
-                          Navigator.pop(ctx);
-                          Navigator.pop(context, true); // ✅ refresh
-                        },
-                  child: const Text("No"),
-                ),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    /// ✅ Success Icon
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.green,
+                      ),
+                      child: const Icon(
+                        Icons.check,
+                        color: Colors.white,
+                        size: 26,
+                      ),
+                    ),
 
-                /// ✅ YES → print or cancel → refresh ALWAYS refresh ALWAYS
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueAccent,
-                  ),
-                  onPressed: isPrinting
-                      ? null
-                      : () async {
-                          setDialogState(() => isPrinting = true);
-                          Navigator.pop(ctx);
+                    const SizedBox(height: 16),
 
-                          // setState(() => _isBuildingPdf = true);
-                          setState(() {
-                            _isLoading = true;
-                            _isBuildingPdf = true;
-                          });
+                    const Text(
+                      "Payment Successful",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
 
-                          try {
-                            final pdf = await buildPdf(
-                              cellController: cellController,
-                              dobController: dobController,
-                              addressController: addressController,
-                              fee: widget.fee,
-                              hospitalName: hospitalName!,
-                              hospitalPlace: hospitalPlace!,
-                              nameController: nameController,
-                              logo: logo!,
-                              loadStaff: allStaff,
-                            );
-                            await Printing.layoutPdf(
-                              onLayout: (format) async => pdf.save(),
-                            );
-                            if (mounted) {
-                              // setState(() => _isBuildingPdf = false);
-                              // setState(() => _isLoading = false);
-                              setState(() {
-                                _isLoading = false;
-                                _isBuildingPdf = false;
-                              });
-                            }
+                    const SizedBox(height: 6),
 
-                            // 🔑 user may print OR cancel – we don't care
-                            // await Printing.layoutPdf(
-                            //   onLayout: (format) async => pdf.save(),
-                            // );
-                          } catch (e) {
-                            debugPrint("Print error: $e");
-                          } finally {
-                            if (mounted) {
-                              // 🔥 ALWAYS refresh parent
-                              Navigator.pop(context, true);
-                            }
-                          }
-                        },
-                  child: isPrinting
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
+                    const Text(
+                      "Would you like to print the bill?",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.black54),
+                    ),
+
+                    const SizedBox(height: 22),
+
+                    /// 🔥 Modern Segmented Toggle
+                    Container(
+                      padding: const EdgeInsets.all(5),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(40),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          /// 3 INCH (Default Selected)
+                          GestureDetector(
+                            onTap: isPrinting
+                                ? null
+                                : () {
+                                    setDialogState(() {
+                                      tempPaperSize =
+                                          PaperSizeType.receipt3inch;
+                                    });
+                                  },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 250),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 22,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: !isA4
+                                    ? Colors.blueAccent
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              child: Text(
+                                "3 Inch",
+                                style: TextStyle(
+                                  color: !isA4 ? Colors.white : Colors.black87,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
                           ),
-                        )
-                      : const Text(
-                          "Yes, Print",
-                          style: TextStyle(color: Colors.white),
+
+                          /// A4
+                          GestureDetector(
+                            onTap: isPrinting
+                                ? null
+                                : () {
+                                    setDialogState(() {
+                                      tempPaperSize = PaperSizeType.a4;
+                                    });
+                                  },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 250),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 22,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isA4
+                                    ? Colors.deepPurple
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              child: Text(
+                                "A4",
+                                style: TextStyle(
+                                  color: isA4 ? Colors.white : Colors.black87,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 28),
+
+                    /// 🔘 Buttons
+                    Row(
+                      children: [
+                        /// Cancel
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: isPrinting
+                                ? null
+                                : () {
+                                    Navigator.pop(dialogContext);
+                                    Navigator.pop(context, true);
+                                  },
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 13),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text("Cancel"),
+                          ),
                         ),
+
+                        const SizedBox(width: 14),
+
+                        /// Print
+                        Expanded(
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blueAccent,
+                              padding: const EdgeInsets.symmetric(vertical: 13),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            onPressed: isPrinting
+                                ? null
+                                : () async {
+                                    setDialogState(() {
+                                      isPrinting = true;
+                                    });
+
+                                    _selectedPaperSize = tempPaperSize;
+
+                                    final prefs =
+                                        await SharedPreferences.getInstance();
+                                    await prefs.setString(
+                                      'paper_size',
+                                      tempPaperSize == PaperSizeType.a4
+                                          ? 'a4'
+                                          : '3inch',
+                                    );
+
+                                    try {
+                                      final pdf = await buildPdf(
+                                        cellController: cellController,
+                                        dobController: dobController,
+                                        addressController: addressController,
+                                        fee: widget.fee,
+                                        hospitalName: hospitalName!,
+                                        hospitalPlace: hospitalPlace!,
+                                        nameController: nameController,
+                                        logo: logo!,
+                                        loadStaff: allStaff,
+                                        pageFormat: tempPaperSize,
+                                      );
+
+                                      await Printing.layoutPdf(
+                                        onLayout: (format) async => pdf.save(),
+                                      );
+                                    } catch (e) {
+                                      debugPrint("Print error: $e");
+                                    } finally {
+                                      if (mounted) {
+                                        Navigator.pop(dialogContext);
+                                        Navigator.pop(context, true);
+                                      }
+                                    }
+                                  },
+                            child: isPrinting
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Text(
+                                    "Print",
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
+              ),
             );
           },
         );
@@ -665,6 +825,9 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
   @override
   Widget build(BuildContext context) {
     final List tests = widget.fee["TestingAndScanningPatients"] ?? [];
+    final List ctScanOnly = tests
+        .where((test) => test["type"] != "CT-SCAN")
+        .toList();
     final consultation = widget.fee['Consultation'] ?? {};
     // final temperature = consultation['temperature'] ?? '';
     final bloodPressure = consultation['bp'] ?? {} ?? '_';
@@ -687,9 +850,10 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
     final num? emergencyFee = consultation?['emergencyFee'];
     final num? sugarTestFee = consultation?['sugarTestFee'];
     final tokenNo =
-        (consultation['tokenNo'] == null || consultation['tokenNo'] == 0)
+        (consultation['displayToken'] == null ||
+            consultation['displayToken'] == 0)
         ? '-'
-        : consultation['tokenNo'].toString();
+        : consultation['displayToken'].toString();
     // final num totalAmount =
     //     (registrationFee ?? 0) +
     //     (consultationFee ?? 0) +
@@ -753,7 +917,10 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
       required num optionAmount,
     }) async {
       final tests = widget.fee['TestingAndScanningPatients'];
-      final test = tests[testIndex];
+      final List ctScanOnly = tests
+          .where((test) => test["type"] != "CT-SCAN")
+          .toList();
+      final test = ctScanOnly[testIndex];
       final Map options = Map.from(test['selectedOptionAmounts'] ?? {});
 
       if (options.length <= 1) {
@@ -789,15 +956,18 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
 
     Future<void> removeTestAt(int index) async {
       final List tests = widget.fee['TestingAndScanningPatients'] ?? [];
+      final List ctScanOnly = tests
+          .where((test) => test["type"] != "CT-SCAN")
+          .toList();
 
-      if (tests.length <= 1) {
+      if (ctScanOnly.length <= 1) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("At least one test/scan must remain")),
         );
         return;
       }
 
-      final test = tests[index];
+      final test = ctScanOnly[index];
       final num testAmount = test['amount'] ?? 0;
       if (testAmount <= 0) return;
 
@@ -812,10 +982,10 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
         0,
         double.infinity,
       );
-      tests.removeAt(index);
+      ctScanOnly.removeAt(index);
       setState(() {
         widget.fee['amount'] = updatedTotal;
-        widget.fee['TestingAndScanningPatients'] = tests;
+        widget.fee['TestingAndScanningPatients'] = ctScanOnly;
       });
     }
 
@@ -1701,7 +1871,7 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                     ),
                   ],
 
-                  if (tests.isNotEmpty) ...[
+                  if (ctScanOnly.isNotEmpty) ...[
                     const SizedBox(height: 10),
                     Text(
                       "${widget.fee['reason']}",
@@ -1827,7 +1997,7 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                     //     const SizedBox(height: 8),
                     //   ];
                     // }),
-                    ...tests.asMap().entries.expand((entry) {
+                    ...ctScanOnly.asMap().entries.expand((entry) {
                       final testIndex = entry.key;
                       final test = entry.value;
 
@@ -1836,7 +2006,7 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                       final selectedOption = test['selectedOptionAmounts'];
                       final entries = parseSelectedOption(selectedOption);
 
-                      final bool isLastTest = tests.length == 1;
+                      final bool isLastTest = ctScanOnly.length == 1;
 
                       return [
                         // Parent test row
@@ -2034,6 +2204,51 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                       : Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.orangeAccent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 12,
+                                ),
+                              ),
+                              onPressed: () async {
+                                final newType =
+                                    _selectedPaperSize == PaperSizeType.a4
+                                    ? PaperSizeType.receipt3inch
+                                    : PaperSizeType.a4;
+
+                                setState(() {
+                                  _selectedPaperSize = newType;
+                                });
+
+                                final prefs =
+                                    await SharedPreferences.getInstance();
+                                await prefs.setString(
+                                  'paper_size',
+                                  newType == PaperSizeType.a4 ? 'a4' : '3inch',
+                                );
+                              },
+                              // icon: Icon(
+                              //   _selectedPaperSize == PaperSizeType.a4
+                              //       ? Icons.picture_as_pdf
+                              //       : Icons.receipt_long,
+                              // ),
+                              label: Text(
+                                _selectedPaperSize == PaperSizeType.a4
+                                    ? "A4"
+                                    : "3inch",
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            //SizedBox(width: 3),
                             // 🔹 Print Button
                             ElevatedButton.icon(
                               onPressed: _isLoading
@@ -2055,6 +2270,7 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                                           nameController: nameController,
                                           logo: logo!,
                                           loadStaff: allStaff,
+                                          pageFormat: _selectedPaperSize,
                                         );
 
                                         await Printing.layoutPdf(
@@ -2144,8 +2360,13 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                                       widget
                                           .fee['TestingAndScanningPatients'] ??
                                       [];
+                                  final List ctScanOnly = tests
+                                      .where(
+                                        (test) => test["type"] != "CT-SCAN",
+                                      )
+                                      .toList();
 
-                                  if (tests.isEmpty) {
+                                  if (ctScanOnly.isEmpty) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
                                         content: Text(
@@ -2168,7 +2389,7 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                                     age: calculateAge(dobController.text),
                                     address: addressController.text,
                                     tests: List<Map<String, dynamic>>.from(
-                                      tests,
+                                      ctScanOnly,
                                     ),
                                   );
                                 } else if (widget.fee['type'] == 'ADVANCEFEE') {
@@ -2837,6 +3058,69 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
               onPressed: () {},
             ),
         ],
+      ),
+    );
+  }
+
+  Widget buildPaperToggleButton() {
+    final isA4 = _selectedPaperSize == PaperSizeType.a4;
+
+    return GestureDetector(
+      onTap: () async {
+        final newType = isA4 ? PaperSizeType.receipt3inch : PaperSizeType.a4;
+
+        setState(() {
+          _selectedPaperSize = newType;
+        });
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(
+          'paper_size',
+          newType == PaperSizeType.a4 ? 'a4' : '3inch',
+        );
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isA4
+                ? [Colors.deepPurple, Colors.purpleAccent]
+                : [Colors.blueAccent, Colors.lightBlue],
+          ),
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isA4 ? Icons.picture_as_pdf : Icons.receipt_long,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 8),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              transitionBuilder: (child, animation) =>
+                  FadeTransition(opacity: animation, child: child),
+              child: Text(
+                isA4 ? "A4 Size" : "3 Inch",
+                key: ValueKey(isA4),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

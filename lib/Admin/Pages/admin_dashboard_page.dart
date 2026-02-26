@@ -8,12 +8,13 @@ import '../../Mediacl_Staff/Pages/Doctor/pages/DrOpDashboard/DrInPatientQueuePag
 import '../../Mediacl_Staff/Pages/Doctor/pages/DrOpDashboard/dr_out_patient_queue_page.dart';
 import '../../Mediacl_Staff/Pages/Medical/medical_queue_page.dart';
 
+import '../../Mediacl_Staff/Pages/Nurse/in_patient_notes_instruction_queue.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/Page/scan_page.dart';
 
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/scan_queue.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/patient_registration/PatientRegistrationPage.dart';
 
-import '../../Mediacl_Staff/Pages/OutPatient/Queue/FeesQueuePage.dart';
+import '../../Mediacl_Staff/Pages/Payment/FeesQueuePage.dart';
 
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/InjectionQueuePage.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/lab_queue_page.dart';
@@ -22,6 +23,7 @@ import '../../Mediacl_Staff/Pages/OutPatient/Queue/op_queue_page.dart';
 
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/SymptomsQueuePage.dart';
 
+import '../../Mediacl_Staff/Pages/Payment/ct-scan_payment_queue.dart';
 import '../../Mediacl_Staff/Pages/inpatient/add_admission_charges_page.dart';
 
 import '../../Mediacl_Staff/Pages/inpatient/admit_patient.dart';
@@ -362,6 +364,15 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                   ),
                                 );
                               }),
+                              _buildActionItem(Icons.vaccines, "Inpatient", () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const NurseInPatientNotesAndInstructionQueuePage(),
+                                  ),
+                                );
+                              }),
                             ],
                           ),
                         ],
@@ -400,12 +411,25 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                             children: [
                               _buildActionItem(
                                 Icons.currency_rupee,
-                                "Payment",
+                                "PAYMENT\n",
                                 () {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
                                       builder: (_) => const FeesQueuePage(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              _buildActionItem(
+                                Icons.currency_rupee,
+                                "CT-SCAN\nPAYMENT",
+                                () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const CtScanFeesQueuePage(),
                                     ),
                                   );
                                 },

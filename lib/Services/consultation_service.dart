@@ -525,6 +525,96 @@ class ConsultationService {
     }
   }
 
+  Future<List<dynamic>> getAllNurseConsultationDrQueueIP() async {
+    try {
+      final hospitalId = await getHospitalId();
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/consultations/all/drqueueIP/$hospitalId'),
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception('Failed to fetch consultations: ${response.body}');
+      }
+
+      final decoded = jsonDecode(response.body);
+
+      /// -----------------------------
+      /// STEP 1: Extract consultation list safely
+      /// -----------------------------
+      List<dynamic> rawList = [];
+
+      if (decoded is Map<String, dynamic> &&
+          decoded['data'] is Map<String, dynamic> &&
+          decoded['data']['data'] is List) {
+        rawList = decoded['data']['data'];
+      } else if (decoded is List) {
+        rawList = decoded;
+      } else {
+        throw Exception('Unexpected JSON structure');
+      }
+
+      /// -----------------------------
+      /// STEP 2: Apply correct filters
+      /// -----------------------------
+      final filtered = rawList.where((item) {
+        if (item is! Map<String, dynamic>) return false;
+
+        final status = item['patientType']?.toString().toLowerCase();
+        final queueStatus = item['queueStatus']?.toString().toLowerCase();
+
+        // API uses ADMITTED + DRQUEUE / PENDING
+        final validStatus = status == 'ip';
+        final validQueue =
+            queueStatus == 'drqueue' ||
+            queueStatus == 'pending' ||
+            queueStatus == 'ongoing';
+
+        if (!validStatus || !validQueue) return false;
+
+        // // Optional doctor filter
+        // if (doctorId != null && item['Doctor'] != null) {
+        //   final docId = item['Doctor']['doctorId']?.toString();
+        //   return docId == doctorId;
+        // }
+        final doctor = item['Doctor'];
+        if (doctor == null || doctor is! Map<String, dynamic>) {
+          return false;
+        }
+
+        final docId = doctor['doctorId']?.toString();
+        if (docId == null || docId.isEmpty) {
+          return false;
+        }
+
+        return true;
+      }).toList();
+
+      /// -----------------------------
+      /// STEP 3: Sort by createdAt (oldest first)
+      /// API format: "2026-01-27 10:45 AM"
+      /// -----------------------------
+      DateTime parseCreatedAt(String? value) {
+        if (value == null) return DateTime.now();
+        try {
+          return DateFormat('yyyy-MM-dd hh:mm a').parse(value);
+        } catch (_) {
+          return DateTime.now();
+        }
+      }
+
+      filtered.sort((a, b) {
+        final aTime = parseCreatedAt(a['createdAt']);
+        final bTime = parseCreatedAt(b['createdAt']);
+        return aTime.compareTo(bTime);
+      });
+
+      return filtered;
+    } catch (e) {
+      throw Exception('Error fetching consultations: $e');
+    }
+  }
+
   Future<List<dynamic>> getAllSugarConsultation() async {
     try {
       final hospitalId = await getHospitalId();
@@ -567,7 +657,7 @@ class ConsultationService {
       final response = await http.get(
         Uri.parse('$baseUrl/consultations/all/ByMedical/$hospitalId/$mode'),
       );
-
+      print('res ${response.body}');
       if (response.statusCode == 200 || response.statusCode == 201) {
         final decoded = jsonDecode(response.body);
 

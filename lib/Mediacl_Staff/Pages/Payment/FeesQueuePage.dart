@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
-import '../../../../Pages/NotificationsPage.dart';
-import '../../../../Services/payment_service.dart';
-import '../Page/PaymentPage.dart';
+import '../../../Pages/NotificationsPage.dart';
+import '../../../Services/payment_service.dart';
+import 'PaymentPage.dart';
 
 class FeesQueuePage extends StatefulWidget {
   const FeesQueuePage({super.key});
@@ -753,7 +753,7 @@ class _FeesQueuePageState extends State<FeesQueuePage> {
                                             ),
                                             Text(
                                               getString(
-                                                item['Consultation']?['tokenNo'] ??
+                                                item['Consultation']?['displayToken'] ??
                                                     '-',
                                               ),
                                               style: const TextStyle(

@@ -415,11 +415,11 @@ class _LabQueuePageState extends State<LabQueuePage>
         final patient = tests.first['Patient'] ?? {};
         final gender = (patient['gender'] ?? 'other').toString();
         final tokenNo =
-            (patient['tokenNo'] == null ||
-                patient['tokenNo'] == 0 ||
-                patient['tokenNo'] == 'N/A')
+            (patient['displayToken'] == null ||
+                patient['displayToken'] == 0 ||
+                patient['displayToken'] == 'N/A')
             ? '-'
-            : patient['tokenNo'].toString();
+            : patient['displayToken'].toString();
 
         return PatientTestCard(
           patient: patient,

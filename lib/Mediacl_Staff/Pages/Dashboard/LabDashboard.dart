@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:health_icons/health_icons.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../Services/admin_service.dart';
+import '../OutPatient/Page/scan_page.dart';
 import '../OutPatient/Queue/CtScanQueuePage.dart';
 import '../OutPatient/Queue/EcgQueuePage.dart';
+import '../Payment/FeesQueuePage.dart';
 import '../OutPatient/Queue/lab_queue_page.dart';
 import '../OutPatient/Queue/MriScanQueuePage.dart';
 import '../OutPatient/Queue/PetScanQueuePage.dart';
 import '../OutPatient/Queue/UltersoundQueuePage.dart';
 import '../OutPatient/Queue/X-RayQueuePage.dart';
+import '../OutPatient/Queue/scan_queue.dart';
+import '../Payment/ct-scan_payment_queue.dart';
 
 class LabDashboardPage extends StatefulWidget {
   const LabDashboardPage({super.key});
@@ -116,190 +122,844 @@ class _LabDashboardPageState extends State<LabDashboardPage> {
                       ),
                     ),
                   ),
+                  if (labPermissionIds.contains(37)) ...[
+                    const SizedBox(height: 16),
+                    Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(22),
+                      ),
+                      color: Colors.white.withValues(alpha: 0.95),
+                      elevation: 8,
+                      shadowColor: Colors.black26,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 30,
+                          horizontal: 20,
+                        ),
+                        child: Column(
+                          children: [
+                            Center(
+                              child: Text(
+                                'CT-SCAN CASHIER DESK',
+                                style: TextStyle(
+                                  color: const Color(0xFF886638),
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 25),
 
+                            //-------------------------------
+                            //  🔥 NEW: NO PERMISSION MESSAGE
+                            //-------------------------------
+                            if (!labPermissionIds.contains(37))
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                  horizontal: 16,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.shade50,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: Colors.red.shade300,
+                                    width: 1.2,
+                                  ),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Colors.black12,
+                                      blurRadius: 4,
+                                      offset: Offset(0, 3),
+                                    ),
+                                  ],
+                                ),
+                                child: const Text(
+                                  "You don't have permission",
+                                  style: TextStyle(
+                                    color: Colors.red,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+
+                            //-----------------------------------
+                            // Existing buttons (unchanged logic)
+                            //-----------------------------------
+                            if (labPermissionIds.contains(37))
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  if (labPermissionIds.contains(37))
+                                    _buildActionItem(
+                                      Icons.currency_rupee,
+                                      "CT-SCAN PAYMENT",
+                                      () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                const CtScanFeesQueuePage(),
+                                          ),
+                                        );
+                                      },
+                                    ),
+
+                                  // if (cashierPermissionIds.contains(27))
+                                  //   _buildActionItem(
+                                  //     Icons.currency_rupee,
+                                  //     "TEST PAYMENT \n ",
+                                  //     () {
+                                  //       Navigator.push(
+                                  //         context,
+                                  //         MaterialPageRoute(
+                                  //           builder: (_) =>
+                                  //               const FeesTestQueuePage(),
+                                  //         ),
+                                  //       );
+                                  //     },
+                                  //   ),
+                                ],
+                              ),
+
+                            const SizedBox(height: 25),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 16),
 
                   // 📋 Action Section Card
-                  Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(22),
-                    ),
-                    color: Colors.white.withValues(alpha: 0.95),
-                    elevation: 8,
-                    shadowColor: Colors.black26,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 30,
-                        horizontal: 20,
+                  // Card(
+                  //   shape: RoundedRectangleBorder(
+                  //     borderRadius: BorderRadius.circular(22),
+                  //   ),
+                  //   color: Colors.white.withValues(alpha: 0.95),
+                  //   elevation: 8,
+                  //   shadowColor: Colors.black26,
+                  //   child: Padding(
+                  //     padding: const EdgeInsets.symmetric(
+                  //       vertical: 30,
+                  //       horizontal: 20,
+                  //     ),
+                  //     child: Column(
+                  //       children: [
+                  //         Center(
+                  //           child: Text(
+                  //             'Scan',
+                  //             style: TextStyle(
+                  //               color: Color(0xFF886638),
+                  //               fontSize: 20,
+                  //               fontWeight: FontWeight.bold,
+                  //             ),
+                  //           ),
+                  //         ),
+                  //         const SizedBox(height: 25),
+                  //         if (!labPermissionIds.contains(4) &&
+                  //             !labPermissionIds.contains(7) &&
+                  //             !labPermissionIds.contains(9) &&
+                  //             !labPermissionIds.contains(10) &&
+                  //             !labPermissionIds.contains(11) &&
+                  //             !labPermissionIds.contains(16) &&
+                  //             !labPermissionIds.contains(17))
+                  //           Container(
+                  //             padding: const EdgeInsets.symmetric(
+                  //               vertical: 12,
+                  //               horizontal: 16,
+                  //             ),
+                  //             decoration: BoxDecoration(
+                  //               color: Colors.red.shade50,
+                  //               borderRadius: BorderRadius.circular(14),
+                  //               border: Border.all(
+                  //                 color: Colors.red.shade300,
+                  //                 width: 1.2,
+                  //               ),
+                  //               boxShadow: const [
+                  //                 BoxShadow(
+                  //                   color: Colors.black12,
+                  //                   blurRadius: 4,
+                  //                   offset: Offset(0, 3),
+                  //                 ),
+                  //               ],
+                  //             ),
+                  //             child: const Text(
+                  //               "You don't have permission",
+                  //               style: TextStyle(
+                  //                 color: Colors.red,
+                  //                 fontSize: 16,
+                  //                 fontWeight: FontWeight.bold,
+                  //               ),
+                  //               textAlign: TextAlign.center,
+                  //             ),
+                  //           ),
+                  //         if (labPermissionIds.contains(4) ||
+                  //             labPermissionIds.contains(7) ||
+                  //             labPermissionIds.contains(9) ||
+                  //             labPermissionIds.contains(10) ||
+                  //             labPermissionIds.contains(11) ||
+                  //             labPermissionIds.contains(16) ||
+                  //             labPermissionIds.contains(17)) ...[
+                  //           Row(
+                  //             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  //             children: [
+                  //               if (labPermissionIds.contains(4))
+                  //                 _buildActionItem(Icons.queue, "X-Ray", () {
+                  //                   Navigator.push(
+                  //                     context,
+                  //                     MaterialPageRoute(
+                  //                       builder: (_) => const XRayQueuePage(),
+                  //                     ),
+                  //                   );
+                  //                 }),
+                  //               if (labPermissionIds.contains(9))
+                  //                 _buildActionItem(Icons.queue, "MRI-Scan", () {
+                  //                   Navigator.push(
+                  //                     context,
+                  //                     MaterialPageRoute(
+                  //                       builder: (_) =>
+                  //                           const MriScanQueuePage(),
+                  //                     ),
+                  //                   );
+                  //                 }),
+                  //               if (labPermissionIds.contains(7))
+                  //                 _buildActionItem(Icons.queue, "CT-Scan", () {
+                  //                   Navigator.push(
+                  //                     context,
+                  //                     MaterialPageRoute(
+                  //                       builder: (_) => const CtScanQueuePage(),
+                  //                     ),
+                  //                   );
+                  //                 }),
+                  //             ],
+                  //           ),
+                  //           const SizedBox(height: 25),
+                  //           Row(
+                  //             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  //             children: [
+                  //               if (labPermissionIds.contains(10))
+                  //                 _buildActionItem(Icons.queue, "ECG", () {
+                  //                   Navigator.push(
+                  //                     context,
+                  //                     MaterialPageRoute(
+                  //                       builder: (_) => const EcgQueuePage(),
+                  //                     ),
+                  //                   );
+                  //                 }),
+                  //               if (labPermissionIds.contains(11))
+                  //                 _buildActionItem(Icons.queue, "EEG", () {
+                  //                   Navigator.push(
+                  //                     context,
+                  //                     MaterialPageRoute(
+                  //                       builder: (_) =>
+                  //                           const MriScanQueuePage(),
+                  //                     ),
+                  //                   );
+                  //                 }),
+                  //               if (labPermissionIds.contains(16))
+                  //                 _buildActionItem(Icons.queue, "PET-Scan", () {
+                  //                   Navigator.push(
+                  //                     context,
+                  //                     MaterialPageRoute(
+                  //                       builder: (_) =>
+                  //                           const PetScanQueuePage(),
+                  //                     ),
+                  //                   );
+                  //                 }),
+                  //             ],
+                  //           ),
+                  //           const SizedBox(height: 25),
+                  //           Row(
+                  //             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  //             children: [
+                  //               if (labPermissionIds.contains(17))
+                  //                 _buildActionItem(
+                  //                   Icons.surround_sound,
+                  //                   "UltraSound",
+                  //                   () {
+                  //                     Navigator.push(
+                  //                       context,
+                  //                       MaterialPageRoute(
+                  //                         builder: (_) =>
+                  //                             const UltrasoundQueuePage(),
+                  //                       ),
+                  //                     );
+                  //                   },
+                  //                 ),
+                  //               //   if (labPermissionIds.contains(16))
+                  //               //     _buildActionItem(Icons.queue, "PET-Scan", () {
+                  //               //       Navigator.push(
+                  //               //         context,
+                  //               //         MaterialPageRoute(
+                  //               //           builder: (_) => const CtScanQueuePage(),
+                  //               //         ),
+                  //               //       );
+                  //               //     }),
+                  //               //   if (labPermissionIds.contains(10))
+                  //               //     _buildActionItem(Icons.queue, "ECG", () {
+                  //               //       Navigator.push(
+                  //               //         context,
+                  //               //         MaterialPageRoute(
+                  //               //           builder: (_) => const EcgQueuePage(),
+                  //               //         ),
+                  //               //       );
+                  //               //     }),
+                  //             ],
+                  //           ),
+                  //         ],
+                  //       ],
+                  //     ),
+                  //   ),
+                  // ),
+                  if (labPermissionIds.contains(4) ||
+                      labPermissionIds.contains(7) ||
+                      labPermissionIds.contains(9) ||
+                      labPermissionIds.contains(10) ||
+                      labPermissionIds.contains(11) ||
+                      labPermissionIds.contains(16) ||
+                      labPermissionIds.contains(17) ||
+                      labPermissionIds.contains(38) ||
+                      labPermissionIds.contains(39) ||
+                      labPermissionIds.contains(40) ||
+                      labPermissionIds.contains(41) ||
+                      labPermissionIds.contains(42)) ...[
+                    Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(22),
                       ),
-                      child: Column(
-                        children: [
-                          Center(
-                            child: Text(
-                              'Scan',
-                              style: TextStyle(
-                                color: Color(0xFF886638),
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 25),
-                          if (!labPermissionIds.contains(4) &&
-                              !labPermissionIds.contains(7) &&
-                              !labPermissionIds.contains(9) &&
-                              !labPermissionIds.contains(10) &&
-                              !labPermissionIds.contains(11) &&
-                              !labPermissionIds.contains(16) &&
-                              !labPermissionIds.contains(17))
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 12,
-                                horizontal: 16,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.red.shade50,
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(
-                                  color: Colors.red.shade300,
-                                  width: 1.2,
-                                ),
-                                boxShadow: const [
-                                  BoxShadow(
-                                    color: Colors.black12,
-                                    blurRadius: 4,
-                                    offset: Offset(0, 3),
-                                  ),
-                                ],
-                              ),
-                              child: const Text(
-                                "You don't have permission",
+                      color: Colors.white.withValues(alpha: 0.95),
+                      elevation: 8,
+                      shadowColor: Colors.black26,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 30,
+                          horizontal: 20,
+                        ),
+                        child: Column(
+                          children: [
+                            Center(
+                              child: Text(
+                                'SCANNING',
                                 style: TextStyle(
-                                  color: Colors.red,
-                                  fontSize: 16,
+                                  color: Color(0xFF886638),
+                                  fontSize: 20,
                                   fontWeight: FontWeight.bold,
                                 ),
-                                textAlign: TextAlign.center,
                               ),
                             ),
-                          if (labPermissionIds.contains(4) ||
-                              labPermissionIds.contains(7) ||
-                              labPermissionIds.contains(9) ||
-                              labPermissionIds.contains(10) ||
-                              labPermissionIds.contains(11) ||
-                              labPermissionIds.contains(16) ||
-                              labPermissionIds.contains(17)) ...[
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                if (labPermissionIds.contains(4))
-                                  _buildActionItem(Icons.queue, "X-Ray", () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => const XRayQueuePage(),
-                                      ),
-                                    );
-                                  }),
-                                if (labPermissionIds.contains(9))
-                                  _buildActionItem(Icons.queue, "MRI-Scan", () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) =>
-                                            const MriScanQueuePage(),
-                                      ),
-                                    );
-                                  }),
-                                if (labPermissionIds.contains(7))
-                                  _buildActionItem(Icons.queue, "CT-Scan", () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => const CtScanQueuePage(),
-                                      ),
-                                    );
-                                  }),
-                              ],
-                            ),
                             const SizedBox(height: 25),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                if (labPermissionIds.contains(10))
-                                  _buildActionItem(Icons.queue, "ECG", () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => const EcgQueuePage(),
-                                      ),
-                                    );
-                                  }),
-                                if (labPermissionIds.contains(11))
-                                  _buildActionItem(Icons.queue, "EEG", () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) =>
-                                            const MriScanQueuePage(),
-                                      ),
-                                    );
-                                  }),
-                                if (labPermissionIds.contains(16))
-                                  _buildActionItem(Icons.queue, "PET-Scan", () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) =>
-                                            const PetScanQueuePage(),
-                                      ),
-                                    );
-                                  }),
-                              ],
-                            ),
+                            if (labPermissionIds.contains(4) ||
+                                labPermissionIds.contains(7) ||
+                                labPermissionIds.contains(9))
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  if (labPermissionIds.contains(4))
+                                    _buildActionItem(
+                                      HealthIcons.xrayFilled,
+                                      "X-Ray",
+                                      () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => ScanQueue(
+                                              type: 'X-Ray',
+                                              pageBuilder:
+                                                  ({
+                                                    required Map<
+                                                      String,
+                                                      dynamic
+                                                    >
+                                                    record,
+                                                    required int mode,
+                                                    required String type,
+                                                    required int currentIndex,
+                                                  }) {
+                                                    return ScanPage(
+                                                      record: record,
+                                                      mode: mode,
+                                                      type: type,
+                                                      currentIndex:
+                                                          currentIndex,
+                                                    );
+                                                  },
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  if (labPermissionIds.contains(9))
+                                    _buildActionItem(
+                                      FontAwesomeIcons.brain, // MRI best match
+                                      "MRI-Scan",
+                                      () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => ScanQueue(
+                                              type: 'MRI-Scan',
+                                              pageBuilder:
+                                                  ({
+                                                    required Map<
+                                                      String,
+                                                      dynamic
+                                                    >
+                                                    record,
+                                                    required int mode,
+                                                    required String type,
+                                                    required int currentIndex,
+                                                  }) {
+                                                    return ScanPage(
+                                                      record: record,
+                                                      mode: mode,
+                                                      type: type,
+                                                      currentIndex:
+                                                          currentIndex,
+                                                    );
+                                                  },
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  if (labPermissionIds.contains(7))
+                                    _buildActionItem(
+                                      FontAwesomeIcons.bone,
+                                      "CT-Scan",
+                                      () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => ScanQueue(
+                                              type: 'CT-Scan',
+                                              pageBuilder:
+                                                  ({
+                                                    required Map<
+                                                      String,
+                                                      dynamic
+                                                    >
+                                                    record,
+                                                    required int mode,
+                                                    required String type,
+                                                    required int currentIndex,
+                                                  }) {
+                                                    return ScanPage(
+                                                      record: record,
+                                                      mode: mode,
+                                                      type: type,
+                                                      currentIndex:
+                                                          currentIndex,
+                                                    );
+                                                  },
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                ],
+                              ),
+
                             const SizedBox(height: 25),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                if (labPermissionIds.contains(17))
-                                  _buildActionItem(
-                                    Icons.surround_sound,
-                                    "UltraSound",
-                                    () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) =>
-                                              const UltrasoundQueuePage(),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                //   if (labPermissionIds.contains(16))
-                                //     _buildActionItem(Icons.queue, "PET-Scan", () {
-                                //       Navigator.push(
-                                //         context,
-                                //         MaterialPageRoute(
-                                //           builder: (_) => const CtScanQueuePage(),
-                                //         ),
-                                //       );
-                                //     }),
-                                //   if (labPermissionIds.contains(10))
-                                //     _buildActionItem(Icons.queue, "ECG", () {
-                                //       Navigator.push(
-                                //         context,
-                                //         MaterialPageRoute(
-                                //           builder: (_) => const EcgQueuePage(),
-                                //         ),
-                                //       );
-                                //     }),
-                              ],
-                            ),
+                            if (labPermissionIds.contains(10) ||
+                                labPermissionIds.contains(11) ||
+                                labPermissionIds.contains(16))
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  if (labPermissionIds.contains(10))
+                                    _buildActionItem(
+                                      HealthIcons.ecmoFilled, // ECG
+                                      "ECG",
+                                      () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => ScanQueue(
+                                              type: 'ECG',
+                                              pageBuilder:
+                                                  ({
+                                                    required Map<
+                                                      String,
+                                                      dynamic
+                                                    >
+                                                    record,
+                                                    required int mode,
+                                                    required String type,
+                                                    required int currentIndex,
+                                                  }) {
+                                                    return ScanPage(
+                                                      record: record,
+                                                      mode: mode,
+                                                      type: type,
+                                                      currentIndex:
+                                                          currentIndex,
+                                                    );
+                                                  },
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  if (labPermissionIds.contains(11))
+                                    _buildActionItem(
+                                      HealthIcons
+                                          .radiologyFilled, // PET Scan close match
+                                      "PET-Scan",
+                                      () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => ScanQueue(
+                                              type: 'PET-Scan',
+                                              pageBuilder:
+                                                  ({
+                                                    required Map<
+                                                      String,
+                                                      dynamic
+                                                    >
+                                                    record,
+                                                    required int mode,
+                                                    required String type,
+                                                    required int currentIndex,
+                                                  }) {
+                                                    return ScanPage(
+                                                      record: record,
+                                                      mode: mode,
+                                                      type: type,
+                                                      currentIndex:
+                                                          currentIndex,
+                                                    );
+                                                  },
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  if (labPermissionIds.contains(16))
+                                    _buildActionItem(
+                                      FontAwesomeIcons
+                                          .brain, // EEG (brain waves)
+                                      "EEG",
+                                      () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => ScanQueue(
+                                              type: 'EEG',
+                                              pageBuilder:
+                                                  ({
+                                                    required Map<
+                                                      String,
+                                                      dynamic
+                                                    >
+                                                    record,
+                                                    required int mode,
+                                                    required String type,
+                                                    required int currentIndex,
+                                                  }) {
+                                                    return ScanPage(
+                                                      record: record,
+                                                      mode: mode,
+                                                      type: type,
+                                                      currentIndex:
+                                                          currentIndex,
+                                                    );
+                                                  },
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                ],
+                              ),
+
+                            const SizedBox(height: 25),
+                            if (labPermissionIds.contains(38) ||
+                                labPermissionIds.contains(41) ||
+                                labPermissionIds.contains(42))
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  if (labPermissionIds.contains(41))
+                                    _buildActionItem(
+                                      HealthIcons.xrayFilled,
+                                      "ABDOMEN",
+                                      () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => ScanQueue(
+                                              type: 'ABDOMEN',
+                                              pageBuilder:
+                                                  ({
+                                                    required Map<
+                                                      String,
+                                                      dynamic
+                                                    >
+                                                    record,
+                                                    required int mode,
+                                                    required String type,
+                                                    required int currentIndex,
+                                                  }) {
+                                                    return ScanPage(
+                                                      record: record,
+                                                      mode: mode,
+                                                      type: type,
+                                                      currentIndex:
+                                                          currentIndex,
+                                                    );
+                                                  },
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  if (labPermissionIds.contains(38))
+                                    _buildActionItem(
+                                      FontAwesomeIcons.brain, // MRI best match
+                                      "GYN",
+                                      () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => ScanQueue(
+                                              type: 'GYN',
+                                              pageBuilder:
+                                                  ({
+                                                    required Map<
+                                                      String,
+                                                      dynamic
+                                                    >
+                                                    record,
+                                                    required int mode,
+                                                    required String type,
+                                                    required int currentIndex,
+                                                  }) {
+                                                    return ScanPage(
+                                                      record: record,
+                                                      mode: mode,
+                                                      type: type,
+                                                      currentIndex:
+                                                          currentIndex,
+                                                    );
+                                                  },
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  if (labPermissionIds.contains(42))
+                                    _buildActionItem(
+                                      FontAwesomeIcons.bone,
+                                      "DOPPLER",
+                                      () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => ScanQueue(
+                                              type: 'DOPPLER',
+                                              pageBuilder:
+                                                  ({
+                                                    required Map<
+                                                      String,
+                                                      dynamic
+                                                    >
+                                                    record,
+                                                    required int mode,
+                                                    required String type,
+                                                    required int currentIndex,
+                                                  }) {
+                                                    return ScanPage(
+                                                      record: record,
+                                                      mode: mode,
+                                                      type: type,
+                                                      currentIndex:
+                                                          currentIndex,
+                                                    );
+                                                  },
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                ],
+                              ),
+
+                            const SizedBox(height: 25),
+                            if (labPermissionIds.contains(17) ||
+                                labPermissionIds.contains(40) ||
+                                labPermissionIds.contains(39))
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  if (labPermissionIds.contains(39))
+                                    _buildActionItem(
+                                      HealthIcons
+                                          .ultrasoundScannerFilled, // Ultrasound
+                                      "OBSTETRICS",
+                                      () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => ScanQueue(
+                                              type: 'OBSTETRICS',
+                                              pageBuilder:
+                                                  ({
+                                                    required Map<
+                                                      String,
+                                                      dynamic
+                                                    >
+                                                    record,
+                                                    required int mode,
+                                                    required String type,
+                                                    required int currentIndex,
+                                                  }) {
+                                                    return ScanPage(
+                                                      record: record,
+                                                      mode: mode,
+                                                      type: type,
+                                                      currentIndex:
+                                                          currentIndex,
+                                                    );
+                                                  },
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  if (labPermissionIds.contains(40))
+                                    _buildActionItem(
+                                      HealthIcons
+                                          .ultrasoundScannerFilled, // Ultrasound
+                                      "ECHO",
+                                      () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => ScanQueue(
+                                              type: 'ECHO',
+                                              pageBuilder:
+                                                  ({
+                                                    required Map<
+                                                      String,
+                                                      dynamic
+                                                    >
+                                                    record,
+                                                    required int mode,
+                                                    required String type,
+                                                    required int currentIndex,
+                                                  }) {
+                                                    return ScanPage(
+                                                      record: record,
+                                                      mode: mode,
+                                                      type: type,
+                                                      currentIndex:
+                                                          currentIndex,
+                                                    );
+                                                  },
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  if (labPermissionIds.contains(17))
+                                    _buildActionItem(
+                                      HealthIcons
+                                          .ultrasoundScannerFilled, // Ultrasound
+                                      "HF UltraSound",
+                                      () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => ScanQueue(
+                                              type: 'HF ULTRA SOUND',
+                                              pageBuilder:
+                                                  ({
+                                                    required Map<
+                                                      String,
+                                                      dynamic
+                                                    >
+                                                    record,
+                                                    required int mode,
+                                                    required String type,
+                                                    required int currentIndex,
+                                                  }) {
+                                                    return ScanPage(
+                                                      record: record,
+                                                      mode: mode,
+                                                      type: type,
+                                                      currentIndex:
+                                                          currentIndex,
+                                                    );
+                                                  },
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                ],
+                              ),
+                            const SizedBox(height: 25),
+
+                            // Row(
+                            //   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            //   children: [
+                            //     _buildActionItem(
+                            //       HealthIcons
+                            //           .ultrasoundScannerFilled, // Ultrasound
+                            //       "OBSTETRICS",
+                            //       () {
+                            //         Navigator.push(
+                            //           context,
+                            //           MaterialPageRoute(
+                            //             builder: (_) =>
+                            //                 const UltersoundQueuePage(),
+                            //           ),
+                            //         );
+                            //       },
+                            //     ),
+                            //     // _buildActionItem(
+                            //     //   HealthIcons
+                            //     //       .ultrasoundScannerFilled, // Ultrasound
+                            //     //   "HF UltraSound",
+                            //     //   () {
+                            //     //     Navigator.push(
+                            //     //       context,
+                            //     //       MaterialPageRoute(
+                            //     //         builder: (_) =>
+                            //     //             const UltersoundQueuePage(),
+                            //     //       ),
+                            //     //     );
+                            //     //   },
+                            //     // ),
+                            //     // _buildActionItem(
+                            //     //   HealthIcons
+                            //     //       .ultrasoundScannerFilled, // Ultrasound
+                            //     //   "UltraSound",
+                            //     //   () {
+                            //     //     Navigator.push(
+                            //     //       context,
+                            //     //       MaterialPageRoute(
+                            //     //         builder: (_) =>
+                            //     //             const UltersoundQueuePage(),
+                            //     //       ),
+                            //     //     );
+                            //     //   },
+                            //     // ),
+                            //   ],
+                            // ),
                           ],
-                        ],
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                   const SizedBox(height: 40),
 
                   Card(

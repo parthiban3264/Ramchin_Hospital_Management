@@ -3,6 +3,11 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="?android:colorBackground" />
 
+    <!-- <style name="Theme.MyApp" parent="Theme.Material3.DayNight.NoActionBar">
+    <item name="android:windowSplashScreenBackground">#F4DFB2</item>
+</style> -->
+
+
     <!-- You can insert your own image assets here -->
     <!-- <item>
         <bitmap
@@ -10,3 +15,5 @@
             android:src="@mipmap/launch_image" />
     </item> -->
 </layer-list>
+
+
