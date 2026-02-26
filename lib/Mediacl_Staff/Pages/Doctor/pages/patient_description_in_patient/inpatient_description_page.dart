@@ -1124,6 +1124,17 @@ class PatientDescriptionInState extends State<PatientDescriptionIn>
     });
   }
 
+  double calculateDays({
+    required double allocatedQty,
+    required double qtyPerDose,
+    required int sessionsPerDay,
+  }) {
+    if (allocatedQty <= 0 || qtyPerDose <= 0 || sessionsPerDay <= 0) {
+      return 0;
+    }
+    return allocatedQty / (qtyPerDose * sessionsPerDay);
+  }
+
   Future<void> _handleSubmitPrescription() async {
     print(submittedMedicines);
     //I/flutter (24558): [{name: paracitamol , price: 7.57, qtyPerDose: 1.0, afterEat: true, morning: true, afternoon: false, night: false, days: 2605, weeks: 0, months: 0, total: 7369.85, medicineId: 1, route: Tablets, batch_No: 1, base_total_stock: 2605, medicine_Id: 1, batch_Id: 1, dosage: 1 tablet, frequency: once, total_quantity: 2605, after_food: true, instructions: , quantityNeeded: 2605.0, quantity: 2605, allocated_batches: [{batch_id: 33, batch_no: 1, allocated_qty: 105, unit_price: 7.57, batch_total: 794.85}, {batch_id: 34, batch_no: 2, allocated_qty: 2500, unit_price: 2.63, batch_total: 6575.0}]}]
@@ -1144,15 +1155,76 @@ class PatientDescriptionInState extends State<PatientDescriptionIn>
       for (var m in submittedMedicines) {
         final List allocatedBatches = m['allocated_batches'] ?? [];
 
+        // Future<void> submitBatch(
+        //   Map<String, dynamic> medicineData, {
+        //   dynamic bId,
+        //   dynamic dispensedQty,
+        //   dynamic bTotal,
+        // }) async {
+        //   final qtyPerDose = medicineData['qtyPerDose'] == 1 / 2
+        //       ? 0.5
+        //       : medicineData['qtyPerDose'];
+        //
+        //   final Map<String, dynamic> singlePrescriptionData = {
+        //     'hospital_Id': widget.consultation['hospital_Id'],
+        //     'patient_Id': widget.consultation['patient_Id'].toString(),
+        //     'doctor_Id': widget.consultation['Doctor']?['doctorId'].toString(),
+        //     'consultation_Id': widget.consultation['id'],
+        //     'createdAt': dateTime.toString(),
+        //     'medicines': [
+        //       {
+        //         'medicine_Id': int.parse(medicineData['medicineId'].toString()),
+        //         'consultation_Id': widget.consultation['id'],
+        //         'route': medicineData['route'].toString().toUpperCase(),
+        //         'quantity': qtyPerDose,
+        //         'afterEat': medicineData['afterEat'],
+        //         'morning': medicineData['morning'],
+        //         'afternoon': medicineData['afternoon'],
+        //         'night': medicineData['night'],
+        //         'days': medicineData['days'] ?? medicineData['days'],
+        //         'total_quantity': dispensedQty ?? medicineData['quantity'],
+        //         'dosage': medicineData['qtyPerDose'].toString(),
+        //         'total': bTotal ?? medicineData['total'],
+        //       },
+        //     ],
+        //   };
         Future<void> submitBatch(
           Map<String, dynamic> medicineData, {
           dynamic bId,
           dynamic dispensedQty,
           dynamic bTotal,
         }) async {
-          final qtyPerDose = medicineData['qtyPerDose'] == 1 / 2
+          final double qtyPerDose =
+              (medicineData['qtyPerDose'] == 0.5 ||
+                  medicineData['qtyPerDose'] == 1 / 2)
               ? 0.5
-              : medicineData['qtyPerDose'];
+              : double.parse(medicineData['qtyPerDose'].toString());
+
+          /// ✅ sessions per day
+          int sessionsPerDay = 0;
+          if (medicineData['morning'] == true) sessionsPerDay++;
+          if (medicineData['afternoon'] == true) sessionsPerDay++;
+          if (medicineData['night'] == true) sessionsPerDay++;
+
+          // /// 🔴 SAFETY CHECK
+          // if (sessionsPerDay == 0) {
+          //   throw Exception("No session selected (morning/afternoon/night)");
+          // }
+
+          final double allocatedQty = dispensedQty != null
+              ? double.parse(dispensedQty.toString())
+              : double.parse(medicineData['dosage'].toString());
+
+          final double batchDays = calculateDays(
+            allocatedQty: allocatedQty,
+            qtyPerDose: qtyPerDose,
+            sessionsPerDay: sessionsPerDay,
+          );
+
+          /// ✅ DEBUG (KEEP THIS TEMPORARILY)
+          debugPrint(
+            'Batch $bId → qty=$allocatedQty, dose=$qtyPerDose, sessions=$sessionsPerDay, days=$batchDays',
+          );
 
           final Map<String, dynamic> singlePrescriptionData = {
             'hospital_Id': widget.consultation['hospital_Id'],
@@ -1170,8 +1242,8 @@ class PatientDescriptionInState extends State<PatientDescriptionIn>
                 'morning': medicineData['morning'],
                 'afternoon': medicineData['afternoon'],
                 'night': medicineData['night'],
-                'days': medicineData['days'],
-                'total_quantity': dispensedQty ?? medicineData['quantity'],
+                'days': batchDays, // ✅ CORRECT VALUE
+                'total_quantity': allocatedQty,
                 'dosage': medicineData['qtyPerDose'].toString(),
                 'total': bTotal ?? medicineData['total'],
               },
@@ -1225,8 +1297,14 @@ class PatientDescriptionInState extends State<PatientDescriptionIn>
         if (submittedMedicines.isNotEmpty) {
           medicineTonicInjection = true; // once true, stays true
         }
+        for (final med in submittedMedicines) {
+          if (med['route']?.toString().toLowerCase() == 'injections') {
+            injection = true;
+            break; // once true, stop checking
+          }
+        }
       });
-
+      print('submittedMedicines $submittedMedicines');
       await ConsultationService().updateConsultation(consultationId, {
         'status': 'ADMITTED',
         // 'scanningTesting': scanningTesting,
