@@ -14,6 +14,7 @@ import '../../../Services/socket_service.dart';
 import '../../../Services/testing&scanning_service.dart';
 import '../Medical/Widget/whatsApp_Send_PaymentBill.dart';
 import '../OutPatient/Page/widget.dart';
+import 'PaymentPage.dart';
 
 class FeesTestPaymentPage extends StatefulWidget {
   final Map<String, dynamic> fee;
@@ -32,6 +33,7 @@ class FeesTestPaymentPage extends StatefulWidget {
 }
 
 class FeesTestPaymentPageState extends State<FeesTestPaymentPage> {
+  PaperSizeType _selectedPaperSize = PaperSizeType.a4;
   final prefs = SharedPreferences.getInstance();
   bool _isProcessing = false;
   final socketService = SocketService();
@@ -168,90 +170,235 @@ class FeesTestPaymentPageState extends State<FeesTestPaymentPage> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) {
+      builder: (dialogContext) {
         bool isPrinting = false;
 
+        // ✅ Default 3 Inch
+        PaperSizeType tempPaperSize = PaperSizeType.a4;
+
         return StatefulBuilder(
-          builder: (ctx, setDialogState) {
-            return AlertDialog(
+          builder: (context, setDialogState) {
+            final isA4 = tempPaperSize == PaperSizeType.a4;
+
+            return Dialog(
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(22),
               ),
-              title: const Text(
-                "Payment Successfully",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              content: const Text("Do you want to print the bill now?"),
-              actions: [
-                /// ❌ NO → refresh
-                TextButton(
-                  onPressed: isPrinting
-                      ? null
-                      : () {
-                          Navigator.pop(ctx);
-                          Navigator.pop(context, true); // ✅ refresh
-                        },
-                  child: const Text("No"),
-                ),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    /// ✅ Success Icon
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.green,
+                      ),
+                      child: const Icon(
+                        Icons.check,
+                        color: Colors.white,
+                        size: 26,
+                      ),
+                    ),
 
-                /// ✅ YES → print or cancel → refresh ALWAYS refresh ALWAYS
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueAccent,
-                  ),
-                  onPressed: isPrinting
-                      ? null
-                      : () async {
-                          setDialogState(() => isPrinting = true);
-                          Navigator.pop(ctx);
+                    const SizedBox(height: 16),
 
-                          setState(() => _isBuildingPdf = true);
+                    const Text(
+                      "Payment Successful",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
 
-                          try {
-                            final pdf = await buildPdf(
-                              cellController: cellController,
-                              dobController: dobController,
-                              addressController: addressController,
-                              fee: widget.fee,
-                              hospitalName: hospitalName!,
-                              hospitalPlace: hospitalPlace!,
-                              nameController: nameController,
-                              logo: logo!,
-                              loadStaff: [],
-                            );
+                    const SizedBox(height: 6),
 
-                            if (mounted) {
-                              setState(() => _isBuildingPdf = false);
-                            }
+                    const Text(
+                      "Would you like to print the bill?",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.black54),
+                    ),
 
-                            // 🔑 user may print OR cancel – we don't care
-                            await Printing.layoutPdf(
-                              onLayout: (format) async => pdf.save(),
-                            );
-                          } catch (e) {
-                            debugPrint("Print error: $e");
-                          } finally {
-                            if (mounted) {
-                              // 🔥 ALWAYS refresh parent
-                              Navigator.pop(context, true);
-                            }
-                          }
-                        },
-                  child: isPrinting
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
+                    const SizedBox(height: 22),
+
+                    /// 🔥 Modern Segmented Toggle
+                    Container(
+                      padding: const EdgeInsets.all(5),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(40),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          /// A4
+                          GestureDetector(
+                            onTap: isPrinting
+                                ? null
+                                : () {
+                                    setDialogState(() {
+                                      tempPaperSize = PaperSizeType.a4;
+                                    });
+                                  },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 250),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 22,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isA4
+                                    ? Colors.deepPurple
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              child: Text(
+                                "A4",
+                                style: TextStyle(
+                                  color: isA4 ? Colors.white : Colors.black87,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
                           ),
-                        )
-                      : const Text(
-                          "Yes, Print",
-                          style: TextStyle(color: Colors.white),
+
+                          /// 3 INCH (Default Selected)
+                          GestureDetector(
+                            onTap: isPrinting
+                                ? null
+                                : () {
+                                    setDialogState(() {
+                                      tempPaperSize =
+                                          PaperSizeType.receipt3inch;
+                                    });
+                                  },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 250),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 22,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: !isA4
+                                    ? Colors.blueAccent
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              child: Text(
+                                "3 Inch",
+                                style: TextStyle(
+                                  color: !isA4 ? Colors.white : Colors.black87,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 28),
+
+                    /// 🔘 Buttons
+                    Row(
+                      children: [
+                        /// Cancel
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: isPrinting
+                                ? null
+                                : () {
+                                    Navigator.pop(dialogContext);
+                                    Navigator.pop(context, true);
+                                  },
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 13),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text("Cancel"),
+                          ),
                         ),
+
+                        const SizedBox(width: 14),
+
+                        /// Print
+                        Expanded(
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blueAccent,
+                              padding: const EdgeInsets.symmetric(vertical: 13),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            onPressed: isPrinting
+                                ? null
+                                : () async {
+                                    setDialogState(() {
+                                      isPrinting = true;
+                                    });
+
+                                    _selectedPaperSize = tempPaperSize;
+
+                                    final prefs =
+                                        await SharedPreferences.getInstance();
+                                    await prefs.setString(
+                                      'paper_size',
+                                      tempPaperSize == PaperSizeType.a4
+                                          ? 'a4'
+                                          : '3inch',
+                                    );
+
+                                    try {
+                                      final pdf = await buildPdf(
+                                        cellController: cellController,
+                                        dobController: dobController,
+                                        addressController: addressController,
+                                        fee: widget.fee,
+                                        hospitalName: hospitalName!,
+                                        hospitalPlace: hospitalPlace!,
+                                        nameController: nameController,
+                                        logo: logo!,
+                                        loadStaff: [],
+                                        pageFormat: tempPaperSize,
+                                      );
+
+                                      await Printing.layoutPdf(
+                                        onLayout: (format) async => pdf.save(),
+                                      );
+                                    } catch (e) {
+                                      debugPrint("Print error: $e");
+                                    } finally {
+                                      if (mounted) {
+                                        Navigator.pop(dialogContext);
+                                        Navigator.pop(context, true);
+                                      }
+                                    }
+                                  },
+                            child: isPrinting
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Text(
+                                    "Print",
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
+              ),
             );
           },
         );
@@ -967,6 +1114,7 @@ class FeesTestPaymentPageState extends State<FeesTestPaymentPage> {
                                           nameController: nameController,
                                           logo: logo!,
                                           loadStaff: [],
+                                          pageFormat: _selectedPaperSize,
                                         );
 
                                         await Printing.layoutPdf(

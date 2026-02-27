@@ -98,11 +98,13 @@ class _ScanReportCardState extends State<ScanReportCard> {
       ...(widget.scanData['testDetails'] as List<dynamic>? ?? []),
       ...(widget.scanData['TeatingAndScanningPatient'] as List<dynamic>? ?? []),
     ];
+    print('item $allScanItems');
 
     // 2) Keep only scan-type items (exclude 'tests' types)
     final List<dynamic> testDetails = allScanItems.where((item) {
       final typeStr = item['type']?.toString().toLowerCase() ?? '';
-      return typeStr != 'tests';
+      final status = item['status']?.toString().toUpperCase();
+      return typeStr != 'tests' && status == 'COMPLETED';
     }).toList();
 
     // 3) Collect all images (unchanged)
@@ -364,14 +366,22 @@ class _ScanReportCardState extends State<ScanReportCard> {
 
                               // 🧠 Impression
                               Expanded(
-                                child: Text(
-                                  testDetails[i]['results'] ?? '-',
-                                  maxLines: 5,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    height: 1.4,
-                                    color: Colors.black87,
+                                child: Center(
+                                  child: Text(
+                                    (testDetails[i]['results'] != null &&
+                                            testDetails[i]['results']
+                                                .toString()
+                                                .trim()
+                                                .isNotEmpty)
+                                        ? testDetails[i]['results'].toString()
+                                        : "No Impression...",
+                                    maxLines: 5,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      height: 1.4,
+                                      color: Colors.black87,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -497,7 +507,9 @@ class _ScanReportCardState extends State<ScanReportCard> {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  patient['patient_Id'] ?? patient['id'].toString() ?? '-',
+                  patient['id'].toString() ??
+                      patient['patient_Id'].toString() ??
+                      '-',
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
@@ -692,7 +704,7 @@ class _ScanReportCardState extends State<ScanReportCard> {
                     ),
                   ),
                   child: const Text(
-                    "Test",
+                    "Scan",
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
@@ -817,7 +829,10 @@ class _ScanReportCardState extends State<ScanReportCard> {
                             ),
                           ),
                           child: Text(
-                            row["result"] ?? "-",
+                            (row["result"] != null &&
+                                    row["result"].toString().trim().isNotEmpty)
+                                ? row["result"].toString()
+                                : "-",
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontSize: 15,

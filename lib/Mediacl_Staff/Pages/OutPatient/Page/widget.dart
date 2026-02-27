@@ -526,24 +526,51 @@ Future<pw.Document> buildPdf({
               children: [
                 pw.TableRow(
                   children: [
-                    pw.Padding(
-                      padding: const pw.EdgeInsets.symmetric(vertical: 4),
+                    pw.Container(
+                      padding: const pw.EdgeInsets.symmetric(vertical: 10),
+                      alignment: pw.Alignment.center,
                       child: pw.Text(
-                        "Token No",
+                        "TOKEN NO : ",
                         style: pw.TextStyle(
-                          fontSize: 10,
+                          fontSize: 9,
                           fontWeight: pw.FontWeight.bold,
                         ),
                       ),
                     ),
-                    pw.SizedBox(width: 1),
-                    pw.Align(
-                      alignment: pw.Alignment.centerLeft,
-                      child: buildTokenBadge(tokenText, pageFormat),
+                    pw.Container(
+                      padding: const pw.EdgeInsets.symmetric(
+                        vertical: 8,
+                        horizontal: 4,
+                      ),
+                      alignment: pw.Alignment.center,
+                      child: pw.Container(
+                        padding: const pw.EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: pw.BoxDecoration(
+                          border: pw.Border.all(
+                            color: PdfColors.black,
+                            width: 1.2,
+                          ),
+                          borderRadius: pw.BorderRadius.circular(6),
+                        ),
+                        child: pw.Text(
+                          tokenText,
+                          style: pw.TextStyle(
+                            fontSize: 10,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
-
+              ],
+            ),
+            pw.Table(
+              border: pw.TableBorder.all(color: PdfColors.white),
+              children: [
                 pw.TableRow(
                   children: [
                     pw.Text("Name :", style: pw.TextStyle(fontSize: 9)),
@@ -1105,8 +1132,8 @@ pw.Widget buildTokenBadge(String tokenText, PaperSizeType paperType) {
 
   return pw.Container(
     padding: pw.EdgeInsets.symmetric(
-      horizontal: isA4 ? 10 : 2,
-      vertical: isA4 ? 4 : 2,
+      horizontal: isA4 ? 10 : 6,
+      vertical: isA4 ? 4 : 4,
     ),
     decoration: pw.BoxDecoration(
       border: pw.Border.all(color: PdfColors.black, width: isA4 ? 1.5 : 1),
@@ -1116,7 +1143,7 @@ pw.Widget buildTokenBadge(String tokenText, PaperSizeType paperType) {
       tokenText,
       textAlign: pw.TextAlign.center,
       style: pw.TextStyle(
-        fontSize: isA4 ? 11 : 6,
+        fontSize: isA4 ? 11 : 8,
         fontWeight: pw.FontWeight.bold,
       ),
     ),

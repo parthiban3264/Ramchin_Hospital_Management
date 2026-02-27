@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:hospitrax/Mediacl_Staff/Pages/OutPatient/Page/widget/inpatient_bill_editor.dart';
 import 'package:intl/intl.dart';
@@ -233,223 +234,236 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
           builder: (context, setDialogState) {
             final isA4 = tempPaperSize == PaperSizeType.a4;
 
-            return Dialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(22),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    /// ✅ Success Icon
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.green,
-                      ),
-                      child: const Icon(
-                        Icons.check,
-                        color: Colors.white,
-                        size: 26,
-                      ),
+            Future<void> handlePrint() async {
+              if (isPrinting) return;
+
+              setDialogState(() {
+                isPrinting = true;
+              });
+
+              _selectedPaperSize = tempPaperSize;
+
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setString(
+                'paper_size',
+                tempPaperSize == PaperSizeType.a4 ? 'a4' : '3inch',
+              );
+
+              try {
+                final pdf = await buildPdf(
+                  cellController: cellController,
+                  dobController: dobController,
+                  addressController: addressController,
+                  fee: widget.fee,
+                  hospitalName: hospitalName!,
+                  hospitalPlace: hospitalPlace!,
+                  nameController: nameController,
+                  logo: logo!,
+                  loadStaff: allStaff,
+                  pageFormat: tempPaperSize,
+                );
+
+                await Printing.layoutPdf(
+                  onLayout: (format) async => pdf.save(),
+                );
+              } catch (e) {
+                debugPrint("Print error: $e");
+              } finally {
+                if (mounted) {
+                  Navigator.pop(dialogContext);
+                  Navigator.pop(context, true);
+                }
+              }
+            }
+
+            return Shortcuts(
+              shortcuts: {
+                LogicalKeySet(LogicalKeyboardKey.enter): const ActivateIntent(),
+              },
+              child: Actions(
+                actions: {
+                  ActivateIntent: CallbackAction<ActivateIntent>(
+                    onInvoke: (intent) async {
+                      await handlePrint();
+                      return null;
+                    },
+                  ),
+                },
+                child: Focus(
+                  autofocus: true,
+                  child: Dialog(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(22),
                     ),
-
-                    const SizedBox(height: 16),
-
-                    const Text(
-                      "Payment Successful",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-
-                    const SizedBox(height: 6),
-
-                    const Text(
-                      "Would you like to print the bill?",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.black54),
-                    ),
-
-                    const SizedBox(height: 22),
-
-                    /// 🔥 Modern Segmented Toggle
-                    Container(
-                      padding: const EdgeInsets.all(5),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(40),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          /// 3 INCH (Default Selected)
-                          GestureDetector(
-                            onTap: isPrinting
-                                ? null
-                                : () {
-                                    setDialogState(() {
-                                      tempPaperSize =
-                                          PaperSizeType.receipt3inch;
-                                    });
-                                  },
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 250),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 22,
-                                vertical: 10,
+                    child: SizedBox(
+                      width: 420, // ✅ Fixed Width
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            /// Success Icon
+                            Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.green,
                               ),
+                              child: const Icon(
+                                Icons.check,
+                                color: Colors.white,
+                                size: 26,
+                              ),
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            const Text(
+                              "Payment Successful",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+
+                            const SizedBox(height: 6),
+
+                            const Text(
+                              "Would you like to print the bill?",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.black54),
+                            ),
+
+                            const SizedBox(height: 22),
+
+                            /// Paper Size Toggle
+                            Container(
+                              padding: const EdgeInsets.all(5),
                               decoration: BoxDecoration(
-                                color: !isA4
-                                    ? Colors.blueAccent
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(30),
+                                color: Colors.grey.shade200,
+                                borderRadius: BorderRadius.circular(40),
                               ),
-                              child: Text(
-                                "3 Inch",
-                                style: TextStyle(
-                                  color: !isA4 ? Colors.white : Colors.black87,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          /// A4
-                          GestureDetector(
-                            onTap: isPrinting
-                                ? null
-                                : () {
-                                    setDialogState(() {
-                                      tempPaperSize = PaperSizeType.a4;
-                                    });
-                                  },
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 250),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 22,
-                                vertical: 10,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isA4
-                                    ? Colors.deepPurple
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                              child: Text(
-                                "A4",
-                                style: TextStyle(
-                                  color: isA4 ? Colors.white : Colors.black87,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 28),
-
-                    /// 🔘 Buttons
-                    Row(
-                      children: [
-                        /// Cancel
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: isPrinting
-                                ? null
-                                : () {
-                                    Navigator.pop(dialogContext);
-                                    Navigator.pop(context, true);
-                                  },
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 13),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: const Text("Cancel"),
-                          ),
-                        ),
-
-                        const SizedBox(width: 14),
-
-                        /// Print
-                        Expanded(
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blueAccent,
-                              padding: const EdgeInsets.symmetric(vertical: 13),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            onPressed: isPrinting
-                                ? null
-                                : () async {
-                                    setDialogState(() {
-                                      isPrinting = true;
-                                    });
-
-                                    _selectedPaperSize = tempPaperSize;
-
-                                    final prefs =
-                                        await SharedPreferences.getInstance();
-                                    await prefs.setString(
-                                      'paper_size',
-                                      tempPaperSize == PaperSizeType.a4
-                                          ? 'a4'
-                                          : '3inch',
-                                    );
-
-                                    try {
-                                      final pdf = await buildPdf(
-                                        cellController: cellController,
-                                        dobController: dobController,
-                                        addressController: addressController,
-                                        fee: widget.fee,
-                                        hospitalName: hospitalName!,
-                                        hospitalPlace: hospitalPlace!,
-                                        nameController: nameController,
-                                        logo: logo!,
-                                        loadStaff: allStaff,
-                                        pageFormat: tempPaperSize,
-                                      );
-
-                                      await Printing.layoutPdf(
-                                        onLayout: (format) async => pdf.save(),
-                                      );
-                                    } catch (e) {
-                                      debugPrint("Print error: $e");
-                                    } finally {
-                                      if (mounted) {
-                                        Navigator.pop(dialogContext);
-                                        Navigator.pop(context, true);
-                                      }
-                                    }
-                                  },
-                            child: isPrinting
-                                ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  GestureDetector(
+                                    onTap: isPrinting
+                                        ? null
+                                        : () {
+                                            setDialogState(() {
+                                              tempPaperSize =
+                                                  PaperSizeType.receipt3inch;
+                                            });
+                                          },
+                                    child: AnimatedContainer(
+                                      duration: const Duration(
+                                        milliseconds: 250,
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 22,
+                                        vertical: 10,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: !isA4
+                                            ? Colors.blueAccent
+                                            : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(30),
+                                      ),
+                                      child: Text(
+                                        "3 Inch",
+                                        style: TextStyle(
+                                          color: !isA4
+                                              ? Colors.white
+                                              : Colors.black87,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
                                     ),
-                                  )
-                                : const Text(
-                                    "Print",
-                                    style: TextStyle(color: Colors.white),
                                   ),
-                          ),
+                                  GestureDetector(
+                                    onTap: isPrinting
+                                        ? null
+                                        : () {
+                                            setDialogState(() {
+                                              tempPaperSize = PaperSizeType.a4;
+                                            });
+                                          },
+                                    child: AnimatedContainer(
+                                      duration: const Duration(
+                                        milliseconds: 250,
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 22,
+                                        vertical: 10,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: isA4
+                                            ? Colors.deepPurple
+                                            : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(30),
+                                      ),
+                                      child: Text(
+                                        "A4",
+                                        style: TextStyle(
+                                          color: isA4
+                                              ? Colors.white
+                                              : Colors.black87,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            const SizedBox(height: 28),
+
+                            /// Buttons
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton(
+                                    onPressed: isPrinting
+                                        ? null
+                                        : () {
+                                            Navigator.pop(dialogContext);
+                                            Navigator.pop(context, true);
+                                          },
+                                    child: const Text("Cancel"),
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.blueAccent,
+                                    ),
+                                    onPressed: isPrinting ? null : handlePrint,
+                                    child: isPrinting
+                                        ? const SizedBox(
+                                            width: 18,
+                                            height: 18,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : const Text(
+                                            "Print",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                  ],
+                  ),
                 ),
               ),
             );
@@ -2105,45 +2119,74 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                   widget.index == 0
                       ? Row(
                           children: [
-                            Center(
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                width: _isProcessing ? 140 : 120,
-                                child: ElevatedButton.icon(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: label == 'Return Amount'
-                                        ? Colors.blue
-                                        : Colors.green,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 14,
-                                    ),
-                                  ),
-                                  icon: const Icon(
-                                    Icons.receipt_long,
-                                    color: Colors.white,
-                                  ),
-                                  label: _isProcessing
-                                      ? const Text(
-                                          "Processing...",
-                                          style: TextStyle(color: Colors.white),
-                                        )
-                                      : Text(
-                                          label == 'Return Amount'
-                                              ? "Get Bill"
-                                              : "Pay Bill",
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.w600,
+                            Shortcuts(
+                              shortcuts: {
+                                LogicalKeySet(LogicalKeyboardKey.enter):
+                                    const ActivateIntent(),
+                              },
+                              child: Actions(
+                                actions: {
+                                  ActivateIntent:
+                                      CallbackAction<ActivateIntent>(
+                                        onInvoke: (intent) {
+                                          if (!_isProcessing) {
+                                            _handlePayment();
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                },
+                                child: Focus(
+                                  autofocus: true,
+                                  child: Center(
+                                    child: AnimatedContainer(
+                                      duration: const Duration(
+                                        milliseconds: 200,
+                                      ),
+                                      width: _isProcessing ? 140 : 120,
+                                      child: ElevatedButton.icon(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor:
+                                              label == 'Return Amount'
+                                              ? Colors.blue
+                                              : Colors.green,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 14,
                                           ),
                                         ),
-                                  onPressed: _isProcessing
-                                      ? null
-                                      : _handlePayment,
+                                        icon: const Icon(
+                                          Icons.receipt_long,
+                                          color: Colors.white,
+                                        ),
+                                        label: _isProcessing
+                                            ? const Text(
+                                                "Processing...",
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                ),
+                                              )
+                                            : Text(
+                                                label == 'Return Amount'
+                                                    ? "Get Bill"
+                                                    : "Pay Bill",
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                        onPressed: _isProcessing
+                                            ? null
+                                            : _handlePayment,
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),

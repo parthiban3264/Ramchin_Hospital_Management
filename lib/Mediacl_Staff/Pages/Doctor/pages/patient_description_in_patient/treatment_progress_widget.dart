@@ -49,7 +49,7 @@ class TreatmentProgressWidget extends StatefulWidget {
 class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
   @override
   void initState() {
-    // TODO: implement initState
+    super.initState();
 
     super.initState();
 
@@ -213,7 +213,7 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
 
   static const Color _orangeBadge = Color(0xFFFF9500);
 
-  static const Color _redBadge = Color(0xFFFF3B30);
+  //static const Color _redBadge = Color(0xFFFF3B30);
 
   static const Color _greyText = Color(0xFF8E8E93);
 
@@ -231,49 +231,102 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
       (widget.consultation['Prescription'] as List<dynamic>?) ?? [];
 
   // List<Map<String, dynamic>> get _allMedicines {
-
   //   final List<Map<String, dynamic>> meds = [];
-
-  //   for (final rx in _prescriptions) {
-
-  //     final isPaid = rx['payment']['status'] == 'PAID';
-
-  //     if (rx == null && !isPaid) continue;
-
   //
-
-  //     final medicines = rx['MedicineAdministration'] as List<dynamic>? ?? [];
-
-  //     for (final m in medicines) {
-
-  //       meds.add(Map<String, dynamic>.from(m));
-
+  //   for (final rx in _prescriptions) {
+  //     final payment = rx['payment'] as Map<String, dynamic>? ?? {};
+  //
+  //     if (payment['status'] == 'PAID') {
+  //       final medicines = rx['MedicineAdministration'] as List<dynamic>? ?? [];
+  //
+  //       for (final m in medicines) {
+  //         meds.add(Map<String, dynamic>.from(m));
+  //       }
   //     }
-
   //   }
-
+  //
   //   return meds;
-
   // }
 
   List<Map<String, dynamic>> get _allMedicines {
     final List<Map<String, dynamic>> meds = [];
 
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
     for (final rx in _prescriptions) {
       final payment = rx['payment'] as Map<String, dynamic>? ?? {};
 
-      if (payment['status'] == 'PAID') {
-        final medicines = rx['MedicineAdministration'] as List<dynamic>? ?? [];
-        final createdAt = medicines[0]['created_at'];
+      if (payment['status'] != 'PAID') continue;
 
-        for (final m in medicines) {
-          meds.add(Map<String, dynamic>.from(m));
+      final createdAtString = rx['created_at'];
+      if (createdAtString == null) continue;
+
+      try {
+        final createdAt = DateTime.parse(createdAtString).toLocal();
+
+        final prescriptionDate = DateTime(
+          createdAt.year,
+          createdAt.month,
+          createdAt.day,
+        );
+
+        if (!prescriptionDate.isAfter(today)) {
+          final medicines =
+              rx['MedicineAdministration'] as List<dynamic>? ?? [];
+
+          final prescriptionMedicines = rx['medicines'] ?? [];
+
+          // Create fast lookup map
+          final prescriptionMap = {
+            for (var pres in prescriptionMedicines) pres['medicine_Id']: pres,
+          };
+
+          for (final m in medicines) {
+            final adminMap = Map<String, dynamic>.from(m);
+
+            final matchingPrescription = prescriptionMap[m['medicine_id']];
+
+            meds.add({...adminMap, "route": matchingPrescription?['route']});
+          }
         }
+      } catch (_) {
+        continue;
       }
     }
 
     return meds;
   }
+
+  List<Map<String, dynamic>> get _allPendingMedicineCount {
+    final now = DateTime.now();
+
+    return _allMedicines.where((m) {
+      // Check status
+      final status = (m['status'] ?? '').toString().toUpperCase();
+      if (status != 'PENDING') return false;
+
+      // Check created_at exists
+      final createdAtString = m['date'];
+      if (createdAtString == null || createdAtString.toString().isEmpty) {
+        return false;
+      }
+
+      try {
+        // Ensure correct format
+        final formattedDate = createdAtString.toString().replaceFirst(' ', 'T');
+
+        final date = DateTime.parse(formattedDate).toLocal();
+
+        // Include today + all previous
+        return date.isBefore(now) || date.isAtSameMomentAs(now);
+      } catch (_) {
+        return false; // skip invalid dates
+      }
+    }).toList();
+  }
+
+  int get pendingCount => _allPendingMedicineCount.length;
 
   // ── Split by status ──
 
@@ -307,8 +360,7 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
         return false;
       }
 
-      final createdAt = m['created_at'];
-      print(' createdAt $createdAt');
+      final createdAt = m['date'];
 
       if (createdAt == null) return false;
 
@@ -329,7 +381,7 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
     return type.contains('scan') ||
         type.contains('x-ray') ||
         type.contains('xray') ||
-        type.contains('mri') ||
+        type.contains('mri-scan') ||
         type.contains('ct') ||
         type.contains('ultrasound') ||
         type.contains('echo');
@@ -350,8 +402,9 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
   // ── Further split: medicines vs injections ──
 
   bool _isInjection(Map<String, dynamic> m) {
+    print('mediiii $m');
     final route = (m['route'] ?? '').toString().toLowerCase();
-
+    //print('route $route , ${m['medicine']?['category']} ');
     final cat = (m['medicine']?['category'] ?? '').toString().toLowerCase();
 
     return route.contains('injections') || cat.contains('injections');
@@ -369,7 +422,7 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
   List<Map<String, dynamic>> get _pendingInjections =>
       _pendingMedicines.where((m) => _isInjection(m)).toList();
 
-  int get _totalItems => _testAndScans.length + _allMedicines.length;
+  int get _totalItems => _testAndScans.length + _allPendingMedicineCount.length;
 
   int get _completedCount =>
       _completedTestScans.length + _completedMedicines.length;
@@ -563,12 +616,6 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
 
       final slot = m['time_slot']?.toString() ?? '';
 
-      final status = m['status']?.toString() ?? '';
-
-      final date = m['date']?.toString().split(' ') ?? '';
-
-      // Unique group key
-
       final key = '$name|$slot';
 
       if (!grouped.containsKey(key)) {
@@ -589,6 +636,7 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // print('pendingCount $pendingCount');
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
 
@@ -809,6 +857,7 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
 
           //const SizedBox(height: 6),
         ],
+
         // ── 4. Empty State ──
         if (_totalItems == 0) _buildEmptyState(),
 
@@ -829,7 +878,9 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
   // ═══════════════════════════════════════════════════════
 
   //  1. PROGRESS HEADER CARD
+
   // ═══════════════════════════════════════════════════════
+
   Widget _buildProgressHeader() {
     final pct = _completionPercent;
 
@@ -1002,7 +1053,9 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
   }
 
   // ═══════════════════════════════════════════════════════
+
   //  SECTION LABEL  ("COMPLETED TASKS  5 items")
+
   // ═══════════════════════════════════════════════════════
 
   Widget _buildSectionLabel(String title, int count, Color badgeColor) {
@@ -1221,7 +1274,7 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
 
     final type = ts['type']?.toString() ?? '';
 
-    final result = ts['results']?.toString() ?? '';
+    //final result = ts['results']?.toString() ?? '';
 
     final selectedOptions = ts['selectedOptions'] as List<dynamic>? ?? [];
 
@@ -1819,15 +1872,11 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
 
     final slot = m['time_slot']?.toString() ?? '';
 
-    final status = m['status']?.toString() ?? '';
+    //final status = m['status']?.toString() ?? '';
 
     final timeLabel = getTimeLabel(slot);
 
     final count = m['count'] ?? 1;
-
-    // Check if this is an injection
-    final isInjection = _isInjection(m);
-    final medicineId = m['id']?.toString() ?? '';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -1885,83 +1934,41 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
             ),
           ),
 
-          // Checkbox for injections or PENDING badge for regular medicines
-          if (isInjection)
-            Checkbox(
-              value: false, // Will be managed by state
-              onChanged: (bool? value) {
-                if (value == true) {
-                  _updateMedicineStatus(medicineId, 'TAKEN');
-                }
-              },
-              activeColor: Colors.green,
-            )
-          else
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
 
-              decoration: BoxDecoration(
-                color: Colors.red,
+            decoration: BoxDecoration(
+              color: Colors.red,
 
-                borderRadius: BorderRadius.circular(8),
-              ),
+              borderRadius: BorderRadius.circular(8),
+            ),
 
-              child: const Text(
-                'PENDING',
+            child: const Text(
+              'PENDING',
 
-                style: TextStyle(
-                  fontSize: 10,
+              style: TextStyle(
+                fontSize: 10,
 
-                  fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w800,
 
-                  color: Colors.white,
-                ),
+                color: Colors.white,
               ),
             ),
+          ),
         ],
       ),
     );
   }
 
   // ═══════════════════════════════════════════════════════
-  //  UPDATE MEDICINE STATUS
-  // ═══════════════════════════════════════════════════════
-  Future<void> _updateMedicineStatus(
-    String medicineId,
-    String newStatus,
-  ) async {
-    try {
-      // TODO: Add API call to update medicine status
-      // For now, we'll simulate the update by refreshing the widget
-      debugPrint('Updating medicine $medicineId to status: $newStatus');
 
-      // Show success message
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Medicine marked as $newStatus'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-
-      // Refresh the widget to reflect changes
-      setState(() {});
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error updating medicine: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  // ═══════════════════════════════════════════════════════
   //  RESULT METRICS (blocks like "TSH LEVEL  3.2 mIU/L")
+
   // ═══════════════════════════════════════════════════════
+
+  // Widget _buildResultMetrics(List<dynamic> options) {
+
+  //   // Only show options that have a result
 
   //   final withResults = options.where((o) {
 
@@ -2096,16 +2103,10 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
   // }
 
   Widget _buildResultMetrics(List<dynamic> options) {
-    final withResults = options.where((o) {
-      final result = o['result']?.toString().trim() ?? '';
-
-      return result.isNotEmpty && result != '-';
-    }).toList();
-
-    if (withResults.isEmpty) return const SizedBox.shrink();
+    if (options.isEmpty) return const SizedBox.shrink();
 
     return Column(
-      children: withResults.map<Widget>((opt) {
+      children: options.map<Widget>((opt) {
         final name = opt['name']?.toString() ?? '';
 
         final result = opt['result']?.toString() ?? '';
@@ -2115,6 +2116,9 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
         final unitStr = (unit.isNotEmpty && unit != '-' && unit != 'N/A')
             ? unit
             : '';
+
+        // Display '-' for empty results
+        final displayResult = (result.isEmpty || result == '-') ? '-' : result;
 
         return Container(
           margin: const EdgeInsets.only(bottom: 8),
@@ -2159,7 +2163,7 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
 
                   children: [
                     Text(
-                      result,
+                      displayResult,
 
                       style: const TextStyle(
                         fontSize: 18,
@@ -2493,220 +2497,6 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
       ),
     );
   }
-
-  // ═══════════════════════════════════════════════════════
-
-  //  SHOW REPORT DETAILS DIALOG
-
-  // ═══════════════════════════════════════════════════════
-
-  void _showReportDetails(dynamic ts) {
-    final title = ts['title']?.toString() ?? ts['type']?.toString() ?? 'Report';
-
-    final result = ts['results']?.toString() ?? 'No main result recorded';
-
-    final selectedOptions = ts['selectedOptions'] as List<dynamic>? ?? [];
-
-    final createdAt = ts['createdAt']?.toString() ?? '';
-
-    final timeStr = _extractTime(createdAt);
-
-    showDialog(
-      context: context,
-
-      builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-
-            crossAxisAlignment: CrossAxisAlignment.start,
-
-            children: [
-              // Header
-              Row(
-                children: [
-                  const Icon(Icons.description, color: _primaryBlue, size: 28),
-
-                  const SizedBox(width: 12),
-
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-
-                      children: [
-                        Text(
-                          title,
-
-                          style: const TextStyle(
-                            fontSize: 18,
-
-                            fontWeight: FontWeight.bold,
-
-                            color: _darkText,
-                          ),
-                        ),
-
-                        if (timeStr.isNotEmpty)
-                          Text(
-                            timeStr,
-
-                            style: const TextStyle(
-                              fontSize: 13,
-
-                              color: _greyText,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-
-                  IconButton(
-                    icon: const Icon(Icons.close, color: _greyText),
-
-                    onPressed: () => Navigator.pop(ctx),
-                  ),
-                ],
-              ),
-
-              const Divider(height: 32),
-
-              // Main Result
-              const Text(
-                'PRIMARY RESULT',
-
-                style: TextStyle(
-                  fontSize: 12,
-
-                  fontWeight: FontWeight.bold,
-
-                  color: _sectionLabel,
-
-                  letterSpacing: 1,
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
-              Container(
-                width: double.infinity,
-
-                padding: const EdgeInsets.all(16),
-
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF9FAFB),
-
-                  borderRadius: BorderRadius.circular(12),
-
-                  border: Border.all(color: const Color(0xFFE5E7EB)),
-                ),
-
-                child: Text(
-                  result,
-
-                  style: const TextStyle(
-                    fontSize: 15,
-
-                    fontWeight: FontWeight.w600,
-
-                    color: _darkText,
-                  ),
-                ),
-              ),
-
-              // Detailed Metrics
-              if (selectedOptions.isNotEmpty) ...[
-                const SizedBox(height: 24),
-
-                const Text(
-                  'DETAILED METRICS',
-
-                  style: TextStyle(
-                    fontSize: 12,
-
-                    fontWeight: FontWeight.bold,
-
-                    color: _sectionLabel,
-
-                    letterSpacing: 1,
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                SizedBox(
-                  width: double.infinity,
-
-                  child: _buildResultMetrics(selectedOptions),
-                ),
-              ],
-
-              const SizedBox(height: 24),
-
-              SizedBox(
-                width: double.infinity,
-
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(ctx),
-
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _primaryBlue,
-
-                    foregroundColor: Colors.white,
-
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-
-                  child: const Text('Close'),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ═══════════════════════════════════════════════════════
-
-  //  UTILITIES
-
-  // ═══════════════════════════════════════════════════════
-
-  /// Build a subtitle from selected options
-
-  // String _getSubtitle(dynamic ts) {
-
-  //   final options = ts['selectedOptions'] as List<dynamic>? ?? [];
-
-  //   if (options.isEmpty) return '';
-
-  //   final names = options
-
-  //       .map(
-
-  //         (o) => o['name']?.toString() ?? o['selectedOption']?.toString() ?? '',
-
-  //       )
-
-  //       .where((n) => n.isNotEmpty)
-
-  //       .take(3)
-
-  //       .toList();
-
-  //   if (names.isEmpty) return '';
-
-  //   return names.join(', ');
-
-  // }
 
   String _getSubtitle(dynamic ts) {
     final options = ts['selectedOptions'] as List<dynamic>? ?? [];
