@@ -6,13 +6,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../../Services/admin_service.dart';
 
+import '../../../../../Services/prescription_service.dart';
 import '../../../Medical/Widget/ReportCard.dart';
 
+import '../../../Nurse/global.dart';
 import '../../../Nurse/notes_edit_remove.dart';
 
 import '../../../OutPatient/Report/ScanReportPage.dart';
 
 import 'add_treatment_progress_dialog.dart';
+import 'inpatient_status_analise.dart';
 
 /// ─────────────────────────────────────────────────────────────────────────────
 
@@ -86,6 +89,8 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
   String _labName = '';
 
   String? logo;
+  bool _expandTests = false;
+  bool _expandScans = false;
 
   void _loadHospitalLogo() async {
     final prefs = await SharedPreferences.getInstance();
@@ -275,17 +280,26 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
           final medicines =
               rx['MedicineAdministration'] as List<dynamic>? ?? [];
 
-          final prescriptionMedicines = rx['medicines'] ?? [];
+          // ✅ Filter only PENDING medicines
+          final pendingMeds = medicines.where((m) {
+            return (m['status'] ?? '').toString().toUpperCase() == 'PENDING' ||
+                (m['status'] ?? '').toString().toUpperCase() == 'TAKEN';
+          }).toList();
 
-          // Create fast lookup map
+          if (pendingMeds.isEmpty) continue;
+
+          final prescriptionMedicines = rx['medicines'] as List<dynamic>? ?? [];
+
+          // ⚠ Make sure key name matches exactly
           final prescriptionMap = {
             for (var pres in prescriptionMedicines) pres['medicine_Id']: pres,
           };
 
-          for (final m in medicines) {
+          for (final m in pendingMeds) {
             final adminMap = Map<String, dynamic>.from(m);
 
-            final matchingPrescription = prescriptionMap[m['medicine_id']];
+            final matchingPrescription =
+                prescriptionMap[adminMap['medicine_id']];
 
             meds.add({...adminMap, "route": matchingPrescription?['route']});
           }
@@ -300,29 +314,37 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
 
   List<Map<String, dynamic>> get _allPendingMedicineCount {
     final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
 
     return _allMedicines.where((m) {
-      // Check status
       final status = (m['status'] ?? '').toString().toUpperCase();
       if (status != 'PENDING') return false;
 
-      // Check created_at exists
-      final createdAtString = m['date'];
-      if (createdAtString == null || createdAtString.toString().isEmpty) {
+      final rawDate = m['date'];
+      if (rawDate == null) return false;
+
+      final parsedDate = DateTime.tryParse(rawDate);
+      if (parsedDate == null) return false;
+
+      final medDate = DateTime(
+        parsedDate.year,
+        parsedDate.month,
+        parsedDate.day,
+      );
+
+      // ❌ Skip future dates
+      if (medDate.isAfter(today)) return false;
+
+      final route = (m['route'] ?? '').toString().toUpperCase();
+
+      final isPreviousDay = medDate.isBefore(today);
+
+      // ❌ If previous day AND route is TABLETS → skip
+      if (isPreviousDay && route == 'TABLETS') {
         return false;
       }
 
-      try {
-        // Ensure correct format
-        final formattedDate = createdAtString.toString().replaceFirst(' ', 'T');
-
-        final date = DateTime.parse(formattedDate).toLocal();
-
-        // Include today + all previous
-        return date.isBefore(now) || date.isAtSameMomentAs(now);
-      } catch (_) {
-        return false; // skip invalid dates
-      }
+      return true;
     }).toList();
   }
 
@@ -349,11 +371,8 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
   //     .toList();
 
   List<Map<String, dynamic>> get _pendingMedicines {
-    final today = DateTime.now();
-
-    final todayStart = DateTime(today.year, today.month, today.day);
-
-    final tomorrowStart = todayStart.add(const Duration(days: 1));
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
 
     return _allMedicines.where((m) {
       if ((m['status'] ?? '').toString().toUpperCase() != 'PENDING') {
@@ -361,18 +380,23 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
       }
 
       final createdAt = m['date'];
-
       if (createdAt == null) return false;
 
-      final date = DateTime.parse(createdAt);
+      final parsed = DateTime.parse(createdAt);
 
-      return date.isAfter(
-            todayStart.subtract(const Duration(milliseconds: 1)),
-          ) &&
-          date.isBefore(tomorrowStart);
+      final itemDate = DateTime(parsed.year, parsed.month, parsed.day);
+      // ❌ Skip future dates
+      if (itemDate.isAfter(today)) return false;
+      final isPreviousDay = itemDate.isBefore(today);
+      final route = (m['route'] ?? '').toString().toUpperCase();
+      // ❌ If previous day AND route is TABLETS → skip
+      if (isPreviousDay && route == 'TABLETS') {
+        return false;
+      }
+
+      return true;
     }).toList();
   }
-
   // ── Further split: tests vs scans ──
 
   bool _isScan(dynamic ts) {
@@ -402,7 +426,7 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
   // ── Further split: medicines vs injections ──
 
   bool _isInjection(Map<String, dynamic> m) {
-    print('mediiii $m');
+    //print('mediiii $m');
     final route = (m['route'] ?? '').toString().toLowerCase();
     //print('route $route , ${m['medicine']?['category']} ');
     final cat = (m['medicine']?['category'] ?? '').toString().toLowerCase();
@@ -422,12 +446,20 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
   List<Map<String, dynamic>> get _pendingInjections =>
       _pendingMedicines.where((m) => _isInjection(m)).toList();
 
-  int get _totalItems => _testAndScans.length + _allPendingMedicineCount.length;
-
   int get _completedCount =>
       _completedTestScans.length + _completedMedicines.length;
 
-  int get _pendingCount => _pendingTestScans.length + _pendingMedicines.length;
+  int get _pendingCount =>
+      _pendingTestScans.length +
+      _groupedTodayPendingMeds.length +
+      _pendingInjections.length;
+
+  int get _totalItems => _completedCount + _pendingCount;
+
+  // int get _totalItems =>
+  //     _testAndScans.length +
+  //     _allPendingMedicineCount
+  //         .length;
 
   double get _completionPercent =>
       _totalItems == 0 ? 0 : _completedCount / _totalItems;
@@ -559,7 +591,7 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
 
     if (hour >= 6 && hour < 12) {
       return 'MORNING';
-    } else if (hour >= 12 && hour < 18) {
+    } else if (hour >= 12 && hour < 16) {
       return 'AFTERNOON';
     } else {
       return 'NIGHT';
@@ -569,13 +601,13 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
   String getTimeLabel(String slot) {
     switch (slot) {
       case 'MORNING':
-        return '9:00 AM';
+        return '10:00 AM';
 
       case 'AFTERNOON':
-        return '1:00 PM';
+        return '3:00 PM';
 
       case 'NIGHT':
-        return '8:00 PM';
+        return '10:00 PM';
 
       default:
         return '';
@@ -584,23 +616,25 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
 
   List<Map<String, dynamic>> get _todayPendingMeds {
     final now = DateTime.now();
-
     final today = DateTime(now.year, now.month, now.day);
 
-    final currentSlot = getCurrentTimeSlot(); // ✅ MORNING / AFTERNOON / NIGHT
+    final currentSlot = getCurrentTimeSlot();
 
     return _pendingMeds.where((m) {
       final rawDate = m['date'];
-
+      //print('date $rawDate');
       if (rawDate == null) return false;
 
-      final parsedUtc = DateTime.tryParse(rawDate);
+      final parsedDate = DateTime.tryParse(rawDate);
+      //print('parsedDate $parsedDate');
+      if (parsedDate == null) return false;
 
-      if (parsedUtc == null) return false;
-
-      final localDate = parsedUtc.toLocal();
-
-      final medDate = DateTime(localDate.year, localDate.month, localDate.day);
+      // 🔥 DO NOT use toLocal()
+      final medDate = DateTime(
+        parsedDate.year,
+        parsedDate.month,
+        parsedDate.day,
+      );
 
       return medDate == today &&
           m['time_slot'] == currentSlot &&
@@ -636,6 +670,7 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
 
   @override
   Widget build(BuildContext context) {
+    //print('ss ${_testAndScans.length} ${_allPendingMedicineCount.length}');
     // print('pendingCount $pendingCount');
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -761,7 +796,44 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
 
             const SizedBox(height: 8),
 
-            ..._pendingTests.map((ts) => _buildPendingTestScanCard(ts)),
+            // ..._pendingTests.map((ts) => _buildPendingTestScanCard(ts)),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                if (_pendingTests.length > 2) {
+                  setState(() {
+                    _expandTests = !_expandTests;
+                  });
+                }
+              },
+              child: Card(
+                elevation: 2,
+                color: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: const BorderSide(color: Color(0xFFDFE4EF), width: 1),
+                ),
+
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                  child: AnimatedSize(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                    child: Column(
+                      children:
+                          (_expandTests
+                                  ? _pendingTests
+                                  : _pendingTests.take(2).toList())
+                              .map((ts) => _buildPendingTestScanCard(ts))
+                              .toList(),
+                    ),
+                  ),
+                ),
+              ),
+            ),
 
             const SizedBox(height: 8),
           ],
@@ -782,7 +854,69 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
 
             const SizedBox(height: 8),
 
-            ..._pendingScans.map((ts) => _buildPendingTestScanCard(ts)),
+            //..._pendingScans.map((ts) => _buildPendingTestScanCard(ts)),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                if (_pendingScans.length > 2) {
+                  setState(() {
+                    _expandScans = !_expandScans;
+                  });
+                }
+              },
+              child: Card(
+                elevation: 2,
+                color: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: const BorderSide(color: Color(0xFFDFE4EF), width: 1),
+                ),
+
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                  child: AnimatedSize(
+                    duration: const Duration(milliseconds: 350),
+                    curve: Curves.easeInOut,
+                    alignment: Alignment.topCenter,
+                    child: Column(
+                      children: List.generate(
+                        _expandScans
+                            ? _pendingScans.length
+                            : (_pendingScans.length > 2
+                                  ? 2
+                                  : _pendingScans.length),
+                        (index) {
+                          final ts = _pendingScans[index];
+
+                          return AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 300),
+                            transitionBuilder: (child, animation) {
+                              return FadeTransition(
+                                opacity: animation,
+                                child: SlideTransition(
+                                  position: Tween<Offset>(
+                                    begin: const Offset(0, 0.1),
+                                    end: Offset.zero,
+                                  ).animate(animation),
+                                  child: child,
+                                ),
+                              );
+                            },
+                            child: Container(
+                              key: ValueKey(ts), // important for animation
+                              child: _buildPendingTestScanCard(ts),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
 
             const SizedBox(height: 8),
           ],
@@ -959,7 +1093,7 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
 
                   children: [
                     const Text(
-                      'Treatment\nProgress',
+                      'Treatment Progress',
 
                       style: TextStyle(
                         fontSize: 20,
@@ -972,66 +1106,65 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
                       ),
                     ),
 
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 8),
 
-                    Text(
-                      'Milestone $_completedCount of $_totalItems',
+                    Row(
+                      children: [
+                        Text(
+                          'Milestone $_completedCount of $_totalItems',
 
-                      style: const TextStyle(fontSize: 13, color: _greyText),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: _greyText,
+                          ),
+                        ),
+                        Spacer(),
+                        if (_pendingCount > 0)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 6,
+                            ),
+
+                            decoration: BoxDecoration(
+                              color: _greenBadge,
+
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+
+                              children: [
+                                const SizedBox(width: 2),
+
+                                Text(
+                                  '$_pendingCount remain ',
+
+                                  style: const TextStyle(
+                                    fontSize: 12,
+
+                                    fontWeight: FontWeight.w600,
+
+                                    color: Colors.white,
+
+                                    height: 1.3,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
                     ),
                   ],
                 ),
               ),
 
               // Remaining badge
-              if (_pendingCount > 0)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-
-                    vertical: 8,
-                  ),
-
-                  decoration: BoxDecoration(
-                    color: _greenBadge,
-
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-
-                    children: [
-                      const Icon(
-                        Icons.more_horiz,
-
-                        color: Colors.white,
-
-                        size: 16,
-                      ),
-
-                      const SizedBox(width: 4),
-
-                      Text(
-                        '$_pendingCount remaining',
-
-                        style: const TextStyle(
-                          fontSize: 11,
-
-                          fontWeight: FontWeight.w600,
-
-                          color: Colors.white,
-
-                          height: 1.3,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
             ],
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Linear progress bar
           ClipRRect(
@@ -1047,6 +1180,50 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
               valueColor: const AlwaysStoppedAnimation(_primaryBlue),
             ),
           ),
+          const SizedBox(height: 12),
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => PatientAnalyticsScreen(
+                    consultationId: widget.consultation['id'],
+                  ),
+                ),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: const LinearGradient(
+                  colors: [Colors.blue, Colors.indigo],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.analytics, color: Colors.white),
+                  SizedBox(width: 10),
+                  Text(
+                    "Patient Analytics Dashboard",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -1060,45 +1237,62 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
 
   Widget _buildSectionLabel(String title, int count, Color badgeColor) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
       child: Row(
         children: [
-          Text(
-            title,
-
-            style: const TextStyle(
-              fontSize: 13,
-
-              fontWeight: FontWeight.w700,
-
-              color: _sectionLabel,
-
-              letterSpacing: 1.2,
+          /// Left Accent Line
+          Container(
+            width: 4,
+            height: 18,
+            decoration: BoxDecoration(
+              color: badgeColor,
+              borderRadius: BorderRadius.circular(4),
             ),
           ),
 
-          const Spacer(),
+          const SizedBox(width: 10),
 
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-
-            decoration: BoxDecoration(
-              color: badgeColor.withValues(alpha: 0.12),
-
-              borderRadius: BorderRadius.circular(8),
-            ),
-
+          /// Title
+          Expanded(
             child: Text(
-              '$count items',
-
-              style: TextStyle(
-                fontSize: 12,
-
-                fontWeight: FontWeight.w700,
-
-                color: badgeColor,
+              title.toUpperCase(),
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                color: _sectionLabel,
+                letterSpacing: 1.1,
               ),
+            ),
+          ),
+
+          /// Modern Count Badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: badgeColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: badgeColor.withOpacity(0.25), width: 1),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: badgeColor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'item ${count.toString()}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: badgeColor,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -1271,154 +1465,155 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
 
   Widget _buildCompletedTestScanCard(dynamic ts) {
     final title = ts['title']?.toString() ?? ts['type']?.toString() ?? '—';
-
     final type = ts['type']?.toString() ?? '';
-
-    //final result = ts['results']?.toString() ?? '';
-
     final selectedOptions = ts['selectedOptions'] as List<dynamic>? ?? [];
-
     final style = _getTestScanStyle(type.isEmpty ? title : type);
-
-    // Extract time
-
     final createdAt = ts['createdAt']?.toString() ?? '';
-
     final timeStr = _extractTime(createdAt);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+    return StatefulBuilder(
+      builder: (context, setState) {
+        bool isExpanded = false;
 
-      padding: const EdgeInsets.all(16),
+        return StatefulBuilder(
+          builder: (context, setInnerState) {
+            final visibleOptions = isExpanded
+                ? selectedOptions
+                : selectedOptions.take(2).toList();
 
-      decoration: BoxDecoration(
-        color: Colors.white,
-
-        borderRadius: BorderRadius.circular(16),
-
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-
-            blurRadius: 12,
-
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-
-        children: [
-          // Header row
-          Row(
-            children: [
-              // Icon circle
-              Container(
-                width: 48,
-
-                height: 48,
-
+            return InkWell(
+              borderRadius: BorderRadius.circular(18),
+              onTap: () {
+                setInnerState(() {
+                  isExpanded = !isExpanded;
+                });
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                margin: const EdgeInsets.only(bottom: 14),
+                padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: style.bgColor,
-
-                  borderRadius: BorderRadius.circular(14),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 14,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-
-                child: Icon(style.icon, color: style.iconColor, size: 24),
-              ),
-
-              const SizedBox(width: 12),
-
-              // Title + subtitle
-              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-
                   children: [
-                    Text(
-                      '$title  ${_getSubtitle(ts)}',
+                    /// HEADER
+                    Row(
+                      children: [
+                        Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                style.bgColor.withOpacity(0.9),
+                                style.bgColor.withOpacity(0.6),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Icon(
+                            style.icon,
+                            color: style.iconColor,
+                            size: 24,
+                          ),
+                        ),
 
-                      style: const TextStyle(
-                        fontSize: 16,
+                        const SizedBox(width: 14),
 
-                        fontWeight: FontWeight.w700,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                title,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: _darkText,
+                                ),
+                              ),
+                              if (timeStr.isNotEmpty)
+                                Text(
+                                  timeStr,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: _greyText,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
 
-                        color: _darkText,
-                      ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _greenBadge,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: const Text(
+                                'COMPLETED',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                  letterSpacing: 0.6,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Icon(
+                              isExpanded
+                                  ? Icons.keyboard_arrow_up
+                                  : Icons.keyboard_arrow_down,
+                              size: 20,
+                              color: Colors.grey,
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
 
-                    // if (_getSubtitle(ts).isNotEmpty)
+                    /// RESULTS
+                    if (selectedOptions.isNotEmpty) ...[
+                      const SizedBox(height: 16),
 
-                    //   Text(
-
-                    //     _getSubtitle(ts),
-
-                    //     style: const TextStyle(fontSize: 12, color: _greyText),
-
-                    //   ),
+                      AnimatedCrossFade(
+                        duration: const Duration(milliseconds: 250),
+                        crossFadeState: isExpanded
+                            ? CrossFadeState.showSecond
+                            : CrossFadeState.showFirst,
+                        firstChild: _buildResultMetrics(
+                          visibleOptions,
+                        ), // show 2
+                        secondChild: _buildResultMetrics(
+                          selectedOptions,
+                        ), // show all
+                      ),
+                    ],
                   ],
                 ),
               ),
-
-              // Completed + time
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-
-                      vertical: 4,
-                    ),
-
-                    decoration: BoxDecoration(
-                      color: _greenBadge,
-
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-
-                    child: const Text(
-                      'COMPLETED',
-
-                      style: TextStyle(
-                        fontSize: 10,
-
-                        fontWeight: FontWeight.w800,
-
-                        color: Colors.white,
-
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-
-                  if (timeStr.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-
-                    Text(
-                      timeStr,
-
-                      style: const TextStyle(fontSize: 12, color: _greyText),
-                    ),
-                  ],
-                ],
-              ),
-            ],
-          ),
-
-          // Result row
-
-          // Selected options results (metric blocks like TSH, FREE T4)
-          if (selectedOptions.isNotEmpty) ...[
-            const SizedBox(height: 12),
-
-            _buildResultMetrics(selectedOptions),
-          ],
-        ],
-      ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -1437,6 +1632,8 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
 
     final afterFood = m['after_food'] == true;
 
+    final timeSlot = m['time_slot'];
+
     final style = _getMedicineStyle(route);
 
     // Dispense time
@@ -1453,12 +1650,14 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
 
     final dosageLabel = dosage.isNotEmpty ? '${dosage}mg' : '';
 
-    final mealLabel = afterFood ? 'After Food' : 'Before Food';
+    final mealLabel = afterFood ? 'AC' : 'PC';
+    final sessionLabel = timeSlot;
 
     final subtitle = [
       dosageLabel,
 
       mealLabel,
+      sessionLabel,
     ].where((s) => s.isNotEmpty).join(' • ');
 
     return Container(
@@ -1569,109 +1768,108 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
     final title = ts['title']?.toString() ?? ts['type']?.toString() ?? '—';
 
     final type = ts['type']?.toString() ?? '';
-
     final style = _getTestScanStyle(type.isEmpty ? title : type);
 
-    // Schedule info
-
     final scheduleDate = ts['scheduleDate']?.toString() ?? '';
-
     final scheduleLabel = _getScheduleLabel(scheduleDate);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-
-      padding: const EdgeInsets.all(16),
-
+      margin: const EdgeInsets.only(bottom: 4, top: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
       decoration: BoxDecoration(
         color: Colors.white,
-
-        borderRadius: BorderRadius.circular(16),
-
-        border: Border.all(
-          color: const Color(0xFFD1D5DB),
-
-          style: BorderStyle.solid,
-        ),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
-
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Icon
+          /// Icon Container
           Container(
-            width: 48,
-
-            height: 48,
-
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
-              color: const Color(0xFFF3F4F6),
-
-              borderRadius: BorderRadius.circular(14),
+              gradient: LinearGradient(
+                colors: [const Color(0xFFF9FAFB), const Color(0xFFF3F4F6)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
             ),
-
-            child: Icon(style.icon, color: const Color(0xFF9CA3AF), size: 24),
+            child: Icon(style.icon, color: const Color(0xFF6B7280), size: 26),
           ),
 
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
 
-          // Title + schedule
+          /// Title & Schedule
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-
               children: [
                 Text(
                   title,
-
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 16,
-
                     fontWeight: FontWeight.w700,
-
                     color: _darkText,
                   ),
                 ),
-
+                const SizedBox(height: 4),
                 if (scheduleLabel.isNotEmpty)
                   Text(
                     scheduleLabel,
-
-                    style: const TextStyle(fontSize: 12, color: _greyText),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: _greyText,
+                      height: 1.4,
+                    ),
                   ),
               ],
             ),
           ),
 
-          // Waiting badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          const SizedBox(width: 10),
 
-            decoration: BoxDecoration(
-              color: const Color(0xFFF3F4F6),
-
-              borderRadius: BorderRadius.circular(8),
-
-              border: Border.all(color: const Color(0xFFD1D5DB)),
-            ),
-
-            child: const Text(
-              'WAITING',
-
-              style: TextStyle(
-                fontSize: 10,
-
-                fontWeight: FontWeight.w800,
-
-                color: _sectionLabel,
-
-                letterSpacing: 0.5,
+          /// Status + Arrow
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF3C7), // soft amber background
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text(
+                  'WAITING',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFFB45309),
+                    letterSpacing: 0.6,
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(height: 6),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: Color(0xFFCBD5E1),
+                size: 22,
+              ),
+            ],
           ),
-
-          const SizedBox(width: 6),
-
-          const Icon(Icons.chevron_right, color: Color(0xFFD1D5DB), size: 22),
         ],
       ),
     );
@@ -1683,276 +1881,206 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
 
   // ═══════════════════════════════════════════════════════
 
-  // Widget _buildPendingMedicineCard(Map<String, dynamic> m) {
-
-  //   final name = m['medicine_name']?.toString().trim() ?? 'Medicine';
-
-  //   final route = m['route']?.toString() ?? '';
-
-  //   final style = _getMedicineStyle(route);
-
-  //
-
-  //   // Try to compute next dose info
-
-  //   final morning = m['morning'] == true;
-
-  //   final afternoon = m['afternoon'] == true;
-
-  //   final night = m['night'] == true;
-
-  //   String nextDoseLabel = '';
-
-  //   if (morning || afternoon || night) {
-
-  //     final sessions = <String>[];
-
-  //     if (morning) sessions.add('8 AM');
-
-  //     if (afternoon) sessions.add('1 PM');
-
-  //     if (night) sessions.add('9 PM');
-
-  //     nextDoseLabel = 'Dose due • ${sessions.join(" / ")}';
-
-  //   }
-
-  //
-
-  //   // Days remaining
-
-  //   final days = m['days'];
-
-  //   final daysNum = days is num
-
-  //       ? days.toDouble()
-
-  //       : double.tryParse(days?.toString() ?? '') ?? 0;
-
-  //   final daysLabel = daysNum > 0 ? '${daysNum.ceil()} day(s) left' : '';
-
-  //
-
-  //   return Container(
-
-  //     margin: const EdgeInsets.only(bottom: 12),
-
-  //     padding: const EdgeInsets.all(16),
-
-  //     decoration: BoxDecoration(
-
-  //       color: Colors.white,
-
-  //       borderRadius: BorderRadius.circular(16),
-
-  //       border: Border.all(
-
-  //         color: const Color(0xFFD1D5DB),
-
-  //         style: BorderStyle.solid,
-
-  //       ),
-
-  //     ),
-
-  //     child: Row(
-
-  //       children: [
-
-  //         // Icon
-
-  //         Container(
-
-  //           width: 48,
-
-  //           height: 48,
-
-  //           decoration: BoxDecoration(
-
-  //             color: const Color(0xFFF3F4F6),
-
-  //             borderRadius: BorderRadius.circular(14),
-
-  //           ),
-
-  //           child: Icon(style.icon, color: const Color(0xFF9CA3AF), size: 24),
-
-  //         ),
-
-  //         const SizedBox(width: 12),
-
-  //         // Name + dose info
-
-  //         Expanded(
-
-  //           child: Column(
-
-  //             crossAxisAlignment: CrossAxisAlignment.start,
-
-  //             children: [
-
-  //               Text(
-
-  //                 name,
-
-  //                 style: const TextStyle(
-
-  //                   fontSize: 16,
-
-  //                   fontWeight: FontWeight.w700,
-
-  //                   color: _darkText,
-
-  //                 ),
-
-  //               ),
-
-  //               if (nextDoseLabel.isNotEmpty)
-
-  //                 Text(
-
-  //                   nextDoseLabel,
-
-  //                   style: const TextStyle(fontSize: 12, color: _greyText),
-
-  //                 ),
-
-  //             ],
-
-  //           ),
-
-  //         ),
-
-  //         // Next badge
-
-  //         Container(
-
-  //           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-
-  //           decoration: BoxDecoration(
-
-  //             color: _redBadge,
-
-  //             borderRadius: BorderRadius.circular(8),
-
-  //           ),
-
-  //           child: Text(
-
-  //             daysLabel.isNotEmpty ? daysLabel.toUpperCase() : 'PENDING',
-
-  //             style: const TextStyle(
-
-  //               fontSize: 10,
-
-  //               fontWeight: FontWeight.w800,
-
-  //               color: Colors.white,
-
-  //               letterSpacing: 0.3,
-
-  //             ),
-
-  //           ),
-
-  //         ),
-
-  //       ],
-
-  //     ),
-
-  //   );
-
-  // }
-
   Widget _buildPendingMedicineCard(Map<String, dynamic> m) {
     final name = m['medicine_name']?.toString().trim() ?? 'Medicine';
-
     final dose = m['dose']?.toString() ?? '';
-
     final slot = m['time_slot']?.toString() ?? '';
-
-    //final status = m['status']?.toString() ?? '';
-
     final timeLabel = getTimeLabel(slot);
-
     final count = m['count'] ?? 1;
+    final status = m['status']?.toString() ?? 'PENDING';
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-
-      padding: const EdgeInsets.all(16),
-
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-
-        borderRadius: BorderRadius.circular(16),
-
-        border: Border.all(color: const Color(0xFFD1D5DB)),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+        border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
-
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Icon
+          /// ICON
           Container(
-            width: 48,
-
-            height: 48,
-
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
-              color: const Color(0xFFF3F4F6),
-
-              borderRadius: BorderRadius.circular(14),
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(16),
             ),
-
-            child: const Icon(Icons.medication_outlined),
+            child: const Icon(
+              Icons.medication_outlined,
+              color: Color(0xFF64748B),
+            ),
           ),
 
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
 
+          /// TITLE + SUBTITLE
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-
               children: [
                 Text(
                   count > 1 ? '$name ×$count' : name,
-
                   style: const TextStyle(
                     fontSize: 16,
-
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-
+                const SizedBox(height: 6),
                 Text(
-                  'Dose due • $timeLabel ($dose)',
-
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  'Dose due • $timeLabel ${dose.isNotEmpty ? "($dose)" : ""}',
+                  style: const TextStyle(fontSize: 13, color: Colors.grey),
                 ),
               ],
             ),
           ),
 
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          const SizedBox(width: 12),
 
-            decoration: BoxDecoration(
-              color: Colors.red,
+          /// RIGHT SIDE (MODE BASED)
+          if (widget.mode == 0)
+            _buildStatusBadge(status)
+          else
+            _buildConfirmCheckbox(m),
+        ],
+      ),
+    );
+  }
 
-              borderRadius: BorderRadius.circular(8),
-            ),
+  Widget _buildStatusBadge(String status) {
+    final bool isPending = status.toUpperCase() == "PENDING";
 
-            child: const Text(
-              'PENDING',
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      decoration: BoxDecoration(
+        color: isPending ? const Color(0xFFFEF2F2) : const Color(0xFFECFDF5),
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: Text(
+        status.toUpperCase(),
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: isPending ? const Color(0xFFDC2626) : const Color(0xFF059669),
+        ),
+      ),
+    );
+  }
 
-              style: TextStyle(
-                fontSize: 10,
+  bool _isChecked = false;
+  bool _isLoading = false;
 
-                fontWeight: FontWeight.w800,
+  Widget _buildConfirmCheckbox(Map<String, dynamic> m) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(50),
+      onTap: () async {
+        if (_isChecked || _isLoading) return;
 
-                color: Colors.white,
+        final confirm = await _showConfirmDialog();
+        if (confirm != true) return;
+
+        // ── Full-screen loading dialog ──
+        if (context.mounted) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (_) => const PopScope(
+              canPop: false,
+              child: Center(
+                child: Card(
+                  elevation: 12,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(16)),
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(color: Color(0xFF4A7BF7)),
+                        SizedBox(width: 16),
+                        Text(
+                          'Updating\u2026',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
+            ),
+          );
+        }
+
+        try {
+          final success = await PrescriptionService()
+              .updateMedicineAdministrationStatus(id: m['id'], status: "TAKEN");
+
+          // Dismiss loading dialog
+          if (context.mounted) {
+            Navigator.of(context, rootNavigator: true).pop();
+          }
+
+          if (!mounted) return;
+
+          if (success == true) {
+            setState(() => _isChecked = true);
+            // Trigger silent reload on queue page (2 routes back)
+            QueueRefreshNotifier.triggerRefresh();
+          } else {
+            _showErrorSnackBar("Failed to update status");
+          }
+        } catch (e) {
+          if (context.mounted) Navigator.of(context, rootNavigator: true).pop();
+          if (!mounted) return;
+          _showErrorSnackBar("Something went wrong");
+        }
+      },
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 28,
+            height: 28,
+            alignment: Alignment.center,
+            // decoration: BoxDecoration(
+            //   shape: BoxShape.circle,
+            //   color: _isChecked ? const Color(0xFF10B981) : Colors.white,
+            //   border: Border.all(
+            //     color: _isChecked
+            //         ? const Color(0xFF10B981)
+            //         : const Color(0xFFCBD5E1),
+            //     width: 1.5,
+            //   ),
+            // ),
+            child: Icon(
+              _isChecked ? Icons.check : Icons.check_box_outline_blank,
+              size: 25,
+              color: _isChecked ? Colors.white : Colors.grey,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            _isChecked ? "Taken" : "Confirm",
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: _isChecked
+                  ? const Color(0xFF10B981)
+                  : const Color(0xFF6B7280),
             ),
           ),
         ],
@@ -1960,147 +2088,130 @@ class _TreatmentProgressWidgetState extends State<TreatmentProgressWidget> {
     );
   }
 
-  // ═══════════════════════════════════════════════════════
-
-  //  RESULT METRICS (blocks like "TSH LEVEL  3.2 mIU/L")
-
-  // ═══════════════════════════════════════════════════════
-
-  // Widget _buildResultMetrics(List<dynamic> options) {
-
-  //   // Only show options that have a result
-
-  //   final withResults = options.where((o) {
-
-  //     final result = o['result']?.toString().trim() ?? '';
-
-  //     return result.isNotEmpty && result != '-';
-
-  //   }).toList();
-
-  //
-
-  //   if (withResults.isEmpty) return const SizedBox.shrink();
-
-  //
-
-  //   return Wrap(
-
-  //     spacing: 10,
-
-  //     runSpacing: 10,
-
-  //     children: withResults.map<Widget>((opt) {
-
-  //       final name = opt['name']?.toString() ?? '';
-
-  //       final result = opt['result']?.toString() ?? '';
-
-  //       final unit = opt['unit']?.toString() ?? '';
-
-  //       final unitStr = (unit.isNotEmpty && unit != '-' && unit != 'N/A')
-
-  //           ? unit
-
-  //           : '';
-
-  //
-
-  //       return Container(
-
-  //         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-
-  //         decoration: BoxDecoration(
-
-  //           color: const Color(0xFFF9FAFB),
-
-  //           borderRadius: BorderRadius.circular(12),
-
-  //         ),
-
-  //         child: Column(
-
-  //           crossAxisAlignment: CrossAxisAlignment.start,
-
-  //           mainAxisSize: MainAxisSize.min,
-
-  //           children: [
-
-  //             Text(
-
-  //               name.toUpperCase(),
-
-  //               style: const TextStyle(
-
-  //                 fontSize: 10,
-
-  //                 fontWeight: FontWeight.w700,
-
-  //                 color: _greyText,
-
-  //                 letterSpacing: 0.8,
-
-  //               ),
-
-  //             ),
-
-  //             const SizedBox(height: 4),
-
-  //             Row(
-
-  //               mainAxisSize: MainAxisSize.min,
-
-  //               crossAxisAlignment: CrossAxisAlignment.baseline,
-
-  //               textBaseline: TextBaseline.alphabetic,
-
-  //               children: [
-
-  //                 Text(
-
-  //                   result,
-
-  //                   style: const TextStyle(
-
-  //                     fontSize: 22,
-
-  //                     fontWeight: FontWeight.w800,
-
-  //                     color: _darkText,
-
-  //                   ),
-
-  //                 ),
-
-  //                 if (unitStr.isNotEmpty) ...[
-
-  //                   const SizedBox(width: 4),
-
-  //                   Text(
-
-  //                     unitStr,
-
-  //                     style: const TextStyle(fontSize: 12, color: _greyText),
-
-  //                   ),
-
-  //                 ],
-
-  //               ],
-
-  //             ),
-
-  //           ],
-
-  //         ),
-
-  //       );
-
-  //     }).toList(),
-
-  //   );
-
-  // }
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
+  }
+
+  Future<bool?> _showConfirmDialog() {
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) {
+        return Dialog(
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Medical Icon Badge
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF34D399), Color(0xFF059669)],
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.check_circle,
+                    color: Colors.white,
+                    size: 32,
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                const Text(
+                  "Confirm Medication",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                const Text(
+                  "Are you sure you want to mark\nthis medicine as administered?",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.5,
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
+
+                const SizedBox(height: 28),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          side: const BorderSide(color: Color(0xFFE5E7EB)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        onPressed: () async => {Navigator.pop(context, false)},
+                        child: const Text(
+                          "Cancel",
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF6B7280),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          backgroundColor: const Color(0xFF059669),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text(
+                          "Confirm",
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   Widget _buildResultMetrics(List<dynamic> options) {
     if (options.isEmpty) return const SizedBox.shrink();

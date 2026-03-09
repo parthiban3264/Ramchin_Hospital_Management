@@ -187,7 +187,7 @@ class NurseInPatientNotesAndInstructionPageState
 
   PreferredSizeWidget buildAppBar(bool isButtonEnabled, BuildContext context) {
     return PreferredSize(
-      preferredSize: Size.fromHeight(100),
+      preferredSize: Size.fromHeight(80),
       child: Column(
         children: [
           // ---- Existing AppBar UI ----
@@ -490,14 +490,6 @@ class NurseInPatientNotesAndInstructionPageState
     // Ideally move to initState or use a flag.
     if ((assignDoctorId.isNotEmpty || assignNurseId.isNotEmpty) &&
         (doctorList.isEmpty || nurseList.isEmpty)) {
-      // Only load if not already loaded to prevent loop
-      // But build can be called multiple times.
-      // Better to rely on initState, but complying with structure for now.
-      // The original code called it in build.
-      // To be safe, we should check if we already have the correct data or use a FutureBuilder.
-      // For now, mirroring original logic but adding a check to avoid infinite loop if possible,
-      // or just keeping it as is since it was working before (with the user's revert).
-      // Actually user reverted the fix in inpatient_description_page, this is nurse page.
       if (nurseList.isEmpty && doctorList.isEmpty) {
         loadStaff(assignDoctorId, assignNurseId);
       }
@@ -532,7 +524,7 @@ class NurseInPatientNotesAndInstructionPageState
                   : null,
             ),
 
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           _buildPatientDetailsCard(
             name: name,
             id: id,

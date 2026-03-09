@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../Pages/NotificationsPage.dart';
 import '../../../Services/prescription_service.dart';
 import '../../../services/consultation_service.dart';
+import '../Nurse/global.dart';
 import 'medical_fee_page.dart';
 
 class MedicalQueuePage extends StatefulWidget {
@@ -27,9 +28,10 @@ class _MedicalQueuePageState extends State<MedicalQueuePage>
   late TabController topTabController;
   late TabController bottomTabController;
 
-  int bottomTabIndex = 0; // Track selected bottom tab
+  int bottomTabIndex = 0;
   final TextEditingController searchController = TextEditingController();
   String searchQuery = '';
+  bool _isRefreshing = false;
 
   @override
   void initState() {
@@ -38,13 +40,35 @@ class _MedicalQueuePageState extends State<MedicalQueuePage>
     bottomTabController = TabController(length: 2, vsync: this);
     consultationsFuture = _loadData();
     //_startAutoRefresh();
+
+    QueueRefreshNotifier.register(_refresh);
+  }
+
+  Future<void> _refresh() async {
+    if (!mounted) return;
+    setState(() => _isRefreshing = true);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final hospitalId = prefs.getString('hospitalId') ?? '';
+      final data =
+          await PrescriptionService().getMedicalPrescriptions(hospitalId);
+      if (mounted) {
+        setState(() {
+          consultationsCache = data;
+          firstLoad = false;
+          _isRefreshing = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isRefreshing = false);
+    }
   }
 
   @override
   void dispose() {
-    //refreshTimer?.cancel();
     topTabController.dispose();
     bottomTabController.dispose();
+    QueueRefreshNotifier.unregister(_refresh);
     super.dispose();
   }
 
@@ -67,63 +91,98 @@ class _MedicalQueuePageState extends State<MedicalQueuePage>
   Widget build(BuildContext context) {
     bool isQueueTab = bottomTabIndex == 0;
     bool isHistoryTab = bottomTabIndex == 1;
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(100),
-        child: _buildAppBar(),
-      ),
+    return Stack(
+      children: [
+        Scaffold(
+          backgroundColor: Colors.grey[100],
+          appBar: PreferredSize(
+            preferredSize: const Size.fromHeight(100),
+            child: _buildAppBar(),
+          ),
 
-      // ── BODY ──
-      body: Column(
-        children: [
-          // TOP TABS → Today / Previous
-          Material(
+          // ── BODY ──
+          body: Column(
+            children: [
+              // TOP TABS → Today / Previous
+              Material(
+                color: Colors.white,
+                elevation: 1,
+                child: TabBar(
+                  controller: topTabController,
+                  labelColor: primaryColor,
+                  unselectedLabelColor: Colors.grey,
+                  indicatorColor: primaryColor,
+                  tabs: const [
+                    Tab(text: "Today"),
+                    Tab(text: "Previous"),
+                  ],
+                ),
+              ),
+              if (topTabController.index == 1) _buildSearchBar(),
+              // CONTENT AREA → patient list filtered by bottom tab
+              Expanded(
+                child: TabBarView(
+                  controller: topTabController,
+                  children: [
+                    _patientListView(isToday: true),
+                    _patientListView(isToday: false),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          // ── BOTTOM TABS  ──
+          bottomNavigationBar: Material(
             color: Colors.white,
-            elevation: 1,
+            elevation: 10,
             child: TabBar(
-              controller: topTabController,
+              controller: bottomTabController,
               labelColor: primaryColor,
               unselectedLabelColor: Colors.grey,
               indicatorColor: primaryColor,
+              onTap: (index) {
+                setState(() => bottomTabIndex = index);
+              },
               tabs: const [
-                Tab(text: "Today"),
-                Tab(text: "Previous"),
+                Tab(text: "Queue"),
+                Tab(text: "History"),
               ],
             ),
           ),
-          if (topTabController.index == 1) _buildSearchBar(),
-          // CONTENT AREA → patient list filtered by bottom tab
-          Expanded(
-            child: TabBarView(
-              controller: topTabController,
-              children: [
-                _patientListView(isToday: true),
-                _patientListView(isToday: false),
-              ],
-            ),
-          ),
-        ],
-      ),
-
-      // ── BOTTOM TABS (Queue / Paid / History) FIXED ──
-      bottomNavigationBar: Material(
-        color: Colors.white,
-        elevation: 10,
-        child: TabBar(
-          controller: bottomTabController,
-          labelColor: primaryColor,
-          unselectedLabelColor: Colors.grey,
-          indicatorColor: primaryColor,
-          onTap: (index) {
-            setState(() => bottomTabIndex = index);
-          },
-          tabs: const [
-            Tab(text: "Queue"),
-            Tab(text: "History"),
-          ],
         ),
-      ),
+
+        // ── REFRESH LOADING OVERLAY ──
+        if (_isRefreshing)
+          Container(
+            color: Colors.black.withOpacity(0.25),
+            child: const Center(
+              child: Card(
+                elevation: 8,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(16)),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(color: Color(0xFFBF955E)),
+                      SizedBox(width: 16),
+                      Text(
+                        'Refreshing queue…',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 

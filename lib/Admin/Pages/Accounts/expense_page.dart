@@ -24,8 +24,10 @@ class _AccountExpensePageState extends State<AccountExpensePage> {
   final TextEditingController amountController = TextEditingController();
   String type = 'EXPENSE';
 
+  List<Map<String, dynamic>> _allDrawers = [];
   List<Map<String, dynamic>> drawers = [];
   double total = 0;
+  DateTime _selectedDate = DateTime.now();
 
   // Hospital info
   String? hospitalName;
@@ -59,6 +61,20 @@ class _AccountExpensePageState extends State<AccountExpensePage> {
     setState(() {});
   }
 
+  void _filterDrawers() {
+    String selectedDateString = DateFormat('yyyy-MM-dd').format(_selectedDate);
+    setState(() {
+      drawers = _allDrawers.where((d) {
+        String? createdAt = d['createdAt'] as String?;
+        if (createdAt != null && createdAt.length >= 10) {
+          return createdAt.substring(0, 10) == selectedDateString;
+        }
+        return false;
+      }).toList();
+      total = drawers.fold(0, (sum, d) => sum + (d['amount'] as num));
+    });
+  }
+
   Future<void> fetchDrawers() async {
     setState(() {
       _loading = true;
@@ -66,13 +82,14 @@ class _AccountExpensePageState extends State<AccountExpensePage> {
     });
     try {
       final fetchedDrawers = await _incomeService.getIncomeExpenseService();
-      setState(() {
-        drawers = fetchedDrawers
-            .map((e) => e as Map<String, dynamic>)
-            .where((e) => e['type']?.toString().toUpperCase() == "EXPENSE")
-            .toList();
+      _allDrawers = fetchedDrawers
+          .map((e) => e as Map<String, dynamic>)
+          .where((e) => e['type']?.toString().toUpperCase() == "EXPENSE")
+          .toList();
 
-        total = drawers.fold(0, (sum, d) => sum + (d['amount'] as num));
+      _filterDrawers();
+
+      setState(() {
         _loading = false;
       });
     } catch (e) {
@@ -80,6 +97,173 @@ class _AccountExpensePageState extends State<AccountExpensePage> {
         _error = "Error fetching drawers: $e";
         _loading = false;
       });
+    }
+  }
+
+  Future<void> deleteDrawer(int id) async {
+    bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Delete Expense',
+          style: TextStyle(color: Colors.red),
+        ),
+        content: const Text('Are you sure you want to delete this expense?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _loading = true);
+    try {
+      await _incomeService.deleteIncomeExpense(id);
+      await fetchDrawers();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Expense deleted successfully')),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _loading = false;
+        _error = "Error deleting: $e";
+      });
+    }
+  }
+
+  Future<void> updateDrawer(Map<String, dynamic> drawer) async {
+    final TextEditingController editReason = TextEditingController(
+      text: drawer['reason'],
+    );
+    final TextEditingController editAmount = TextEditingController(
+      text: drawer['amount'].toString(),
+    );
+
+    bool? update = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Edit Expense'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: editReason,
+              decoration: InputDecoration(
+                labelText: 'Reason',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: editAmount,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: InputDecoration(
+                labelText: 'Amount',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.teal,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('Update', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (update != true) return;
+
+    if (editReason.text.trim().isEmpty || editAmount.text.trim().isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Reason and Amount cannot be empty')),
+        );
+      }
+      return;
+    }
+
+    setState(() => _loading = true);
+    try {
+      final updatedData = {
+        'reason': editReason.text.trim(),
+        'amount': double.tryParse(editAmount.text.trim()) ?? 0,
+      };
+      await _incomeService.updateIncomeExpense(
+        int.parse(drawer['id'].toString()),
+        updatedData,
+      );
+      await fetchDrawers();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Expense updated successfully')),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _loading = false;
+        _error = "Error updating: $e";
+      });
+    }
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Colors.teal,
+              onPrimary: Colors.white,
+              onSurface: Colors.teal.shade900,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(foregroundColor: Colors.teal),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+      });
+      _filterDrawers();
     }
   }
 
@@ -121,6 +305,35 @@ class _AccountExpensePageState extends State<AccountExpensePage> {
       });
     }
   }
+  // Future<List<dynamic>> getIncomeExpenseService() async {
+  //   final hospitalId = await getHospitalId();
+  //   final url = Uri.parse('$baseUrl/income_and_expense/getAll/$hospitalId');
+  //
+  //   final response = await http.get(url);
+  //
+  //   if (response.statusCode == 200) {
+  //     return jsonDecode(response.body);
+  //   } else {
+  //     throw Exception('Failed to fetch drawers: ${response.body}');
+  //   }
+  // }
+  //
+  // Future<bool> updateIncomeExpense(int id, Map<String, dynamic> data) async {
+  //   final response = await http.patch(
+  //     Uri.parse("$baseUrl/income_and_expense/$id"),
+  //     headers: {"Content-Type": "application/json"},
+  //     body: jsonEncode(data),
+  //   );
+  //
+  //   if (response.statusCode == 200 || response.statusCode == 201) {
+  //     return true;
+  //   } else {
+  //     print(response.body);
+  //     return false;
+  //   }
+  // }
+  //edit updateIncomeExpense()
+  //remove updateIncomeExpense()
 
   @override
   Widget build(BuildContext context) {
@@ -138,6 +351,8 @@ class _AccountExpensePageState extends State<AccountExpensePage> {
             children: [
               const SizedBox(height: 4),
               _buildHospitalCard(),
+              const SizedBox(height: 10),
+              _buildDatePicker(),
               const SizedBox(height: 2),
               _buildTotalCard(),
               _buildAddDrawerButton(),
@@ -229,6 +444,95 @@ class _AccountExpensePageState extends State<AccountExpensePage> {
                                           ),
                                         ),
                                       ),
+                                      if (drawer['id'] != null) ...[
+                                        const SizedBox(height: 6),
+                                        Row(
+                                          children: [
+                                            InkWell(
+                                              onTap: () => updateDrawer(drawer),
+                                              child: Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 10,
+                                                      vertical: 4,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.blue.withValues(
+                                                    alpha: 0.15,
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
+                                                ),
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.edit,
+                                                      size: 14,
+                                                      color:
+                                                          Colors.blue.shade700,
+                                                    ),
+                                                    const SizedBox(width: 4),
+                                                    Text(
+                                                      'Edit',
+                                                      style: TextStyle(
+                                                        fontSize: 12,
+                                                        color: Colors
+                                                            .blue
+                                                            .shade700,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            InkWell(
+                                              onTap: () => deleteDrawer(
+                                                int.parse(
+                                                  drawer['id'].toString(),
+                                                ),
+                                              ),
+                                              child: Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 10,
+                                                      vertical: 4,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.red.withValues(
+                                                    alpha: 0.15,
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
+                                                ),
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.delete,
+                                                      size: 14,
+                                                      color:
+                                                          Colors.red.shade700,
+                                                    ),
+                                                    const SizedBox(width: 4),
+                                                    Text(
+                                                      'Delete',
+                                                      style: TextStyle(
+                                                        fontSize: 12,
+                                                        color:
+                                                            Colors.red.shade700,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
                                     ],
                                   ),
                                 ),
@@ -413,7 +717,8 @@ class _AccountExpensePageState extends State<AccountExpensePage> {
   }
 
   Widget _buildFormCard() {
-    final bool disabled = _submitting;
+    bool isSubmitting = _submitting;
+    bool isButtonDisabled = isSubmitting || reasonController.text.trim().isEmpty || amountController.text.trim().isEmpty;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -501,7 +806,7 @@ class _AccountExpensePageState extends State<AccountExpensePage> {
               const SizedBox(height: 16),
               TextField(
                 controller: reasonController,
-                enabled: !disabled,
+                enabled: !isSubmitting,
                 decoration: InputDecoration(
                   labelText: "Reason",
                   prefixIcon: Icon(
@@ -521,11 +826,12 @@ class _AccountExpensePageState extends State<AccountExpensePage> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
+                onChanged: (e) => setState(() {}),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: amountController,
-                enabled: !disabled,
+                enabled: !isSubmitting,
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
@@ -548,7 +854,8 @@ class _AccountExpensePageState extends State<AccountExpensePage> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
-                onEditingComplete: disabled ? null : createDrawer,
+                onChanged: (e) => setState(() {}),
+                onEditingComplete: isButtonDisabled ? null : createDrawer,
               ),
               const SizedBox(height: 24),
               AnimatedContainer(
@@ -557,7 +864,7 @@ class _AccountExpensePageState extends State<AccountExpensePage> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
                   gradient: LinearGradient(
-                    colors: disabled
+                    colors: isButtonDisabled
                         ? [Colors.grey.shade400, Colors.grey.shade500]
                         : [Colors.teal.shade600, Colors.teal.shade400],
                   ),
@@ -570,7 +877,7 @@ class _AccountExpensePageState extends State<AccountExpensePage> {
                   ],
                 ),
                 child: ElevatedButton(
-                  onPressed: disabled ? null : createDrawer,
+                  onPressed: isButtonDisabled ? null : createDrawer,
                   style: ElevatedButton.styleFrom(
                     elevation: 0,
                     backgroundColor: Colors.transparent,
@@ -579,7 +886,7 @@ class _AccountExpensePageState extends State<AccountExpensePage> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  child: disabled
+                  child: isSubmitting
                       ? const SizedBox(
                           height: 24,
                           width: 24,
@@ -740,6 +1047,89 @@ class _AccountExpensePageState extends State<AccountExpensePage> {
                   ),
                 ),
               ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDatePicker() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.teal.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.calendar_today,
+                    color: Colors.teal.shade700,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Selected Date",
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      DateFormat('dd MMM yyyy').format(_selectedDate),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            ElevatedButton(
+              onPressed: () => _selectDate(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.teal.shade50,
+                foregroundColor: Colors.teal.shade700,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+              ),
+              child: const Text(
+                'Change',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),

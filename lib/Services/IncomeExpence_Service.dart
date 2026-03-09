@@ -50,4 +50,34 @@ class IncomeExpenseService {
       throw Exception('Failed to fetch drawers: ${response.body}');
     }
   }
+
+  Future<bool> updateIncomeExpense(int id, Map<String, dynamic> data) async {
+    final response = await http.patch(
+      Uri.parse("$baseUrl/income_and_expense/$id"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode(data),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return true;
+    } else {
+      print(response.body);
+      return false;
+    }
+  }
+
+  // DELETE
+  Future<bool> deleteIncomeExpense(int id) async {
+    final response = await http.delete(
+      Uri.parse("$baseUrl/income_and_expense/$id"),
+      headers: {"Content-Type": "application/json"},
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return true;
+    } else {
+      print(response.body);
+      return false;
+    }
+  }
 }

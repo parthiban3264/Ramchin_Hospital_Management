@@ -29,6 +29,12 @@ class PaymentTotals {
   double totalScan = 0;
   double totalScanCash = 0;
   double totalScanOnline = 0;
+  double totalDischarge = 0;
+  double totalDischargeCash = 0;
+  double totalDischargeOnline = 0;
+  double totalDailyTreatment = 0;
+  double totalDailyTreatmentCash = 0;
+  double totalDailyTreatmentOnline = 0;
 
   int totalRegistrationFeeCount = 0;
   int totalSugarFeeCount = 0;
@@ -60,9 +66,11 @@ class _AccountsReportState extends State<AccountsReport> {
   String? hospitalPlace;
   String? hospitalPhoto;
   double _totalCashIncome = 0;
+  double _totalOnlineIncome = 0;
   double _totalExpenses = 0;
   double _totalIncomes = 0;
-  double _totalDrawing = 0;
+  double _totalDrawingOut = 0;
+  double _totalDrawingIn = 0;
   double _cashInHand = 0;
   DateTime? _reportFromDate;
   DateTime? reportToDate;
@@ -133,10 +141,12 @@ class _AccountsReportState extends State<AccountsReport> {
       return !createdAt.isBefore(from) && !createdAt.isAfter(to);
     }).toList();
 
-    _totalDrawing = filtered.fold(
-      0.0,
-      (sum, d) => sum + (d['amount'] as num).toDouble(),
-    );
+    _totalDrawingOut = filtered
+        .where((e) => e['type']?.toString().toUpperCase() == "OUT")
+        .fold(0.0, (sum, d) => sum + (d['amount'] as num).toDouble());
+    _totalDrawingIn = filtered
+        .where((e) => e['type']?.toString().toUpperCase() == "IN")
+        .fold(0.0, (sum, d) => sum + (d['amount'] as num).toDouble());
   }
 
   Future<void> _loadHospitalInfo() async {
@@ -293,6 +303,16 @@ class _AccountsReportState extends State<AccountsReport> {
             scanCounts[subType] = (scanCounts[subType] ?? 0) + 1;
           }
         }
+      } else if (type == "DISCHARGEFEE") {
+        totals.totalDischarge += amount;
+        if (paymentType == "MANUALPAY") totals.totalDischargeCash += amount;
+        if (paymentType == "ONLINEPAY") totals.totalDischargeOnline += amount;
+      } else if (type == "DAILYTREATMENTFEE") {
+        totals.totalDailyTreatment += amount;
+        if (paymentType == "MANUALPAY")
+          totals.totalDailyTreatmentCash += amount;
+        if (paymentType == "ONLINEPAY")
+          totals.totalDailyTreatmentOnline += amount;
       }
       // ---------------- MEDICAL ----------------
       else if (type == "MEDICINETONICINJECTIONFEES") {
@@ -307,23 +327,31 @@ class _AccountsReportState extends State<AccountsReport> {
         totals.totalRegisterCash +
         totals.totalTestCash +
         totals.totalScanCash +
+        totals.totalDischargeCash +
+        totals.totalDailyTreatmentCash +
         totals.totalMedicalCash +
         _totalIncomes; // other income (cash)
 
-    // final totalOnlinePayments =
-    //     totals.totalRegisterOnline +
-    //     totals.totalTestOnline +
-    //     totals.totalScanOnline +
-    //     totals.totalMedicalOnline;
+    final totalOnlinePayments =
+        totals.totalRegisterOnline +
+        totals.totalTestOnline +
+        totals.totalScanOnline +
+        totals.totalDischargeOnline +
+        totals.totalDailyTreatmentOnline +
+        totals.totalMedicalOnline;
 
     final balance = totalCashPayments - _totalExpenses;
 
-    _cashInHand = balance - _totalDrawing;
+    _cashInHand = balance - _totalDrawingOut;
 
     setState(() {
       _paymentTotals = totals;
-      _grandTotal = totals.grandTotal + _totalIncomes; // include other income
+      _grandTotal =
+          totals.grandTotal +
+          _totalIncomes +
+          _totalDrawingIn; // include other income
       _totalCashIncome = totalCashPayments;
+      _totalOnlineIncome = totalOnlinePayments;
     });
   }
 
@@ -503,9 +531,9 @@ class _AccountsReportState extends State<AccountsReport> {
         payments: _filteredPayments,
         hospitalName: hospitalName ?? "Unknown Hospital",
         hospitalPlace: hospitalPlace ?? "",
-        income: _totalIncomes,
+        income: _totalIncomes + _totalDrawingIn,
         expenses: _totalExpenses,
-        drawingOut: _totalDrawing,
+        drawingOut: _totalDrawingOut,
         previousBalance: previousBalance,
         reportDate: reportDate, // ✅ FIXED
         // ✅ NOW VALID
@@ -674,6 +702,16 @@ class _AccountsReportState extends State<AccountsReport> {
                   _paymentTotals.totalEmergencyFee,
                   color: Colors.red.shade50,
                 ),
+                _fullRowCard(
+                  "I/P Discharge Fee",
+                  _paymentTotals.totalDischarge,
+                  color: Colors.blue.shade50,
+                ),
+                _fullRowCard(
+                  "I/P Daily Treatment Fee",
+                  _paymentTotals.totalDailyTreatment,
+                  color: Colors.blue.shade50,
+                ),
               ],
             ),
 
@@ -706,13 +744,18 @@ class _AccountsReportState extends State<AccountsReport> {
                   color: Colors.green.shade50,
                 ),
                 _fullRowCard(
+                  "Total Online Income",
+                  _totalOnlineIncome,
+                  color: Colors.green.shade50,
+                ),
+                _fullRowCard(
                   "Expenses",
                   _totalExpenses,
                   color: Colors.red.shade50,
                 ),
                 _fullRowCard(
                   "Other Income",
-                  _totalIncomes,
+                  _totalIncomes + _totalDrawingIn,
                   color: Colors.yellow.shade50,
                 ),
                 _fullRowCard(
@@ -722,7 +765,7 @@ class _AccountsReportState extends State<AccountsReport> {
                 ),
                 _fullRowCard(
                   "Drawing Out",
-                  _totalDrawing,
+                  _totalDrawingOut,
                   color: Colors.orange.shade50,
                 ),
                 _fullRowCard(

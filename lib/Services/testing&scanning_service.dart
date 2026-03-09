@@ -78,6 +78,56 @@ class TestingScanningService {
     }
   }
 
+  Future<List<dynamic>> getAllOverviewTestingAndScanningData() async {
+    try {
+      final hospitalId = await getHospitalId();
+
+      final response = await http.get(
+        Uri.parse(
+          '$baseUrl/testing_and_scanning_patient/all/overview/$hospitalId',
+        ),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final decoded = jsonDecode(response.body);
+        if (decoded['status'] == 'success' && decoded['data'] != null) {
+          return decoded['data'] as List<dynamic>;
+        } else {
+          return [];
+        }
+      } else {
+        throw Exception('Failed to fetch ECG queue: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching ECG queue: $e');
+    }
+  }
+
+  /// Returns the aggregated test/scan dashboard overview data as a Map
+  Future<Map<String, dynamic>> getOverviewTestScanDashboard() async {
+    try {
+      final hospitalId = await getHospitalId();
+
+      final response = await http.get(
+        Uri.parse(
+          '$baseUrl/testing_and_scanning_patient/all/overview/$hospitalId',
+        ),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map<String, dynamic>) {
+          return decoded;
+        }
+        throw Exception('Unexpected JSON structure: $decoded');
+      } else {
+        throw Exception('Failed to fetch test/scan dashboard: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching test/scan dashboard: $e');
+    }
+  }
+
   Future<List<dynamic>> getAllEditTestingAndScanning(
     String doctorId,
     String patientType,

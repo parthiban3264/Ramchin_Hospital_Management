@@ -5,6 +5,8 @@ import '../../Admin/Colors/custom_colors.dart';
 import '../Admin/Pages/admin_edit_profile_page.dart';
 import '../Admin/Pages/admin_profile_page.dart';
 import '../Admin/Pages/change_password_page.dart';
+import '../Admin/Pages/privacy_policy_page.dart';
+import '../Admin/Pages/terms_conditions_page.dart';
 import '../Pages/NotificationsPage.dart';
 import '../Pages/login/widget/HospitalLoginPage.dart';
 import '../Services/auth_service.dart';
@@ -39,6 +41,16 @@ class AdminMobileDrawer extends StatelessWidget {
         "icon": Icons.change_circle,
         "label": "Change Password",
         "page": const ChangePasswordPage(),
+      },
+      {
+        "icon": Icons.policy,
+        "label": "Privacy policy",
+        "page": const PrivacyPolicyPage(),
+      },
+      {
+        "icon": Icons.privacy_tip_outlined,
+        "label": "Terms & Conditions",
+        "page": const TermsConditionsPage(),
       },
 
       // {

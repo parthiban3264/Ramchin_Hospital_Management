@@ -11,6 +11,7 @@ import '../../../../../Services/consultation_service.dart';
 import '../../../../../Services/socket_service.dart';
 import '../Doctor/pages/patient_description_in_patient/inpatient_description_page.dart';
 import '../Doctor/widgets/doctor_description_edit.dart';
+import 'global.dart';
 import 'in_patient_notes_instruction_page.dart';
 
 class NurseInPatientNotesAndInstructionQueuePage extends StatefulWidget {
@@ -44,6 +45,8 @@ class _NurseInPatientNotesAndInstructionQueuePageState
     _fetchConsultations(showLoading: true);
     _loadDoctorsAndDefault().then((_) {
       _fetchConsultations(showLoading: true);
+
+      QueueRefreshNotifier.register(_onRefreshSignal);
     });
 
     // _refreshTimer = Timer.periodic(const Duration(seconds: 5), (_) {
@@ -53,8 +56,12 @@ class _NurseInPatientNotesAndInstructionQueuePageState
 
   @override
   void dispose() {
-    //_refreshTimer.cancel();
+    QueueRefreshNotifier.unregister(_onRefreshSignal);
     super.dispose();
+  }
+
+  void _onRefreshSignal() {
+    if (mounted) _fetchConsultations(showLoading: false);
   }
 
   Future<void> _loadDoctorsAndDefault() async {

@@ -45,6 +45,22 @@ class PaymentService {
     }
   }
 
+  Future<Map<String, dynamic>> getAllOverviewPayments() async {
+    final hospitalId = await getHospitalId();
+    final response = await http.get(
+      Uri.parse('$baseUrl/payments/all/overview/$hospitalId'),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map<String, dynamic> && decoded['data'] != null) {
+        return decoded['data'] as Map<String, dynamic>;
+      }
+      throw Exception('Unexpected JSON structure: $decoded');
+    } else {
+      throw Exception('Failed to fetch dashboard: ${response.body}');
+    }
+  }
+
   Future<List<dynamic>> getOnePayments(int id) async {
     final hospitalId = await getHospitalId();
     final response = await http.get(

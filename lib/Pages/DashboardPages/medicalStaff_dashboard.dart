@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../Admin/Appbar/admin_appbar_desktop.dart';
 import '../../Admin/Pages/adding_page.dart';
 import '../../Admin/Pages/admin_dashboard_page.dart';
+import '../../Admin/Pages/admin_overview_page.dart';
 import '../../Drawer/MedicalStaffDrawer.dart';
 import '../../Mediacl_Staff/Appbar/MedicalStaffAppbarMobile.dart';
 import '../../Mediacl_Staff/Pages/Dashboard/CashierDashboard.dart';
@@ -106,7 +107,7 @@ class _MedicalStaffDashboardPageState extends State<MedicalStaffDashboardPage> {
         pages = accessAdmin
             ? const [
                 AdminOpDashboardPage(),
-                DrOverviewPage(),
+                AdminOverviewPage(), // DrOverviewPage(),
                 AdminAddingPage(),
               ]
             : const [DrOverviewPage(), DrOpDashboardPage()];

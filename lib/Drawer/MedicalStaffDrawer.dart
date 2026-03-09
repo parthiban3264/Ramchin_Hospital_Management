@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../Admin/Colors/custom_colors.dart';
 import '../Admin/Pages/admin_edit_profile_page.dart';
 import '../Admin/Pages/change_password_page.dart';
+import '../Admin/Pages/privacy_policy_page.dart';
+import '../Admin/Pages/terms_conditions_page.dart';
 import '../Pages/NotificationsPage.dart';
 import '../Pages/login/widget/HospitalLoginPage.dart';
 import '../Services/auth_service.dart';
@@ -62,6 +64,32 @@ class _MedicalStaffMobileDrawerState extends State<MedicalStaffMobileDrawer> {
       "icon": Icons.change_circle_outlined,
       "label": "Change Password",
       "page": const ChangePasswordPage(),
+      "roles": [
+        "cashier",
+        "doctor",
+        "nurse",
+        "lab technician",
+        "medical staff",
+        "assistant doctor",
+      ],
+    },
+    {
+      "icon": Icons.policy,
+      "label": "Privacy policy",
+      "page": const PrivacyPolicyPage(),
+      "roles": [
+        "cashier",
+        "doctor",
+        "nurse",
+        "lab technician",
+        "medical staff",
+        "assistant doctor",
+      ],
+    },
+    {
+      "icon": Icons.privacy_tip_outlined,
+      "label": "Terms & Conditions",
+      "page": const TermsConditionsPage(),
       "roles": [
         "cashier",
         "doctor",

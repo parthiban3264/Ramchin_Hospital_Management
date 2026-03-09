@@ -89,6 +89,81 @@ class ConsultationService {
     }
   }
 
+  Future<List<dynamic>> getAllOverviewConsultations() async {
+    try {
+      final hospitalId = await getHospitalId();
+      final response = await http.get(
+        Uri.parse('$baseUrl/consultations/all/overview/$hospitalId'),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // ✅ Decode JSON response first
+        final decoded = jsonDecode(response.body);
+
+        // ✅ FIX: Extract list safely from JSON object
+        final List<dynamic> rawList;
+        if (decoded is Map<String, dynamic> && decoded.containsKey('data')) {
+          rawList = decoded['data']; // data key contains list
+        } else if (decoded is List) {
+          rawList = decoded; // already a list
+        } else {
+          throw Exception('Unexpected JSON structure: $decoded');
+        }
+
+        return rawList;
+      } else {
+        throw Exception('Failed to fetch consultations: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching consultations: $e');
+    }
+  }
+
+  /// Returns the aggregated dashboard overview data as a Map
+  Future<Map<String, dynamic>> getOverviewDashboard() async {
+    try {
+      final hospitalId = await getHospitalId();
+      final response = await http.get(
+        Uri.parse('$baseUrl/consultations/all/overview/$hospitalId'),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map<String, dynamic> && decoded['data'] != null) {
+          return decoded['data'] as Map<String, dynamic>;
+        }
+        throw Exception('Unexpected JSON structure: $decoded');
+      } else {
+        throw Exception('Failed to fetch dashboard: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching dashboard: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> getOverviewDashboardByUserId(
+    String userId,
+  ) async {
+    try {
+      final hospitalId = await getHospitalId();
+      final response = await http.get(
+        Uri.parse('$baseUrl/consultations/all/overview/$hospitalId/$userId'),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map<String, dynamic> && decoded['data'] != null) {
+          return decoded['data'] as Map<String, dynamic>;
+        }
+        throw Exception('Unexpected JSON structure: $decoded');
+      } else {
+        throw Exception('Failed to fetch dashboard: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching dashboard: $e');
+    }
+  }
+
   Future<List<dynamic>> getAllConsultationsHistory(String patientId) async {
     try {
       final hospitalId = await getHospitalId();

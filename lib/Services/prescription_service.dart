@@ -321,6 +321,53 @@ class PrescriptionService {
       throw Exception("Failed to load prescriptions");
     }
   }
+
+  Future<bool> updateMedicineAdministrationStatus({
+    required int id,
+    required String status,
+  }) async {
+    print('work $id $status');
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+    final url = Uri.parse(
+      "$baseUrl/prescriptions/medicineAdministrationStatus/$id",
+    );
+
+    try {
+      final response = await http.patch(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token", // if needed
+        },
+        body: jsonEncode({"status": status}),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return true;
+      } else {
+        print("Error: ${response.body}");
+        return false;
+      }
+    } catch (e) {
+      print("Exception: $e");
+      return false;
+    }
+  }
+
+  Future<Map<String, dynamic>> getStatusAnalysis(int consultationId) async {
+    final uri = Uri.parse(
+      '$baseUrl/prescriptions/inpatient/medicine-administration/status-analysis/$consultationId',
+    );
+
+    final response = await http.get(uri);
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw Exception('Failed to load status analysis: ${response.statusCode}');
+    }
+  }
 }
 
 /// -----------------------------------

@@ -25,6 +25,8 @@ class AccountsReportPdf {
     final Map<String, Map<String, double>> doctorTotals = {};
     double registrationCash = 0, registrationOnline = 0;
     double testScanCash = 0, testScanOnline = 0;
+    double dischargeCash = 0, dischargeOnline = 0;
+    double dailyTreatmentCash = 0, dailyTreatmentOnline = 0;
     double otherIncomeCash = 0;
     double sugarCash = 0, sugarOnline = 0;
     double emergencyCash = 0, emergencyOnline = 0;
@@ -82,6 +84,17 @@ class AccountsReportPdf {
           if (isOnline) testScanOnline += amt;
         }
       }
+
+      if (type == "DISCHARGEFEE") {
+        final amount = (p['amount'] ?? 0).toDouble();
+        if (isCash) dischargeCash += amount;
+        if (isOnline) dischargeOnline += amount;
+      }
+      if (type == "DAILYTREATMENTFEE") {
+        final amount = (p['amount'] ?? 0).toDouble();
+        if (isCash) dailyTreatmentCash += amount;
+        if (isOnline) dailyTreatmentOnline += amount;
+      }
     }
 
     /// ---------------- CALCULATIONS ----------------
@@ -96,6 +109,8 @@ class AccountsReportPdf {
         testScanCash +
         sugarCash +
         emergencyCash +
+        dischargeCash +
+        dailyTreatmentCash +
         otherIncomeCash;
 
     final totalOnline =
@@ -103,6 +118,8 @@ class AccountsReportPdf {
         doctorOnline +
         testScanOnline +
         sugarOnline +
+        dischargeOnline +
+        dailyTreatmentOnline +
         emergencyOnline;
 
     final balance = previousBalance + totalCash + income - expenses;
@@ -162,12 +179,23 @@ class AccountsReportPdf {
               /// ---------- TEST & SCAN ----------
               _tripleRow('Test & Scan', testScanCash, testScanOnline),
 
+              /// ---------- Discharge fee ------------------
+              _tripleRow('I/P Discharge', dischargeCash, dischargeOnline),
+
+              /// ---------- Daily Treatment fee ----------
+              _tripleRow(
+                'I/P Daily Tr..',
+                dailyTreatmentCash,
+                dailyTreatmentOnline,
+              ),
+
               /// ---------- OTHER INCOME ----------
               _dashDivider(),
               _tripleRowBold('Sub Total', totalCash, totalOnline),
 
               //pw.Divider(),
               _dashDivider(),
+              _row('Total Income (Online)', totalOnline),
               _row('Total Income (Cash)', totalCash),
               _row('Other Income', income),
               _row('Expenses', expenses),

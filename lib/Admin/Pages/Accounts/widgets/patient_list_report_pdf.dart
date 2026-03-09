@@ -52,6 +52,8 @@ class PatientListReportPdf {
     Map<String, double> medicalAmounts = {};
     Map<String, Map<String, dynamic>> testCounts = {};
     Map<String, Map<String, dynamic>> scanCounts = {};
+    Map<String, Map<String, dynamic>> DischargeCounts = {};
+    Map<String, Map<String, dynamic>> DailyTreatmentCounts = {};
 
     for (var p in payments) {
       final type = (p['type'] ?? "").toString().toUpperCase();
@@ -136,6 +138,28 @@ class PatientListReportPdf {
           feeCounts['Medical / Injection / Tonic']!['online'] += amount;
         }
         medicalAmounts[medName] = (medicalAmounts[medName] ?? 0) + amount;
+      } else if (type == "DISCHARGEFEE") {
+        DischargeCounts.putIfAbsent(
+          'Discharge Fee',
+          () => {'count': 0, 'amount': 0.0, 'cash': 0.0, 'online': 0.0},
+        );
+        DischargeCounts['Discharge Fee']!['amount'] += amount;
+        DischargeCounts['Discharge Fee']!['count'] += 1;
+        if (isCash) DischargeCounts['Discharge Fee']!['cash'] += amount;
+        if (isOnline) DischargeCounts['Discharge Fee']!['online'] += amount;
+      } else if (type == "DAILYTREATMENTFEE") {
+        DailyTreatmentCounts.putIfAbsent(
+          'DailyTreatment Fee',
+          () => {'count': 0, 'amount': 0.0, 'cash': 0.0, 'online': 0.0},
+        );
+        DailyTreatmentCounts['Daily Treatment Fee']!['amount'] += amount;
+        DailyTreatmentCounts['Daily Treatment Fee']!['count'] += 1;
+        if (isCash) {
+          DailyTreatmentCounts['Daily Treatment Fee']!['cash'] += amount;
+        }
+        if (isOnline) {
+          DailyTreatmentCounts['Daily Treatment Fee']!['online'] += amount;
+        }
       }
     }
 
@@ -249,6 +273,26 @@ class PatientListReportPdf {
             _summaryTable(scanCounts),
             pw.SizedBox(height: 12),
           ],
+          // Discharge Summary
+          if (DischargeCounts.isNotEmpty) ...[
+            pw.Text(
+              "Discharge Summery",
+              style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14),
+            ),
+            pw.SizedBox(height: 6),
+            _summaryTable(DischargeCounts),
+            pw.SizedBox(height: 12),
+          ],
+          // DailyTreatment Summary
+          if (DailyTreatmentCounts.isNotEmpty) ...[
+            pw.Text(
+              "Discharge Summery",
+              style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14),
+            ),
+            pw.SizedBox(height: 6),
+            _summaryTable(DailyTreatmentCounts),
+            pw.SizedBox(height: 12),
+          ],
           // Medical Summary
           if (medicalAmounts.isNotEmpty) ...[
             pw.Text(
@@ -295,6 +339,21 @@ class PatientListReportPdf {
             ),
             pw.SizedBox(height: 6),
             _detailedPatientTable(payments, "TESTINGFEESANDSCANNINGFEE"),
+            pw.SizedBox(height: 12),
+            pw.Text(
+              "I/P Discharge Fees",
+              style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+            ),
+            pw.SizedBox(height: 6),
+            _detailedPatientTable(payments, "DISCHARGEFEE"),
+
+            pw.SizedBox(height: 12),
+            pw.Text(
+              "I/P Daily Treatment Fees",
+              style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+            ),
+            pw.SizedBox(height: 6),
+            _detailedPatientTable(payments, "DAILYTREATMENTFEE"),
 
             // Medical / Injection / Tonic
             pw.SizedBox(height: 12),
