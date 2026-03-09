@@ -35,6 +35,9 @@ class PaymentTotals {
   double totalDailyTreatment = 0;
   double totalDailyTreatmentCash = 0;
   double totalDailyTreatmentOnline = 0;
+  double totalAdvancedFee = 0;
+  double totalAdvancedFeeCash = 0;
+  double totalAdvancedFeeOnline = 0;
 
   int totalRegistrationFeeCount = 0;
   int totalSugarFeeCount = 0;
@@ -307,12 +310,18 @@ class _AccountsReportState extends State<AccountsReport> {
         totals.totalDischarge += amount;
         if (paymentType == "MANUALPAY") totals.totalDischargeCash += amount;
         if (paymentType == "ONLINEPAY") totals.totalDischargeOnline += amount;
+      } else if (type == "ADVANCEFEE") {
+        totals.totalAdvancedFee += amount;
+        if (paymentType == "MANUALPAY") totals.totalAdvancedFeeCash += amount;
+        if (paymentType == "ONLINEPAY") totals.totalAdvancedFeeOnline += amount;
       } else if (type == "DAILYTREATMENTFEE") {
         totals.totalDailyTreatment += amount;
-        if (paymentType == "MANUALPAY")
+        if (paymentType == "MANUALPAY") {
           totals.totalDailyTreatmentCash += amount;
-        if (paymentType == "ONLINEPAY")
+        }
+        if (paymentType == "ONLINEPAY") {
           totals.totalDailyTreatmentOnline += amount;
+        }
       }
       // ---------------- MEDICAL ----------------
       else if (type == "MEDICINETONICINJECTIONFEES") {
@@ -329,6 +338,7 @@ class _AccountsReportState extends State<AccountsReport> {
         totals.totalScanCash +
         totals.totalDischargeCash +
         totals.totalDailyTreatmentCash +
+        totals.totalAdvancedFeeCash +
         totals.totalMedicalCash +
         _totalIncomes; // other income (cash)
 
@@ -338,6 +348,7 @@ class _AccountsReportState extends State<AccountsReport> {
         totals.totalScanOnline +
         totals.totalDischargeOnline +
         totals.totalDailyTreatmentOnline +
+        totals.totalAdvancedFeeOnline +
         totals.totalMedicalOnline;
 
     final balance = totalCashPayments - _totalExpenses;
@@ -705,6 +716,11 @@ class _AccountsReportState extends State<AccountsReport> {
                 _fullRowCard(
                   "I/P Discharge Fee",
                   _paymentTotals.totalDischarge,
+                  color: Colors.blue.shade50,
+                ),
+                _fullRowCard(
+                  "I/P Advanced Fee",
+                  _paymentTotals.totalAdvancedFee,
                   color: Colors.blue.shade50,
                 ),
                 _fullRowCard(

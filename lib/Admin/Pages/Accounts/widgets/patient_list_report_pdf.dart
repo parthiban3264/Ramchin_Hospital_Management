@@ -52,8 +52,9 @@ class PatientListReportPdf {
     Map<String, double> medicalAmounts = {};
     Map<String, Map<String, dynamic>> testCounts = {};
     Map<String, Map<String, dynamic>> scanCounts = {};
-    Map<String, Map<String, dynamic>> DischargeCounts = {};
-    Map<String, Map<String, dynamic>> DailyTreatmentCounts = {};
+    Map<String, Map<String, dynamic>> dischargeCounts = {};
+    Map<String, Map<String, dynamic>> dailyTreatmentCounts = {};
+    Map<String, Map<String, dynamic>> advanceCounts = {};
 
     for (var p in payments) {
       final type = (p['type'] ?? "").toString().toUpperCase();
@@ -139,26 +140,35 @@ class PatientListReportPdf {
         }
         medicalAmounts[medName] = (medicalAmounts[medName] ?? 0) + amount;
       } else if (type == "DISCHARGEFEE") {
-        DischargeCounts.putIfAbsent(
+        dischargeCounts.putIfAbsent(
           'Discharge Fee',
           () => {'count': 0, 'amount': 0.0, 'cash': 0.0, 'online': 0.0},
         );
-        DischargeCounts['Discharge Fee']!['amount'] += amount;
-        DischargeCounts['Discharge Fee']!['count'] += 1;
-        if (isCash) DischargeCounts['Discharge Fee']!['cash'] += amount;
-        if (isOnline) DischargeCounts['Discharge Fee']!['online'] += amount;
+        dischargeCounts['Discharge Fee']!['amount'] += amount;
+        dischargeCounts['Discharge Fee']!['count'] += 1;
+        if (isCash) dischargeCounts['Discharge Fee']!['cash'] += amount;
+        if (isOnline) dischargeCounts['Discharge Fee']!['online'] += amount;
+      } else if (type == "ADVANCEFEE") {
+        advanceCounts.putIfAbsent(
+          'Advanced Fee',
+          () => {'count': 0, 'amount': 0.0, 'cash': 0.0, 'online': 0.0},
+        );
+        advanceCounts['Advanced Fee']!['amount'] += amount;
+        advanceCounts['Advanced Fee']!['count'] += 1;
+        if (isCash) advanceCounts['Advanced Fee']!['cash'] += amount;
+        if (isOnline) advanceCounts['Advanced Fee']!['online'] += amount;
       } else if (type == "DAILYTREATMENTFEE") {
-        DailyTreatmentCounts.putIfAbsent(
+        dailyTreatmentCounts.putIfAbsent(
           'DailyTreatment Fee',
           () => {'count': 0, 'amount': 0.0, 'cash': 0.0, 'online': 0.0},
         );
-        DailyTreatmentCounts['Daily Treatment Fee']!['amount'] += amount;
-        DailyTreatmentCounts['Daily Treatment Fee']!['count'] += 1;
+        dailyTreatmentCounts['Daily Treatment Fee']!['amount'] += amount;
+        dailyTreatmentCounts['Daily Treatment Fee']!['count'] += 1;
         if (isCash) {
-          DailyTreatmentCounts['Daily Treatment Fee']!['cash'] += amount;
+          dailyTreatmentCounts['Daily Treatment Fee']!['cash'] += amount;
         }
         if (isOnline) {
-          DailyTreatmentCounts['Daily Treatment Fee']!['online'] += amount;
+          dailyTreatmentCounts['Daily Treatment Fee']!['online'] += amount;
         }
       }
     }
@@ -274,23 +284,33 @@ class PatientListReportPdf {
             pw.SizedBox(height: 12),
           ],
           // Discharge Summary
-          if (DischargeCounts.isNotEmpty) ...[
+          if (dischargeCounts.isNotEmpty) ...[
             pw.Text(
               "Discharge Summery",
               style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14),
             ),
             pw.SizedBox(height: 6),
-            _summaryTable(DischargeCounts),
+            _summaryTable(dischargeCounts),
+            pw.SizedBox(height: 12),
+          ],
+          // Advanced Summary
+          if (advanceCounts.isNotEmpty) ...[
+            pw.Text(
+              "Advance Summery",
+              style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14),
+            ),
+            pw.SizedBox(height: 6),
+            _summaryTable(advanceCounts),
             pw.SizedBox(height: 12),
           ],
           // DailyTreatment Summary
-          if (DailyTreatmentCounts.isNotEmpty) ...[
+          if (dailyTreatmentCounts.isNotEmpty) ...[
             pw.Text(
               "Discharge Summery",
               style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14),
             ),
             pw.SizedBox(height: 6),
-            _summaryTable(DailyTreatmentCounts),
+            _summaryTable(dailyTreatmentCounts),
             pw.SizedBox(height: 12),
           ],
           // Medical Summary

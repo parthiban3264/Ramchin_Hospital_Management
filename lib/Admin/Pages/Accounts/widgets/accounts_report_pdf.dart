@@ -26,6 +26,7 @@ class AccountsReportPdf {
     double registrationCash = 0, registrationOnline = 0;
     double testScanCash = 0, testScanOnline = 0;
     double dischargeCash = 0, dischargeOnline = 0;
+    double advanceCash = 0, advanceOnline = 0;
     double dailyTreatmentCash = 0, dailyTreatmentOnline = 0;
     double otherIncomeCash = 0;
     double sugarCash = 0, sugarOnline = 0;
@@ -90,6 +91,11 @@ class AccountsReportPdf {
         if (isCash) dischargeCash += amount;
         if (isOnline) dischargeOnline += amount;
       }
+      if (type == "ADVANCEFEE") {
+        final amount = (p['amount'] ?? 0).toDouble();
+        if (isCash) advanceCash += amount;
+        if (isOnline) advanceOnline += amount;
+      }
       if (type == "DAILYTREATMENTFEE") {
         final amount = (p['amount'] ?? 0).toDouble();
         if (isCash) dailyTreatmentCash += amount;
@@ -111,6 +117,7 @@ class AccountsReportPdf {
         emergencyCash +
         dischargeCash +
         dailyTreatmentCash +
+        advanceCash +
         otherIncomeCash;
 
     final totalOnline =
@@ -120,6 +127,7 @@ class AccountsReportPdf {
         sugarOnline +
         dischargeOnline +
         dailyTreatmentOnline +
+        advanceOnline +
         emergencyOnline;
 
     final balance = previousBalance + totalCash + income - expenses;
@@ -178,6 +186,9 @@ class AccountsReportPdf {
 
               /// ---------- TEST & SCAN ----------
               _tripleRow('Test & Scan', testScanCash, testScanOnline),
+
+              /// ---------- Discharge fee ------------------
+              _tripleRow('I/P Advanced', advanceCash, advanceOnline),
 
               /// ---------- Discharge fee ------------------
               _tripleRow('I/P Discharge', dischargeCash, dischargeOnline),
