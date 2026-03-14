@@ -27,6 +27,22 @@ class PaymentService {
     }
   }
 
+  static Future<Map<String, dynamic>?> createSupplementaryPayment(
+    Map<String, dynamic> data,
+  ) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/payments/create/supplementary'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(data),
+    );
+
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      return null;
+    }
+  }
+
   Future<List<dynamic>> getAllPayments() async {
     final hospitalId = await getHospitalId();
     final response = await http.get(
@@ -212,6 +228,53 @@ class PaymentService {
       final hospitalId = await getHospitalId();
       final response = await http.get(
         Uri.parse('$baseUrl/payments/all/ct-scan/pendingFee/$hospitalId'),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final decoded = jsonDecode(response.body);
+
+        // Handle different backend JSON formats
+        final List<dynamic> rawList;
+        if (decoded is Map<String, dynamic> && decoded.containsKey('data')) {
+          rawList = decoded['data'];
+        } else if (decoded is List) {
+          rawList = decoded;
+        } else {
+          throw Exception('Unexpected JSON structure: $decoded');
+        }
+
+        // Filter only Pending payments
+        final pending = rawList.where((item) {
+          final status = item['status']?.toString().toLowerCase();
+          return status == 'pending' ||
+              status == 'paid' ||
+              status == 'cancelled' ||
+              status == 'partially_paid';
+        }).toList();
+
+        // Sort by createdAt (oldest first)
+        pending.sort((b, a) {
+          final aTime =
+              DateTime.tryParse(a['createdAt'] ?? '') ?? DateTime.now();
+          final bTime =
+              DateTime.tryParse(b['createdAt'] ?? '') ?? DateTime.now();
+          return bTime.compareTo(aTime);
+        });
+
+        return pending;
+      } else {
+        throw Exception('Failed to fetch payments: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching payments: $e');
+    }
+  }
+
+  Future<List<dynamic>> getAllOnlyInitialPendingFees() async {
+    try {
+      final hospitalId = await getHospitalId();
+      final response = await http.get(
+        Uri.parse('$baseUrl/payments/all/initial/pendingFee/$hospitalId'),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -463,6 +526,40 @@ class PaymentService {
         return decoded is Map<String, dynamic> && decoded.containsKey('data')
             ? decoded['data']
             : (decoded is List ? decoded : []);
+      } else {
+        throw Exception('Failed: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching payments: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> getAllPaidAccountsFilterData({
+    String? day,
+    int? month,
+    int? year,
+  }) async {
+    try {
+      final hospitalId = await getHospitalId();
+
+      final Uri uri = Uri.parse('$baseUrl/payments/all/paid/Accounts/filterData/$hospitalId').replace(
+        queryParameters: {
+          if (day != null) 'day': day,
+          if (month != null) 'month': month.toString(),
+          if (year != null) 'year': year.toString(),
+        },
+      );
+
+      final response = await http.get(uri);
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+
+        if (decoded is Map<String, dynamic> && decoded.containsKey('data')) {
+          return decoded['data'] as Map<String, dynamic>;
+        } else {
+          throw Exception('Unexpected response format. Expected data object.');
+        }
       } else {
         throw Exception('Failed: ${response.body}');
       }

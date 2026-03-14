@@ -6,7 +6,7 @@ import 'package:printing/printing.dart';
 
 class AccountsReportPdf {
   static Future<void> generate({
-    required List<dynamic> payments,
+    required Map<String, dynamic>? payments,
     required double expenses,
     required double income,
     required double drawingOut,
@@ -21,117 +21,97 @@ class AccountsReportPdf {
     final font = await PdfGoogleFonts.notoSansRegular();
     final bold = await PdfGoogleFonts.notoSansBold();
 
-    /// ---------------- Totals ----------------
+    /// ---------------- Data Selection ----------------
+    final Map<String, dynamic> data;
+    if (reportFilter == DateFilter.year) {
+      data = payments?['year'] ?? {};
+    } else if (reportFilter == DateFilter.month) {
+      data = payments?['month'] ?? {};
+    } else {
+      // Day or Periodical (Periodical is currently handled as 'day' by backend's selectedDate)
+      data = payments?['today'] ?? {};
+    }
+
+    final typeMap = data['type'] as Map<String, dynamic>? ?? {};
+
+    // Helper to get Cash/Online from type map
+    Map<String, double> getModeTotals(String key) {
+      final m = typeMap[key] as Map<String, dynamic>? ?? {};
+      return {
+        'cash': (m['ManualPay'] ?? 0).toDouble(),
+        'online': (m['OnlinePay'] ?? 0).toDouble(),
+      };
+    }
+
+    final regTotals = getModeTotals('REGISTRATIONFEE');
+    // Actually, looking at the provided JSON, REGISTRATIONFEE under 'type' has the breakdown.
+    final double registrationCash = regTotals['cash'] ?? 0.0;
+    final double registrationOnline = regTotals['online'] ?? 0.0;
+
+    // Consultation breakdown usually comes from 'consultationDrFee'
+    final Map<String, dynamic> drFeeMap = data['consultationDrFee'] is Map
+        ? data['consultationDrFee'] as Map<String, dynamic>
+        : {};
     final Map<String, Map<String, double>> doctorTotals = {};
-    double registrationCash = 0, registrationOnline = 0;
-    double testScanCash = 0, testScanOnline = 0;
-    double dischargeCash = 0, dischargeOnline = 0;
-    double advanceCash = 0, advanceOnline = 0;
-    double dailyTreatmentCash = 0, dailyTreatmentOnline = 0;
-    double otherIncomeCash = 0;
-    double sugarCash = 0, sugarOnline = 0;
-    double emergencyCash = 0, emergencyOnline = 0;
+    drFeeMap.forEach((name, amount) {
+      // Truncate name to fit 58mm layout
+      final displayName = name.length > 12
+          ? '${name.substring(0, 10)}...'
+          : name;
+      doctorTotals[displayName] = {
+        'cash': (amount ?? 0).toDouble(),
+        'online': 0.0,
+      };
+    });
 
-    for (final p in payments) {
-      final type = (p['type'] ?? '').toString().toUpperCase();
-      final mode = (p['paymentType'] ?? '').toString().toUpperCase();
-      final isCash = mode == 'MANUALPAY';
-      final isOnline = mode == 'ONLINEPAY';
+    final testScanTotals = getModeTotals('TESTINGFEESANDSCANNINGFEE');
+    final double testScanCash = testScanTotals['cash'] ?? 0.0;
+    final double testScanOnline = testScanTotals['online'] ?? 0.0;
 
-      /// ---------- REGISTRATION + CONSULTATION ----------
-      if (type == 'REGISTRATIONFEE' && p['Consultation'] != null) {
-        final c = p['Consultation'];
+    final dischargeTotals = getModeTotals('DISCHARGEFEE');
+    final double dischargeCash = dischargeTotals['cash'] ?? 0.0;
+    final double dischargeOnline = dischargeTotals['online'] ?? 0.0;
 
-        final regFee = (c['registrationFee'] ?? 0).toDouble();
-        final consultFee = (c['consultationFee'] ?? 0).toDouble();
-        final sugarFee = (c['sugarTestFee'] ?? 0).toDouble();
-        final emergencyFee = (c['emergencyFee'] ?? 0).toDouble();
+    final advanceTotals = getModeTotals('ADVANCEFEE');
+    final double advanceCash = advanceTotals['cash'] ?? 0.0;
+    final double advanceOnline = advanceTotals['online'] ?? 0.0;
 
-        if (isCash) registrationCash += regFee;
-        if (isOnline) registrationOnline += regFee;
+    final supplementaryTotals = getModeTotals('SUPPLEMENTARYFEE');
+    final double supplementaryCash = supplementaryTotals['cash'] ?? 0.0;
+    final double supplementaryOnline = supplementaryTotals['online'] ?? 0.0;
 
-        if (consultFee > 0) {
-          final doctorName = _doctorName(p);
-          doctorTotals.putIfAbsent(doctorName, () => {'cash': 0, 'online': 0});
+    final dailyTotals = getModeTotals('DAILYTREATMENTFEE');
+    final double dailyTreatmentCash = dailyTotals['cash'] ?? 0.0;
+    final double dailyTreatmentOnline = dailyTotals['online'] ?? 0.0;
 
-          if (isCash) {
-            doctorTotals[doctorName]!['cash'] =
-                doctorTotals[doctorName]!['cash']! + consultFee;
-          }
+    final sugarTotals = getModeTotals(
+      'SUGARTESTFEE',
+    ); // If backend provides this key
+    final double sugarCash = sugarTotals['cash'] ?? 0.0;
+    final double sugarOnline = sugarTotals['online'] ?? 0.0;
 
-          if (isOnline) {
-            doctorTotals[doctorName]!['online'] =
-                doctorTotals[doctorName]!['online']! + consultFee;
-          }
-        }
-        // Sugar Test Fee
-        if (sugarFee > 0) {
-          if (isCash) sugarCash += sugarFee;
-          if (isOnline) sugarOnline += sugarFee;
-        }
+    final emergencyTotals = getModeTotals('EMERGENCYFEE');
+    final double emergencyCash = emergencyTotals['cash'] ?? 0.0;
+    final double emergencyOnline = emergencyTotals['online'] ?? 0.0;
 
-        // Emergency Fee
-        if (emergencyFee > 0) {
-          if (isCash) emergencyCash += emergencyFee;
-          if (isOnline) emergencyOnline += emergencyFee;
-        }
-      }
+    final medicalTotals = getModeTotals('MEDICINETONICINJECTIONFEES');
+    final double medicalCash = medicalTotals['cash'] ?? 0.0;
+    final double medicalOnline = medicalTotals['online'] ?? 0.0;
 
-      /// ---------- TEST & SCAN ----------
-      if (type == 'TESTINGFEESANDSCANNINGFEE') {
-        for (final e in p['TestingAndScanningPatients'] ?? []) {
-          final amt = (e['amount'] ?? 0).toDouble();
-          if (isCash) testScanCash += amt;
-          if (isOnline) testScanOnline += amt;
-        }
-      }
+    final double drawingOutTotal = (data['totalDrawingOut'] ?? 0).toDouble();
+    final double otherIncomeTotal =
+        (data['totalIncome'] ?? 0).toDouble() +
+        (data['totalDrawingIn'] ?? 0).toDouble();
+    final double totalExpenses = (data['totalExpense'] ?? 0).toDouble();
 
-      if (type == "DISCHARGEFEE") {
-        final amount = (p['amount'] ?? 0).toDouble();
-        if (isCash) dischargeCash += amount;
-        if (isOnline) dischargeOnline += amount;
-      }
-      if (type == "ADVANCEFEE") {
-        final amount = (p['amount'] ?? 0).toDouble();
-        if (isCash) advanceCash += amount;
-        if (isOnline) advanceOnline += amount;
-      }
-      if (type == "DAILYTREATMENTFEE") {
-        final amount = (p['amount'] ?? 0).toDouble();
-        if (isCash) dailyTreatmentCash += amount;
-        if (isOnline) dailyTreatmentOnline += amount;
-      }
-    }
+    final double totalCash = (data['paymentType']?['ManualPay'] ?? 0)
+        .toDouble();
+    final double totalOnline = (data['paymentType']?['OnlinePay'] ?? 0)
+        .toDouble();
 
-    /// ---------------- CALCULATIONS ----------------
-    double doctorCash = 0, doctorOnline = 0;
-    for (var v in doctorTotals.values) {
-      doctorCash += v['cash']!;
-      doctorOnline += v['online']!;
-    }
-    final totalCash =
-        registrationCash +
-        doctorCash +
-        testScanCash +
-        sugarCash +
-        emergencyCash +
-        dischargeCash +
-        dailyTreatmentCash +
-        advanceCash +
-        otherIncomeCash;
-
-    final totalOnline =
-        registrationOnline +
-        doctorOnline +
-        testScanOnline +
-        sugarOnline +
-        dischargeOnline +
-        dailyTreatmentOnline +
-        advanceOnline +
-        emergencyOnline;
-
-    final balance = previousBalance + totalCash + income - expenses;
-    final cashInHand = balance - drawingOut;
+    final double balance =
+        previousBalance + totalCash + otherIncomeTotal - totalExpenses;
+    final double cashInHand = balance - drawingOutTotal;
 
     /// ---------------- PDF PAGE (58mm) ----------------
     pdf.addPage(
@@ -155,8 +135,6 @@ class AccountsReportPdf {
 
               pw.SizedBox(height: 4),
 
-              /// ---------- HEADER ----------
-              /// ---------- HEADER ----------
               pw.Text(
                 'Consultation Fee',
                 style: pw.TextStyle(
@@ -200,6 +178,16 @@ class AccountsReportPdf {
                 dailyTreatmentOnline,
               ),
 
+              /// ---------- Supplementary fee ----------
+              _tripleRow(
+                'Supplementary Fee',
+                supplementaryCash,
+                supplementaryOnline,
+              ),
+
+              /// ---------- Medical fee ------------------
+              _tripleRow('Medical/Injection', medicalCash, medicalOnline),
+
               /// ---------- OTHER INCOME ----------
               _dashDivider(),
               _tripleRowBold('Sub Total', totalCash, totalOnline),
@@ -208,14 +196,14 @@ class AccountsReportPdf {
               _dashDivider(),
               _row('Total Income (Online)', totalOnline),
               _row('Total Income (Cash)', totalCash),
-              _row('Other Income', income),
-              _row('Expenses', expenses),
+              _row('Other Income', otherIncomeTotal),
+              _row('Expenses', totalExpenses),
               _dashDivider(),
               _row('Previous Balance', previousBalance),
 
               _dashDivider(),
               _row('Balance', balance),
-              _row('Drawing Out', drawingOut),
+              _row('Drawing Out', drawingOutTotal),
               _dashDivider(),
               pw.SizedBox(height: 2),
               _rowBold('Cash in Hand', cashInHand),
@@ -411,27 +399,6 @@ class AccountsReportPdf {
   //     '${DateTime.now().day.toString().padLeft(2, '0')}.'
   //     '${DateTime.now().month.toString().padLeft(2, '0')}.'
   //     '${DateTime.now().year}';
-
-  static String _doctorName(Map p) {
-    final admins = p['Hospital']?['Admins'];
-    final docId = p['Consultation']?['doctor_Id'];
-
-    if (admins is! List || docId == null) {
-      return 'Doctor';
-    }
-
-    final admin = admins.cast<Map?>().firstWhere(
-      (a) => a?['user_Id'] == docId,
-      orElse: () => null,
-    );
-
-    final name = admin?['name']?.toString();
-    if (name == null || name.isEmpty) {
-      return 'Doctor';
-    }
-
-    return name.length > 12 ? '${name.substring(0, 10)}...' : name;
-  }
 
   static pw.Widget _dashDivider() => pw.LayoutBuilder(
     builder: (context, constraints) {

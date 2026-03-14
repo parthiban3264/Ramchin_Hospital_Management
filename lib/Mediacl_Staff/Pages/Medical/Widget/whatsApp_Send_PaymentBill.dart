@@ -397,6 +397,65 @@ ${hospital['name'] ?? 'Hospital'}
     await _sendToWhatsApp(phoneNumber, billText);
   }
 
+  /// ================= Supplementary BILL =================
+  static Future<void> sendSupplementaryBill({
+    required String phoneNumber,
+    required String patientName,
+    required String tokenNo,
+    required Map<String, dynamic> fee,
+    required String patientId,
+    required String age,
+    required String address,
+  }) async {
+    // final consultation = fee['Consultation'] ?? {};
+    final hospital = await HospitalStorage.getHospitalData();
+    final date = DateFormat('dd-MM-yyyy').format(DateTime.now());
+    final supplementaryFee = fee['supplementaryFee'] ?? [];
+
+    final List<dynamic> supplementaryLines = [];
+    num total = 0;
+
+    String billText =
+        '''
+🧾 *INVOICE / HOSPITAL BILL*
+
+🏥 *${hospital['name'] ?? 'Hospital'}*
+📍 ${hospital['place'] ?? '-'}
+
+📅 *Date:* $date
+       *TokenNO:* $tokenNo
+━━━━━━━━━━━━━━━━━━━━━━
+👤 *PATIENT DETAILS*
+━━━━━━━━━━━━━━━━━━━━━━
+Name    : $patientName
+PID     : $patientId
+Age     : $age
+Address : $address
+━━━━━━━━━━━━━━━━━━━━━━
+''';
+
+    billText +=
+        '''
+🧪 *TESTING & SCANNING*
+━━━━━━━━━━━━━━━━━━━━━━
+Test / Option              Amount
+---------------------------------------------
+${supplementaryFee.isNotEmpty ? supplementaryLines.join('\n') : 'No tests'}
+---------------------------------------------
+
+━━━━━━━━━━━━━━━━━━━━━━
+💰 *TOTAL AMOUNT* : ₹ $total
+━━━━━━━━━━━━━━━━━━━━━━
+
+✅ *PAYMENT STATUS:* PAID
+
+🙏 Thank you for visiting
+${hospital['name'] ?? 'Hospital'}
+''';
+
+    await _sendToWhatsApp(phoneNumber, billText);
+  }
+
   // /// ================= COMMON =================
   // static Future<void> _sendToWhatsApp(
   //   String phoneNumber,

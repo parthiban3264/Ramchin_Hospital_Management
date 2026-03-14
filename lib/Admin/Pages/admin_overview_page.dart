@@ -651,7 +651,7 @@ class _AdminOverviewPageState extends State<AdminOverviewPage>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "Registrations",
+                "LAST 7D REGISTRATIONS",
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
@@ -721,7 +721,9 @@ class _AdminOverviewPageState extends State<AdminOverviewPage>
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: List.generate(values.length, (i) {
-                    final height = maxValue == 0 ? 0.0 : (values[i] / maxValue) * 70;
+                    final height = maxValue == 0
+                        ? 0.0
+                        : (values[i] / maxValue) * 70;
 
                     return Expanded(
                       child: Column(
@@ -2724,7 +2726,9 @@ class SmoothGraphPainter extends CustomPainter {
     for (int i = 0; i < values.length; i++) {
       final x = (i * step) + step / 2;
 
-      final y = maxValue == 0 ? height : height - (values[i] / maxValue) * height;
+      final y = maxValue == 0
+          ? height
+          : height - (values[i] / maxValue) * height;
 
       points.add(Offset(x, y));
     }

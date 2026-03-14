@@ -230,47 +230,86 @@ class _WardsPageState extends State<WardsPage> {
 
           const SizedBox(width: 10),
 
+          // Expanded(
+          //   child: Expanded(
+          //     child: DropdownButtonFormField<String>(
+          //       value: bedStatusValues[index],
+          //       dropdownColor: Colors.white,
+          //       style: const TextStyle(color: royal),
+          //       iconEnabledColor: royal,
+          //       decoration: InputDecoration(
+          //         labelText: "Status",
+          //         labelStyle: const TextStyle(color: royal),
+          //         enabledBorder: OutlineInputBorder(
+          //           borderSide: const BorderSide(color: royal, width: 1),
+          //           borderRadius: BorderRadius.circular(12),
+          //         ),
+          //         focusedBorder: OutlineInputBorder(
+          //           borderSide: const BorderSide(color: royal, width: 2),
+          //           borderRadius: BorderRadius.circular(12),
+          //         ),
+          //         filled: true,
+          //         fillColor: bedStatusValues[index] == "OCCUPIED"
+          //             ? Colors.grey.withValues(alpha: 0.1)
+          //             : royal.withValues(alpha: 0.02),
+          //       ),
+          //
+          //       /// 🔒 DISABLE IF OCCUPIED
+          //       onChanged: bedStatusValues[index] == "OCCUPIED"
+          //           ? null
+          //           : (v) => setState(() => bedStatusValues[index] = v!),
+          //
+          //       items: const [
+          //         DropdownMenuItem(
+          //           value: "AVAILABLE",
+          //           child: Text("AVAILABLE"),
+          //         ),
+          //         DropdownMenuItem(value: "OCCUPIED", child: Text("OCCUPIED")),
+          //         DropdownMenuItem(
+          //           value: "MAINTENANCE",
+          //           child: Text("MAINTENANCE"),
+          //         ),
+          //       ],
+          //     ),
+          //   ),
+          // ),
           Expanded(
-            child: Expanded(
-              child: DropdownButtonFormField<String>(
-                value: bedStatusValues[index],
-                dropdownColor: Colors.white,
-                style: const TextStyle(color: royal),
-                iconEnabledColor: royal,
-                decoration: InputDecoration(
-                  labelText: "Status",
-                  labelStyle: const TextStyle(color: royal),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: const BorderSide(color: royal, width: 1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: const BorderSide(color: royal, width: 2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  filled: true,
-                  fillColor: bedStatusValues[index] == "OCCUPIED"
-                      ? Colors.grey.withValues(alpha: 0.1)
-                      : royal.withValues(alpha: 0.02),
+            child: DropdownButtonFormField<String>(
+              isExpanded: true,
+              value: bedStatusValues[index],
+              dropdownColor: Colors.white,
+              style: const TextStyle(color: royal),
+              iconEnabledColor: royal,
+              decoration: InputDecoration(
+                labelText: "Status",
+                labelStyle: const TextStyle(color: royal),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: const BorderSide(color: royal, width: 1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-
-                /// 🔒 DISABLE IF OCCUPIED
-                onChanged: bedStatusValues[index] == "OCCUPIED"
-                    ? null
-                    : (v) => setState(() => bedStatusValues[index] = v!),
-
-                items: const [
-                  DropdownMenuItem(
-                    value: "AVAILABLE",
-                    child: Text("AVAILABLE"),
-                  ),
-                  DropdownMenuItem(value: "OCCUPIED", child: Text("OCCUPIED")),
-                  DropdownMenuItem(
-                    value: "MAINTENANCE",
-                    child: Text("MAINTENANCE"),
-                  ),
-                ],
+                focusedBorder: OutlineInputBorder(
+                  borderSide: const BorderSide(color: royal, width: 2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                filled: true,
+                fillColor: bedStatusValues[index] == "OCCUPIED"
+                    ? Colors.grey.withValues(alpha: 0.1)
+                    : royal.withValues(alpha: 0.02),
               ),
+
+              /// 🔒 DISABLE IF OCCUPIED
+              onChanged: bedStatusValues[index] == "OCCUPIED"
+                  ? null
+                  : (v) => setState(() => bedStatusValues[index] = v!),
+
+              items: const [
+                DropdownMenuItem(value: "AVAILABLE", child: Text("AVAILABLE")),
+                DropdownMenuItem(value: "OCCUPIED", child: Text("OCCUPIED")),
+                DropdownMenuItem(
+                  value: "MAINTENANCE",
+                  child: Text("MAINTENANCE"),
+                ),
+              ],
             ),
           ),
 

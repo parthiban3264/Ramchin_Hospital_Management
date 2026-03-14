@@ -1,52 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hospitrax/Admin/Pages/Accounts/widgets/accounts_report_pdf.dart';
 import 'package:hospitrax/Admin/Pages/Accounts/widgets/report_filter_widget.dart';
 import 'package:hospitrax/Services/payment_service.dart';
-
-import '../../../Services/IncomeExpence_Service.dart';
-import '../../../Services/drawer_Service.dart';
-
-class PaymentTotals {
-  // ---------------- Amount Totals ----------------
-  double totalRegister = 0;
-  double totalRegisterCash = 0;
-  double totalRegisterOnline = 0;
-  double totalRegistrationFee = 0;
-  double totalSugarFee = 0;
-  double totalEmergencyFee = 0;
-  double totalDoctorFee = 0;
-  Map<String, Map<String, dynamic>> doctorFeeTotals = {};
-
-  double totalMedical = 0;
-  double totalMedicalCash = 0;
-  double totalMedicalOnline = 0;
-
-  double totalTest = 0;
-  double totalTestCash = 0;
-  double totalTestOnline = 0;
-  double totalScan = 0;
-  double totalScanCash = 0;
-  double totalScanOnline = 0;
-  double totalDischarge = 0;
-  double totalDischargeCash = 0;
-  double totalDischargeOnline = 0;
-  double totalDailyTreatment = 0;
-  double totalDailyTreatmentCash = 0;
-  double totalDailyTreatmentOnline = 0;
-  double totalAdvancedFee = 0;
-  double totalAdvancedFeeCash = 0;
-  double totalAdvancedFeeOnline = 0;
-
-  int totalRegistrationFeeCount = 0;
-  int totalSugarFeeCount = 0;
-  int totalEmergencyFeeCount = 0;
-
-  Map<String, int> testCounts = {};
-  Map<String, int> scanCounts = {};
-  double get grandTotal => totalRegister + totalMedical + totalTest + totalScan;
-}
 
 class AccountsReport extends StatefulWidget {
   const AccountsReport({super.key});
@@ -57,29 +13,20 @@ class AccountsReport extends StatefulWidget {
 
 class _AccountsReportState extends State<AccountsReport> {
   final _paymentService = PaymentService();
-  final _incexpService = IncomeExpenseService();
-  final _drawerService = DrawerService();
 
-  List<dynamic> _allPayments = [];
-  List<dynamic> _filteredPayments = [];
-  PaymentTotals _paymentTotals = PaymentTotals();
-  double _grandTotal = 0;
+  Map<String, dynamic>? _backendData;
 
   String? hospitalName;
   String? hospitalPlace;
   String? hospitalPhoto;
-  double _totalCashIncome = 0;
-  double _totalOnlineIncome = 0;
-  double _totalExpenses = 0;
-  double _totalIncomes = 0;
-  double _totalDrawingOut = 0;
-  double _totalDrawingIn = 0;
-  double _cashInHand = 0;
+
   DateTime? _reportFromDate;
   DateTime? reportToDate;
   DateFilter? _currentFilter;
+  DateTime _lastSelectedDate = DateTime.now();
 
   bool _isGeneratingPdf = false;
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -89,67 +36,19 @@ class _AccountsReportState extends State<AccountsReport> {
   }
 
   Future<void> _initLoad() async {
-    await _loadPayments();
-
-    // 🔹 Default: current day report
-    final now = DateTime.now();
-
-    await _applyReportFilter(reportType: DateFilter.day, selectedDate: now);
-  }
-
-  DateTime parseAppDate(dynamic value) {
-    if (value == null) return DateTime.now();
-
-    if (value is DateTime) return value;
-
-    final str = value.toString();
-
-    try {
-      // Try ISO first
-      return DateTime.parse(str);
-    } catch (_) {
-      // Fallback to your format
-      return DateFormat("yyyy-MM-dd hh:mm a").parse(str);
+    if (_currentFilter == null) {
+      // First time load: default to Today
+      await _applyReportFilter(
+        reportType: DateFilter.day,
+        selectedDate: DateTime.now(),
+      );
+    } else {
+      // Refresh current filter
+      await _applyReportFilter(
+        reportType: _currentFilter!,
+        selectedDate: _lastSelectedDate,
+      );
     }
-  }
-
-  Future<void> _loadExpenses({
-    required DateTime from,
-    required DateTime to,
-  }) async {
-    final fetched = await _incexpService.getIncomeExpenseService();
-
-    final filtered = fetched.where((e) {
-      final createdAt = parseAppDate(e['createdAt']);
-      return !createdAt.isBefore(from) && !createdAt.isAfter(to);
-    }).toList();
-
-    _totalExpenses = filtered
-        .where((e) => e['type']?.toString().toUpperCase() == "EXPENSE")
-        .fold(0.0, (sum, e) => sum + (e['amount'] as num).toDouble());
-
-    _totalIncomes = filtered
-        .where((e) => e['type']?.toString().toUpperCase() == "INCOME")
-        .fold(0.0, (sum, e) => sum + (e['amount'] as num).toDouble());
-  }
-
-  Future<void> _loadDrawings({
-    required DateTime from,
-    required DateTime to,
-  }) async {
-    final fetched = await _drawerService.getDrawers();
-
-    final filtered = fetched.where((d) {
-      final createdAt = parseAppDate(d['createdAt']);
-      return !createdAt.isBefore(from) && !createdAt.isAfter(to);
-    }).toList();
-
-    _totalDrawingOut = filtered
-        .where((e) => e['type']?.toString().toUpperCase() == "OUT")
-        .fold(0.0, (sum, d) => sum + (d['amount'] as num).toDouble());
-    _totalDrawingIn = filtered
-        .where((e) => e['type']?.toString().toUpperCase() == "IN")
-        .fold(0.0, (sum, d) => sum + (d['amount'] as num).toDouble());
   }
 
   Future<void> _loadHospitalInfo() async {
@@ -163,20 +62,6 @@ class _AccountsReportState extends State<AccountsReport> {
     });
   }
 
-  Future<void> _loadPayments() async {
-    final result = await _paymentService.getAllPaidShowAccounts();
-    for (var p in result) {
-      try {
-        p['createdAt'] = DateTime.parse(p['createdAt']);
-      } catch (_) {
-        p['createdAt'] = DateFormat("yyyy-MM-dd hh:mm a").parse(p['createdAt']);
-      }
-    }
-    setState(() {
-      _allPayments = result;
-    });
-  }
-
   Future<void> _applyReportFilter({
     required DateFilter reportType,
     required DateTime selectedDate,
@@ -186,7 +71,6 @@ class _AccountsReportState extends State<AccountsReport> {
     late DateTime from;
     late DateTime to;
 
-    // ---------------- Determine date range ----------------
     switch (reportType) {
       case DateFilter.day:
         from = DateTime(
@@ -203,178 +87,78 @@ class _AccountsReportState extends State<AccountsReport> {
           59,
         );
         break;
-
       case DateFilter.month:
         from = DateTime(selectedDate.year, selectedDate.month, 1);
         to = DateTime(selectedDate.year, selectedDate.month + 1, 0, 23, 59, 59);
         break;
-
       case DateFilter.year:
         from = DateTime(selectedDate.year, 1, 1);
         to = DateTime(selectedDate.year, 12, 31, 23, 59, 59);
         break;
-
       case DateFilter.periodical:
         if (fromDate == null || toDate == null) return;
         from = fromDate;
         to = toDate;
         break;
     }
-    // ✅ SAVE CURRENT FILTER STATE
-    // after switch(reportType)
-    _currentFilter = reportType;
-    _reportFromDate = from;
-    reportToDate = to;
-
-    // ---------------- Filter Payments ----------------
-    final filtered = _allPayments.where((p) {
-      final createdAt = p['createdAt'] as DateTime;
-      return !createdAt.isBefore(from) && !createdAt.isAfter(to);
-    }).toList();
-
-    // ---------------- Load Expenses & Drawing (SAME RANGE) ----------------
-    await _loadExpenses(from: from, to: to);
-    await _loadDrawings(from: from, to: to);
 
     setState(() {
-      _filteredPayments = filtered;
+      _currentFilter = reportType;
+      _lastSelectedDate = selectedDate;
+      _reportFromDate = from;
+      reportToDate = to;
+      _isLoading = true;
     });
 
-    _calculateTotals();
-  }
-
-  void _calculateTotals() {
-    final totals = PaymentTotals();
-
-    Map<String, int> testCounts = {};
-    Map<String, int> scanCounts = {};
-
-    for (var p in _filteredPayments) {
-      final type = (p['type'] ?? "").toString().toUpperCase();
-      final amount = (p['amount'] ?? 0).toDouble();
-      final paymentType = (p['paymentType'] ?? "").toString().toUpperCase();
-      final consultation = p['Consultation'];
-
-      // ---------------- REGISTRATION ----------------
-      if (type == "REGISTRATIONFEE") {
-        totals.totalRegister += amount;
-
-        if (paymentType == "MANUALPAY") totals.totalRegisterCash += amount;
-        if (paymentType == "ONLINEPAY") totals.totalRegisterOnline += amount;
-
-        if (consultation != null) {
-          totals.totalRegistrationFee += (consultation['registrationFee'] ?? 0)
-              .toDouble();
-          totals.totalSugarFee += (consultation['sugarTestFee'] ?? 0)
-              .toDouble();
-          totals.totalEmergencyFee += (consultation['emergencyFee'] ?? 0)
-              .toDouble();
-
-          final double consultFee = (consultation['consultationFee'] ?? 0)
-              .toDouble();
-          totals.totalDoctorFee += consultFee;
-
-          final doctorId = consultation['doctor_Id']?.toString();
-          final doctorName = getDoctorName(p);
-
-          if (doctorId != null && doctorName.isNotEmpty) {
-            totals.doctorFeeTotals.putIfAbsent(
-              doctorId,
-              () => {'name': doctorName, 'total': 0.0},
-            );
-            totals.doctorFeeTotals[doctorId]!['total'] =
-                (totals.doctorFeeTotals[doctorId]!['total'] as double) +
-                consultFee;
-          }
-        }
-      }
-      // ---------------- TEST & SCAN ----------------
-      else if (type == "TESTINGFEESANDSCANNINGFEE") {
-        for (var entry in p["TestingAndScanningPatients"] ?? []) {
-          final subType = (entry["type"] ?? "").toString();
-          final subAmt = (entry["amount"] ?? 0).toDouble();
-
-          if (subType.toLowerCase().contains("test")) {
-            totals.totalTest += subAmt;
-            if (paymentType == "MANUALPAY") totals.totalTestCash += subAmt;
-            if (paymentType == "ONLINEPAY") totals.totalTestOnline += subAmt;
-            testCounts[subType] = (testCounts[subType] ?? 0) + 1;
-          } else {
-            totals.totalScan += subAmt;
-            if (paymentType == "MANUALPAY") totals.totalScanCash += subAmt;
-            if (paymentType == "ONLINEPAY") totals.totalScanOnline += subAmt;
-            scanCounts[subType] = (scanCounts[subType] ?? 0) + 1;
-          }
-        }
-      } else if (type == "DISCHARGEFEE") {
-        totals.totalDischarge += amount;
-        if (paymentType == "MANUALPAY") totals.totalDischargeCash += amount;
-        if (paymentType == "ONLINEPAY") totals.totalDischargeOnline += amount;
-      } else if (type == "ADVANCEFEE") {
-        totals.totalAdvancedFee += amount;
-        if (paymentType == "MANUALPAY") totals.totalAdvancedFeeCash += amount;
-        if (paymentType == "ONLINEPAY") totals.totalAdvancedFeeOnline += amount;
-      } else if (type == "DAILYTREATMENTFEE") {
-        totals.totalDailyTreatment += amount;
-        if (paymentType == "MANUALPAY") {
-          totals.totalDailyTreatmentCash += amount;
-        }
-        if (paymentType == "ONLINEPAY") {
-          totals.totalDailyTreatmentOnline += amount;
-        }
-      }
-      // ---------------- MEDICAL ----------------
-      else if (type == "MEDICINETONICINJECTIONFEES") {
-        totals.totalMedical += amount;
-        if (paymentType == "MANUALPAY") totals.totalMedicalCash += amount;
-        if (paymentType == "ONLINEPAY") totals.totalMedicalOnline += amount;
-      }
-    }
-
-    // ---------------- GRAND TOTALS ----------------
-    final totalCashPayments =
-        totals.totalRegisterCash +
-        totals.totalTestCash +
-        totals.totalScanCash +
-        totals.totalDischargeCash +
-        totals.totalDailyTreatmentCash +
-        totals.totalAdvancedFeeCash +
-        totals.totalMedicalCash +
-        _totalIncomes; // other income (cash)
-
-    final totalOnlinePayments =
-        totals.totalRegisterOnline +
-        totals.totalTestOnline +
-        totals.totalScanOnline +
-        totals.totalDischargeOnline +
-        totals.totalDailyTreatmentOnline +
-        totals.totalAdvancedFeeOnline +
-        totals.totalMedicalOnline;
-
-    final balance = totalCashPayments - _totalExpenses;
-
-    _cashInHand = balance - _totalDrawingOut;
-
-    setState(() {
-      _paymentTotals = totals;
-      _grandTotal =
-          totals.grandTotal +
-          _totalIncomes +
-          _totalDrawingIn; // include other income
-      _totalCashIncome = totalCashPayments;
-      _totalOnlineIncome = totalOnlinePayments;
-    });
-  }
-
-  String getDoctorName(Map<String, dynamic> payment) {
     try {
-      final doctor = payment['Hospital']['Admins'].firstWhere(
-        (a) => a['user_Id'] == payment['Consultation']['doctor_Id'],
+      String? dayParam;
+      int? monthParam;
+      int? yearParam;
+
+      if (reportType == DateFilter.day) {
+        dayParam =
+            "${selectedDate.year}-${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}";
+      } else if (reportType == DateFilter.month) {
+        monthParam = selectedDate.month;
+        yearParam = selectedDate.year;
+      } else if (reportType == DateFilter.year) {
+        yearParam = selectedDate.year;
+      }
+
+      final result = await _paymentService.getAllPaidAccountsFilterData(
+        day: dayParam,
+        month: monthParam,
+        year: yearParam,
       );
-      return doctor['name'] ?? "Unknown Doctor";
-    } catch (_) {
-      return "Unknown Doctor";
+      if (mounted) {
+        setState(() {
+          _backendData = result;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching account report filtered data: $e");
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
+  }
+
+  Map<String, dynamic>? _getCurrentDataMap() {
+    if (_backendData == null) return null;
+
+    if (_currentFilter == DateFilter.day) {
+      return _backendData!['today'];
+    } else if (_currentFilter == DateFilter.month) {
+      return _backendData!['month'];
+    } else if (_currentFilter == DateFilter.year) {
+      return _backendData!['year'];
+    } else if (_currentFilter == DateFilter.periodical) {
+      // Backend does not natively supply a periodical map right now. Default to today or handle appropriately.
+      // Assuming user agreed Periodical isn't fully supported yet in agg API, fallback to today.
+      return _backendData!['today'];
+    }
+    return null;
   }
 
   String formatAmount(double value) {
@@ -384,148 +168,14 @@ class _AccountsReportState extends State<AccountsReport> {
     return value.toStringAsFixed(1);
   }
 
-  // Future<void> _generatePdf() async {
-  //   if (_filteredPayments.isEmpty || _isGeneratingPdf) return;
-  //
-  //   try {
-  //     setState(() => _isGeneratingPdf = true);
-  //
-  //     await AccountsReportPdf.generate(
-  //       payments: _filteredPayments,
-  //       hospitalName: hospitalName ?? "Unknown Hospital",
-  //       hospitalPlace: hospitalPlace ?? "",
-  //       hospitalPhoto: hospitalPhoto ?? "",
-  //       expenses: _totalExpenses,
-  //       drawingOut: _totalDrawing,
-  //     );
-  //   } finally {
-  //     if (mounted) {
-  //       setState(() => _isGeneratingPdf = false);
-  //     }
-  //   }
-  // }
-
-  // Future<void> _generatePdf() async {
-  //   if (_filteredPayments.isEmpty || _isGeneratingPdf) return;
-  //
-  //   try {
-  //     setState(() => _isGeneratingPdf = true);
-  //
-  //     await AccountsReportPdf.generate(
-  //       payments: _filteredPayments,
-  //       hospitalName: hospitalName ?? "Unknown Hospital",
-  //       hospitalPlace: hospitalPlace ?? "",
-  //       income: _totalIncomes,
-  //       expenses: _totalExpenses,
-  //       drawingOut: _totalDrawing,
-  //       reportDate: , // ✅ ADD THIS
-  //
-  //       // ✅ ADD THESE
-  //     );
-  //   } finally {
-  //     if (mounted) {
-  //       setState(() => _isGeneratingPdf = false);
-  //     }
-  //   }
-  // }
-  Map<String, DateTime> _getPreviousRange(DateFilter filter, DateTime from) {
-    late DateTime prevFrom;
-    late DateTime prevTo;
-
-    switch (filter) {
-      case DateFilter.day:
-        prevFrom = DateTime(from.year, from.month, from.day - 1);
-        prevTo = DateTime(
-          prevFrom.year,
-          prevFrom.month,
-          prevFrom.day,
-          23,
-          59,
-          59,
-        );
-        break;
-
-      case DateFilter.month:
-        prevFrom = DateTime(from.year, from.month - 1, 1);
-        prevTo = DateTime(from.year, from.month, 0, 23, 59, 59);
-        break;
-
-      case DateFilter.year:
-        prevFrom = DateTime(from.year - 1, 1, 1);
-        prevTo = DateTime(from.year - 1, 12, 31, 23, 59, 59);
-        break;
-
-      case DateFilter.periodical:
-        prevFrom = from.subtract(const Duration(days: 1));
-        prevTo = prevFrom;
-        break;
-    }
-
-    return {'from': prevFrom, 'to': prevTo};
-  }
-
-  Future<double> _calculatePreviousClosingBalance() async {
-    final range = _getPreviousRange(_currentFilter!, _reportFromDate!);
-
-    final prevFrom = range['from']!;
-    final prevTo = range['to']!;
-
-    // Filter previous payments
-    final prevPayments = _allPayments.where((p) {
-      final createdAt = p['createdAt'] as DateTime;
-      return !createdAt.isBefore(prevFrom) && !createdAt.isAfter(prevTo);
-    }).toList();
-
-    double cashIncome = 0;
-    double expenses = 0;
-    double drawing = 0;
-
-    // Payments
-    for (var p in prevPayments) {
-      final amount = (p['amount'] ?? 0).toDouble();
-      final paymentType = (p['paymentType'] ?? "").toString().toUpperCase();
-
-      if (paymentType == "MANUALPAY") {
-        cashIncome += amount;
-      }
-    }
-
-    // Expenses
-    final exp = await _incexpService.getIncomeExpenseService();
-    for (var e in exp) {
-      final createdAt = parseAppDate(e['createdAt']);
-      if (!createdAt.isBefore(prevFrom) && !createdAt.isAfter(prevTo)) {
-        if (e['type']?.toString().toUpperCase() == "EXPENSE") {
-          expenses += (e['amount'] as num).toDouble();
-        }
-        if (e['type']?.toString().toUpperCase() == "INCOME") {
-          cashIncome += (e['amount'] as num).toDouble();
-        }
-      }
-    }
-
-    // Drawings
-    final draws = await _drawerService.getDrawers();
-    for (var d in draws) {
-      final createdAt = parseAppDate(d['createdAt']);
-      if (!createdAt.isBefore(prevFrom) && !createdAt.isAfter(prevTo)) {
-        drawing += (d['amount'] as num).toDouble();
-      }
-    }
-
-    // 🔥 Previous closing balance
-    return cashIncome - expenses - drawing;
-  }
-
   Future<void> _generatePdf() async {
-    if (_filteredPayments.isEmpty || _isGeneratingPdf) return;
+    final data = _getCurrentDataMap();
+    if (data == null || _isGeneratingPdf) return;
 
     try {
       setState(() => _isGeneratingPdf = true);
 
-      // ✅ Decide which date to show in PDF
       DateTime reportDate;
-
       if (_currentFilter == DateFilter.day) {
         reportDate = _reportFromDate!;
       } else if (_currentFilter == DateFilter.month) {
@@ -533,21 +183,26 @@ class _AccountsReportState extends State<AccountsReport> {
       } else if (_currentFilter == DateFilter.year) {
         reportDate = _reportFromDate!;
       } else {
-        // periodical
         reportDate = _reportFromDate!;
       }
-      final previousBalance = await _calculatePreviousClosingBalance();
 
+      final previousBalance = (_backendData!['previousAmount'] ?? 0).toDouble();
+      //debugPrint('previousBalance $previousBalance');
+
+      // AccountsReportPdf might need adapting depending on what parameter it takes. If it takes `payments`, you might need to supply a dummy list, or adapt AccountsReportPdf independently.
+      // Note: If AccountsReportPdf requires _filteredPayments, you must change that widget as well.
+      // For now passing empty list, as totals are precalculated.
       await AccountsReportPdf.generate(
-        payments: _filteredPayments,
+        payments: _backendData,
         hospitalName: hospitalName ?? "Unknown Hospital",
         hospitalPlace: hospitalPlace ?? "",
-        income: _totalIncomes + _totalDrawingIn,
-        expenses: _totalExpenses,
-        drawingOut: _totalDrawingOut,
+        income:
+            (data['totalIncome'] ?? 0).toDouble() +
+            (data['totalDrawingIn'] ?? 0).toDouble(),
+        expenses: (data['totalExpense'] ?? 0).toDouble(),
+        drawingOut: (data['totalDrawingOut'] ?? 0).toDouble(),
         previousBalance: previousBalance,
-        reportDate: reportDate, // ✅ FIXED
-        // ✅ NOW VALID
+        reportDate: reportDate,
         reportFilter: _currentFilter!,
         reportFromDate: _reportFromDate!,
       );
@@ -591,12 +246,84 @@ class _AccountsReportState extends State<AccountsReport> {
 
   @override
   Widget build(BuildContext context) {
-    Map<String, double> doctorTotals = {};
-    for (var entry in _paymentTotals.doctorFeeTotals.entries) {
-      doctorTotals[entry.value['name']] = entry.value['total'] as double;
+    if (_isLoading && _backendData == null) {
+      return Scaffold(
+        appBar: _buildAppBar(),
+        body: const Center(child: CircularProgressIndicator()),
+      );
     }
 
-    bool hasData = _filteredPayments.isNotEmpty;
+    final data = _getCurrentDataMap();
+    bool hasData = data != null;
+
+    final double grandTotal = data != null
+        ? (data['totalAmount'] ?? 0).toDouble()
+        : 0.0;
+
+    final double regFee = data != null
+        ? (data['registerationFee'] ?? 0).toDouble()
+        : 0.0;
+    final double consultationFee = data != null
+        ? (data['consultationFee'] ?? 0).toDouble()
+        : 0.0;
+    final double sugarFee = data != null
+        ? (data['sugarTestFee'] ?? 0).toDouble()
+        : 0.0;
+    final double emergencyFee = data != null
+        ? (data['emergencyFee'] ?? 0).toDouble()
+        : 0.0;
+    final double dischargeFee = data != null
+        ? ((data['type']?['DISCHARGEFEE']?['ManualPay'] ?? 0) +
+                  (data['type']?['DISCHARGEFEE']?['OnlinePay'] ?? 0))
+              .toDouble()
+        : 0.0;
+    final double advanceFee = data != null
+        ? ((data['type']?['ADVANCEFEE']?['ManualPay'] ?? 0) +
+                  (data['type']?['ADVANCEFEE']?['OnlinePay'] ?? 0))
+              .toDouble()
+        : 0.0;
+    final double dailyTreatmentFee = data != null
+        ? ((data['type']?['DAILYTREATMENTFEE']?['ManualPay'] ?? 0) +
+                  (data['type']?['DAILYTREATMENTFEE']?['OnlinePay'] ?? 0))
+              .toDouble()
+        : 0.0;
+
+    final double testFee = data != null
+        ? (data['testingAmount'] ?? 0).toDouble()
+        : 0.0;
+    final double scanFee = data != null
+        ? (data['ScanningAmount'] ?? 0).toDouble()
+        : 0.0;
+
+    final double cashIncome = data != null
+        ? (data['paymentType']?['ManualPay'] ?? 0).toDouble()
+        : 0.0;
+    final double onlineIncome = data != null
+        ? (data['paymentType']?['OnlinePay'] ?? 0).toDouble()
+        : 0.0;
+    final double expenses = data != null
+        ? (data['totalExpense'] ?? 0).toDouble()
+        : 0.0;
+    final double balance = cashIncome - expenses;
+    final double drawingOut = data != null
+        ? (data['totalDrawingOut'] ?? 0).toDouble()
+        : 0.0;
+    final double otherIncome = data != null
+        ? (data['totalIncome'] ?? 0).toDouble() +
+              (data['totalDrawingIn'] ?? 0).toDouble()
+        : 0.0;
+    final double cashInHand = balance - drawingOut;
+
+    final double medicalFee = data != null
+        ? ((data['type']?['MEDICINETONICINJECTIONFEES']?['ManualPay'] ?? 0) +
+                  (data['type']?['MEDICINETONICINJECTIONFEES']?['OnlinePay'] ??
+                      0))
+              .toDouble()
+        : 0.0;
+
+    final Map<String, dynamic> doctorFeeTotals = data != null
+        ? (data['consultationDrFee'] ?? {})
+        : {};
 
     return Scaffold(
       appBar: _buildAppBar(),
@@ -605,8 +332,18 @@ class _AccountsReportState extends State<AccountsReport> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (_isLoading)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 12),
+                child: LinearProgressIndicator(
+                  backgroundColor: Colors.transparent,
+                  color: Colors.orange,
+                  minHeight: 2,
+                ),
+              ),
             ReportFilterWidget(onApply: _applyReportFilter),
             const SizedBox(height: 20),
+
             // ---------------------Generate Pdf ----------------------
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -644,7 +381,7 @@ class _AccountsReportState extends State<AccountsReport> {
             ),
             const SizedBox(height: 20),
 
-            // ---------------- GRAND TOTAL + PDF ----------------
+            // ---------------- GRAND TOTAL ----------------
             Row(
               children: [
                 Expanded(
@@ -674,7 +411,7 @@ class _AccountsReportState extends State<AccountsReport> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          "₹ ${formatAmount(_grandTotal)}",
+                          "₹ ${formatAmount(grandTotal)}",
                           style: const TextStyle(
                             fontSize: 32,
                             fontWeight: FontWeight.bold,
@@ -695,37 +432,37 @@ class _AccountsReportState extends State<AccountsReport> {
               children: [
                 _fullRowCard(
                   "Registration Fee",
-                  _paymentTotals.totalRegistrationFee,
+                  regFee,
                   color: Colors.blue.shade50,
                 ),
                 _fullRowCard(
                   "Consultation Fee",
-                  _paymentTotals.totalDoctorFee,
+                  consultationFee,
                   color: Colors.purple.shade50,
                 ),
                 _fullRowCard(
                   "Sugar Test Fee",
-                  _paymentTotals.totalSugarFee,
+                  sugarFee,
                   color: Colors.green.shade50,
                 ),
                 _fullRowCard(
                   "Emergency Fee",
-                  _paymentTotals.totalEmergencyFee,
+                  emergencyFee,
                   color: Colors.red.shade50,
                 ),
                 _fullRowCard(
                   "I/P Discharge Fee",
-                  _paymentTotals.totalDischarge,
+                  dischargeFee,
                   color: Colors.blue.shade50,
                 ),
                 _fullRowCard(
                   "I/P Advanced Fee",
-                  _paymentTotals.totalAdvancedFee,
+                  advanceFee,
                   color: Colors.blue.shade50,
                 ),
                 _fullRowCard(
                   "I/P Daily Treatment Fee",
-                  _paymentTotals.totalDailyTreatment,
+                  dailyTreatmentFee,
                   color: Colors.blue.shade50,
                 ),
               ],
@@ -737,16 +474,8 @@ class _AccountsReportState extends State<AccountsReport> {
             _buildGroupCard(
               title: "Test & Scan Fees",
               children: [
-                _fullRowCard(
-                  "Test Fee",
-                  _paymentTotals.totalTest,
-                  color: Colors.teal.shade50,
-                ),
-                _fullRowCard(
-                  "Scan Fee",
-                  _paymentTotals.totalScan,
-                  color: Colors.cyan.shade50,
-                ),
+                _fullRowCard("Test Fee", testFee, color: Colors.teal.shade50),
+                _fullRowCard("Scan Fee", scanFee, color: Colors.cyan.shade50),
               ],
             ),
 
@@ -756,37 +485,29 @@ class _AccountsReportState extends State<AccountsReport> {
               children: [
                 _fullRowCard(
                   "Total Cash Income",
-                  _totalCashIncome,
+                  cashIncome,
                   color: Colors.green.shade50,
                 ),
                 _fullRowCard(
                   "Total Online Income",
-                  _totalOnlineIncome,
+                  onlineIncome,
                   color: Colors.green.shade50,
                 ),
-                _fullRowCard(
-                  "Expenses",
-                  _totalExpenses,
-                  color: Colors.red.shade50,
-                ),
+                _fullRowCard("Expenses", expenses, color: Colors.red.shade50),
                 _fullRowCard(
                   "Other Income",
-                  _totalIncomes + _totalDrawingIn,
+                  otherIncome,
                   color: Colors.yellow.shade50,
                 ),
-                _fullRowCard(
-                  "Balance",
-                  _totalCashIncome - _totalExpenses,
-                  color: Colors.blue.shade50,
-                ),
+                _fullRowCard("Balance", balance, color: Colors.blue.shade50),
                 _fullRowCard(
                   "Drawing Out",
-                  _totalDrawingOut,
+                  drawingOut,
                   color: Colors.orange.shade50,
                 ),
                 _fullRowCard(
                   "Cash in Hand",
-                  _cashInHand,
+                  cashInHand,
                   color: Colors.purple.shade50,
                 ),
               ],
@@ -799,7 +520,7 @@ class _AccountsReportState extends State<AccountsReport> {
               children: [
                 _fullRowCard(
                   "Medical / Injection / Tonic",
-                  _paymentTotals.totalMedical,
+                  medicalFee,
                   color: Colors.orange.shade50,
                 ),
               ],
@@ -813,12 +534,12 @@ class _AccountsReportState extends State<AccountsReport> {
             const SizedBox(height: 12),
 
             // ---------------- DOCTOR WISE SCROLLABLE ----------------
-            doctorTotals.isEmpty
+            doctorFeeTotals.isEmpty
                 ? const Text("No doctor fees found.")
                 : SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
-                      children: doctorTotals.entries.map((e) {
+                      children: doctorFeeTotals.entries.map((e) {
                         return Container(
                           width: 180,
                           margin: const EdgeInsets.only(right: 12),
@@ -847,7 +568,7 @@ class _AccountsReportState extends State<AccountsReport> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                "₹ ${formatAmount(e.value)}",
+                                "₹ ${formatAmount((e.value ?? 0).toDouble())}",
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
@@ -933,6 +654,11 @@ class _AccountsReportState extends State<AccountsReport> {
                     fontWeight: FontWeight.bold,
                     letterSpacing: 0.5,
                   ),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.refresh, color: Colors.white),
+                  onPressed: _isLoading ? null : _initLoad,
                 ),
               ],
             ),

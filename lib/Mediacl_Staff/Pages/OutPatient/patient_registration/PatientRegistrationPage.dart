@@ -365,17 +365,22 @@ class _PatientRegistrationPagesState extends State<PatientRegistrationPages> {
                       width: isMobile ? double.infinity : 520,
                       child: Row(
                         children: [
-                          _buildInput(
-                            "Name *",
-                            fullNameController,
-                            focusNode: nameFocus,
-                            textInputAction: TextInputAction.next,
-                            onSubmitted: (_) {
-                              FocusScope.of(context).requestFocus(ageDobFocus);
-                            },
-                            hint: "Enter full name",
-                            inputFormatters: [UpperCaseTextFormatter()],
+                          Expanded(
+                            child: _buildInput(
+                              "Name *",
+                              fullNameController,
+                              focusNode: nameFocus,
+                              textInputAction: TextInputAction.next,
+                              onSubmitted: (_) {
+                                FocusScope.of(
+                                  context,
+                                ).requestFocus(ageDobFocus);
+                              },
+                              hint: "Enter full name",
+                              inputFormatters: [UpperCaseTextFormatter()],
+                            ),
                           ),
+
                           !nameMicOpen
                               ? Padding(
                                   padding: const EdgeInsets.only(top: 30),

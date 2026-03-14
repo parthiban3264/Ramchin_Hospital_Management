@@ -23,9 +23,24 @@ class ReportFilterWidget extends StatefulWidget {
 
 class _ReportFilterWidgetState extends State<ReportFilterWidget> {
   DateFilter _dateFilter = DateFilter.day;
-  DateTime _selectedDate = DateTime.now();
+  DateTime _dayDate = DateTime.now();
+  DateTime _monthDate = DateTime.now();
+  DateTime _yearDate = DateTime.now();
   DateTime? _fromDate;
   DateTime? _toDate;
+
+  DateTime get _currentSelectedDate {
+    switch (_dateFilter) {
+      case DateFilter.day:
+        return _dayDate;
+      case DateFilter.month:
+        return _monthDate;
+      case DateFilter.year:
+        return _yearDate;
+      default:
+        return DateTime.now();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,16 +79,32 @@ class _ReportFilterWidgetState extends State<ReportFilterWidget> {
                         borderRadius: BorderRadius.circular(20),
                         onTap: () => _onFilterTap(filter),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
                           child: Center(
-                            child: Text(
-                              filter.name.toUpperCase(),
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: isSelected
-                                    ? Colors.white
-                                    : Colors.black87,
-                                fontSize: 14,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    _getTabLabel(filter),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : Colors.black87,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  if (isSelected) ...[
+                                    const SizedBox(width: 6),
+                                    const Icon(
+                                      Icons.edit_calendar_rounded,
+                                      color: Colors.white,
+                                      size: 16,
+                                    ),
+                                  ],
+                                ],
                               ),
                             ),
                           ),
@@ -128,13 +159,7 @@ class _ReportFilterWidgetState extends State<ReportFilterWidget> {
 
             const SizedBox(height: 20),
 
-            // ---------------- SINGLE DATE PICKER ----------------
-            if (_dateFilter != DateFilter.periodical)
-              _dateSelectorBox(
-                label: _dateLabel(),
-                date: _selectedDate,
-                onTap: _pickSingleDate,
-              ),
+
 
             // ---------------- PERIODICAL PICKER ----------------
             if (_dateFilter == DateFilter.periodical) _periodicalPicker(),
@@ -146,37 +171,54 @@ class _ReportFilterWidgetState extends State<ReportFilterWidget> {
 
   // ---------------- FILTER LOGIC ----------------
   Future<void> _onFilterTap(DateFilter filter) async {
+    final bool wasSelected = _dateFilter == filter;
     setState(() => _dateFilter = filter);
 
     if (filter != DateFilter.periodical) {
-      await _pickSingleDate();
-      widget.onApply(reportType: filter, selectedDate: _selectedDate);
+      final bool picked = await _pickSingleDate();
+      
+      if (picked || !wasSelected) {
+        widget.onApply(reportType: filter, selectedDate: _currentSelectedDate);
+      }
     }
   }
 
-  Future<void> _pickSingleDate() async {
+  String _getTabLabel(DateFilter filter) {
+    if (_dateFilter != filter) {
+      return filter.name.toUpperCase();
+    }
+    switch (filter) {
+      case DateFilter.day:
+        return DateFormat("dd MMM yyyy").format(_dayDate);
+      case DateFilter.month:
+        return DateFormat("MMM yyyy").format(_monthDate);
+      case DateFilter.year:
+        return DateFormat("yyyy").format(_yearDate);
+      default:
+        return filter.name.toUpperCase();
+    }
+  }
+
+  Future<bool> _pickSingleDate() async {
     if (_dateFilter == DateFilter.day) {
       final d = await showDatePicker(
         context: context,
-        initialDate: _selectedDate,
+        initialDate: _dayDate,
         firstDate: DateTime(2000),
         lastDate: DateTime.now(),
       );
       if (d != null) {
-        setState(() => _selectedDate = d);
-        widget.onApply(reportType: DateFilter.day, selectedDate: _selectedDate);
+        setState(() => _dayDate = d);
+        return true;
       }
     } else if (_dateFilter == DateFilter.month) {
       final m = await showMonthPicker(
         context: context,
-        initialDate: _selectedDate,
+        initialDate: _monthDate,
       );
       if (m != null) {
-        setState(() => _selectedDate = DateTime(m.year, m.month));
-        widget.onApply(
-          reportType: DateFilter.month,
-          selectedDate: _selectedDate,
-        );
+        setState(() => _monthDate = DateTime(m.year, m.month));
+        return true;
       }
     } else if (_dateFilter == DateFilter.year) {
       final y = await showDialog<int>(
@@ -188,20 +230,18 @@ class _ReportFilterWidgetState extends State<ReportFilterWidget> {
             child: YearPicker(
               firstDate: DateTime(2000),
               lastDate: DateTime.now(),
-              selectedDate: _selectedDate,
+              selectedDate: _yearDate,
               onChanged: (d) => Navigator.pop(context, d.year),
             ),
           ),
         ),
       );
       if (y != null) {
-        setState(() => _selectedDate = DateTime(y));
-        widget.onApply(
-          reportType: DateFilter.year,
-          selectedDate: _selectedDate,
-        );
+        setState(() => _yearDate = DateTime(y));
+        return true;
       }
     }
+    return false;
   }
 
   // ---------------- PERIODICAL PICKER ----------------
@@ -287,7 +327,13 @@ class _ReportFilterWidgetState extends State<ReportFilterWidget> {
             const Icon(Icons.calendar_today, size: 18, color: Colors.black54),
             const SizedBox(width: 8),
             Text(
-              date == null ? label : DateFormat("dd MMM yyyy").format(date),
+              date == null
+                  ? label
+                  : _dateFilter == DateFilter.year
+                      ? DateFormat("yyyy").format(date)
+                      : _dateFilter == DateFilter.month
+                          ? DateFormat("MMM yyyy").format(date)
+                          : DateFormat("dd MMM yyyy").format(date),
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ],
@@ -296,16 +342,4 @@ class _ReportFilterWidgetState extends State<ReportFilterWidget> {
     );
   }
 
-  String _dateLabel() {
-    switch (_dateFilter) {
-      case DateFilter.day:
-        return "Select Day";
-      case DateFilter.month:
-        return "Select Month";
-      case DateFilter.year:
-        return "Select Year";
-      default:
-        return "";
-    }
-  }
 }

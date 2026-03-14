@@ -793,4 +793,22 @@ class ConsultationService {
       throw Exception('Error fetching dispense: $e');
     }
   }
+
+  Future<Map<String, dynamic>> getConsultationByInitialPayment() async {
+    try {
+      final hospitalId = await getHospitalId();
+      final response = await http.get(
+        Uri.parse('$baseUrl/consultations/all/getByInitial/$hospitalId'),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final decoded = jsonDecode(response.body);
+        return decoded;
+      } else {
+        throw Exception('Failed to load consultations: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching consultations: $e');
+    }
+  }
 }

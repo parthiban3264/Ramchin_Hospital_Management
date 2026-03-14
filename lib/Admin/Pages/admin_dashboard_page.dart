@@ -24,6 +24,7 @@ import '../../Mediacl_Staff/Pages/OutPatient/Queue/op_queue_page.dart';
 import '../../Mediacl_Staff/Pages/OutPatient/Queue/SymptomsQueuePage.dart';
 
 import '../../Mediacl_Staff/Pages/Payment/ct-scan_payment_queue.dart';
+import '../../Mediacl_Staff/Pages/Payment/initial_payment_queue.dart';
 import '../../Mediacl_Staff/Pages/inpatient/add_admission_charges_page.dart';
 
 import '../../Mediacl_Staff/Pages/inpatient/admit_patient.dart';
@@ -430,6 +431,19 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                     MaterialPageRoute(
                                       builder: (_) =>
                                           const CtScanFeesQueuePage(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              _buildActionItem(
+                                Icons.payments,
+                                "INITIAL\nPAYMENT",
+                                () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const InitialFeesQueuePage(),
                                     ),
                                   );
                                 },

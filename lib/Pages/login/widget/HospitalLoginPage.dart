@@ -211,9 +211,9 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
                         ),
 
                         const SizedBox(height: 30),
-                        const Text(
-                          '© 2025 Ramchin Technologies Pvt Ltd.',
-                          style: TextStyle(
+                        Text(
+                          '© ${DateTime.now().year} Ramchin Technologies Pvt Ltd.',
+                          style: const TextStyle(
                             color: Color(0xFFBF955E),
                             fontSize: 13,
                             fontWeight: FontWeight.w600,

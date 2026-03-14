@@ -1,0 +1,2911 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:hospitrax/Mediacl_Staff/Pages/OutPatient/Page/widget/inpatient_bill_editor.dart';
+import 'package:intl/intl.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../../Pages/NotificationsPage.dart';
+import '../../../Pages/payment_modal.dart';
+import '../../../Services/admin_service.dart';
+import '../../../Services/charge_Service.dart';
+import '../../../Services/consultation_service.dart';
+import '../../../Services/payment_service.dart';
+import '../../../Services/socket_service.dart';
+import '../../../Services/testing&scanning_service.dart';
+import '../Medical/Widget/whatsApp_Send_PaymentBill.dart';
+import '../OutPatient/Page/widget.dart';
+import 'PaymentPage.dart';
+
+class InitialFeesPaymentPage extends StatefulWidget {
+  final Map<String, dynamic> fee;
+  final Map<String, dynamic> patient;
+  final int index;
+  final String page;
+
+  const InitialFeesPaymentPage({
+    super.key,
+    required this.fee,
+    required this.patient,
+    required this.index,
+    required this.page,
+  });
+
+  @override
+  State<InitialFeesPaymentPage> createState() => InitialFeesPaymentPageState();
+}
+
+class InitialFeesPaymentPageState extends State<InitialFeesPaymentPage> {
+  PaperSizeType _selectedPaperSize = PaperSizeType.receipt3inch;
+  final prefs = SharedPreferences.getInstance();
+
+  bool _isProcessing = false;
+  final socketService = SocketService();
+  String? logo;
+  String? hospitalName;
+  String? hospitalPlace;
+  bool _isLoading = false;
+  bool _isBuildingPdf = false;
+
+  // Map to track edited charge amounts: chargeId -> newAmount
+  Map<int, num> _editedCharges = {};
+
+  // Lists to track pending test/scan changes (updated on Pay Bill click)
+  List<int> _pendingTestRemovals = [];
+  List<Map<String, dynamic>> _pendingOptionRemovals = [];
+  num? _pendingAdvanceFeeAmount;
+
+  late TextEditingController cellController;
+  late TextEditingController nameController;
+  late TextEditingController addressController;
+  late TextEditingController dobController;
+  late TextEditingController feeController;
+  late TextEditingController idController;
+  late TextEditingController referredDoctorController;
+
+  @override
+  void initState() {
+    super.initState();
+    _updateTime();
+    cellController = TextEditingController(
+      text: extractString(widget.patient['phone'], 'mobile'),
+    );
+    nameController = TextEditingController(
+      text: extractName(widget.patient['name']),
+    );
+    idController = TextEditingController(
+      text: extractName(widget.patient['id']),
+    );
+    addressController = TextEditingController(
+      text: extractString(widget.patient['address'], 'Address'),
+    );
+    referredDoctorController = TextEditingController(
+      text: extractString(
+        widget.fee['Consultation']?['referredByDoctorName'] ?? '',
+      ),
+    );
+    dobController = TextEditingController(
+      text: formatDob(extractString(widget.patient['dob'])),
+    );
+    feeController = TextEditingController(
+      text: widget.fee['amount']?.toString() ?? '',
+    );
+    _loadHospitalLogo();
+    loadStaff();
+  }
+
+  List<Map<String, dynamic>> allStaff = [];
+
+  Future<void> loadStaff() async {
+    allStaff = List<Map<String, dynamic>>.from(
+      await AdminService().getMedicalStaff(),
+    );
+    setState(() {});
+  }
+
+  String? _dateTime;
+  void _updateTime() {
+    setState(() {
+      _dateTime = DateFormat('yyyy-MM-dd hh:mm a').format(DateTime.now());
+    });
+  }
+
+  void _loadHospitalLogo() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    logo = prefs.getString('hospitalPhoto');
+    hospitalName = prefs.getString('hospitalName');
+    hospitalPlace = prefs.getString('hospitalPlace');
+    setState(() {});
+  }
+
+  String formatDob(String? dob) {
+    if (dob == null || dob.trim().isEmpty) return 'N/A';
+
+    try {
+      // Try parsing "dd-MM-yyyy" format first
+      DateTime date;
+      if (dob.contains('-') && dob.split('-')[0].length == 2) {
+        date = DateFormat('dd-MM-yyyy').parse(dob);
+      } else {
+        date = DateTime.parse(dob); // fallback for ISO format
+      }
+
+      return DateFormat('dd-MM-yyyy').format(date);
+    } catch (e) {
+      return dob;
+    }
+  }
+
+  static String calculateAge(String? dob) {
+    if (dob == null || dob.trim().isEmpty) return 'N/A';
+
+    try {
+      DateTime birthDate;
+      if (dob.contains('-') && dob.split('-')[0].length == 2) {
+        // parse "02-11-2004"
+        birthDate = DateFormat('dd-MM-yyyy').parse(dob);
+      } else {
+        // parse ISO "2004-11-02"
+        birthDate = DateTime.parse(dob);
+      }
+
+      final now = DateTime.now();
+      int age = now.year - birthDate.year;
+
+      if (now.month < birthDate.month ||
+          (now.month == birthDate.month && now.day < birthDate.day)) {
+        age--;
+      }
+
+      if (age < 0) age = 0;
+      return '$age';
+    } catch (e) {
+      return 'N/A';
+    }
+  }
+
+  static String getFormattedDate(dynamic value) {
+    if (value == null) return "-";
+
+    try {
+      DateTime date;
+
+      // If already DateTime
+      if (value is DateTime) {
+        date = value;
+      }
+      // If string → fix formats like "2025-12-03 03:07 PM"
+      else if (value is String) {
+        // Try normal parse
+        try {
+          date = DateTime.parse(value);
+        } catch (_) {
+          // Try manual parse for AM/PM formats
+          date = DateFormat("yyyy-MM-dd hh:mm a").parse(value);
+        }
+      } else {
+        return "-";
+      }
+
+      return DateFormat("dd-MM-yyyy hh:mm a").format(date);
+    } catch (e) {
+      return value.toString();
+    }
+  }
+
+  Future<void> _showBillConfirmationDialog() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        bool isPrinting = false;
+
+        // ✅ Default a4
+        PaperSizeType tempPaperSize = PaperSizeType.a4;
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final isA4 = tempPaperSize == PaperSizeType.a4;
+
+            Future<void> handlePrint() async {
+              if (isPrinting) return;
+
+              setDialogState(() {
+                isPrinting = true;
+              });
+
+              _selectedPaperSize = tempPaperSize;
+
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setString(
+                'paper_size',
+                tempPaperSize == PaperSizeType.a4 ? 'a4' : '3inch',
+              );
+
+              try {
+                final pdf = await buildPdf(
+                  cellController: cellController,
+                  dobController: dobController,
+                  addressController: addressController,
+                  fee: widget.fee,
+                  hospitalName: hospitalName!,
+                  hospitalPlace: hospitalPlace!,
+                  nameController: nameController,
+                  logo: logo!,
+                  loadStaff: allStaff,
+                  pageFormat: tempPaperSize,
+                );
+
+                await Printing.layoutPdf(
+                  onLayout: (format) async => pdf.save(),
+                );
+              } catch (e) {
+                debugPrint("Print error: $e");
+              } finally {
+                if (mounted) {
+                  Navigator.pop(dialogContext);
+                  Navigator.pop(context, true);
+                }
+              }
+            }
+
+            return Shortcuts(
+              shortcuts: {
+                LogicalKeySet(LogicalKeyboardKey.enter): const ActivateIntent(),
+              },
+              child: Actions(
+                actions: {
+                  ActivateIntent: CallbackAction<ActivateIntent>(
+                    onInvoke: (intent) async {
+                      await handlePrint();
+                      return null;
+                    },
+                  ),
+                },
+                child: Focus(
+                  autofocus: true,
+                  child: Dialog(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(22),
+                    ),
+                    child: SizedBox(
+                      width: 420, // ✅ Fixed Width
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            /// Success Icon
+                            Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.green,
+                              ),
+                              child: const Icon(
+                                Icons.check,
+                                color: Colors.white,
+                                size: 26,
+                              ),
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            const Text(
+                              "Payment Successful",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+
+                            const SizedBox(height: 6),
+
+                            const Text(
+                              "Would you like to print the bill?",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.black54),
+                            ),
+
+                            const SizedBox(height: 22),
+
+                            /// Paper Size Toggle
+                            Container(
+                              padding: const EdgeInsets.all(5),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade200,
+                                borderRadius: BorderRadius.circular(40),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  GestureDetector(
+                                    onTap: isPrinting
+                                        ? null
+                                        : () {
+                                            setDialogState(() {
+                                              tempPaperSize = PaperSizeType.a4;
+                                            });
+                                          },
+                                    child: AnimatedContainer(
+                                      duration: const Duration(
+                                        milliseconds: 250,
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 22,
+                                        vertical: 10,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: isA4
+                                            ? Colors.deepPurple
+                                            : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(30),
+                                      ),
+                                      child: Text(
+                                        "A4",
+                                        style: TextStyle(
+                                          color: isA4
+                                              ? Colors.white
+                                              : Colors.black87,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: isPrinting
+                                        ? null
+                                        : () {
+                                            setDialogState(() {
+                                              tempPaperSize =
+                                                  PaperSizeType.receipt3inch;
+                                            });
+                                          },
+                                    child: AnimatedContainer(
+                                      duration: const Duration(
+                                        milliseconds: 250,
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 22,
+                                        vertical: 10,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: !isA4
+                                            ? Colors.blueAccent
+                                            : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(30),
+                                      ),
+                                      child: Text(
+                                        "3 Inch",
+                                        style: TextStyle(
+                                          color: !isA4
+                                              ? Colors.white
+                                              : Colors.black87,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            const SizedBox(height: 28),
+
+                            /// Buttons
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton(
+                                    onPressed: isPrinting
+                                        ? null
+                                        : () {
+                                            Navigator.pop(dialogContext);
+                                            Navigator.pop(context, true);
+                                          },
+                                    child: const Text("Cancel"),
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.blueAccent,
+                                    ),
+                                    onPressed: isPrinting ? null : handlePrint,
+                                    child: isPrinting
+                                        ? const SizedBox(
+                                            width: 18,
+                                            height: 18,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : const Text(
+                                            "Print",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _handlePayment() async {
+    final amount = widget.fee['amount']?.toDouble() ?? 0.0;
+    final paymentId = widget.fee['id'];
+    final type = widget.fee['type'].toString().toUpperCase();
+
+    final paymentResult = await showDialog<Map<String, dynamic>>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => PaymentModal(registrationFee: amount),
+    );
+
+    if (paymentResult == null && mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Payment cancelled')));
+      return;
+    }
+    final String paymentMode = paymentResult?['paymentMode'] ?? 'unknown';
+    final prefs = await SharedPreferences.getInstance();
+
+    // ✅ Payment succeeded → update backend
+    setState(() => _isProcessing = true);
+    final staffId = prefs.getString('userId');
+
+    // 🔄 Update all edited charges before payment
+    if (_editedCharges.isNotEmpty) {
+      final charges = (widget.fee['Admission']?['charges'] as List?) ?? [];
+      for (final entry in _editedCharges.entries) {
+        final chargeId = entry.key;
+        final newAmount = entry.value;
+
+        // Find the original charge to calculate decrement
+        final charge = charges.firstWhere(
+          (c) => c['id'] == chargeId,
+          orElse: () => null,
+        );
+
+        if (charge != null) {
+          final originalAmount = charge['originalAmount'] ?? charge['amount'];
+          final decrement = (originalAmount as num) - newAmount;
+          if (decrement > 0) {
+            try {
+              await PaymentService().updateDecreasePayment(widget.fee['id'], {
+                'decrementAmount': decrement,
+                'chargeId': charge['id'],
+              });
+            } catch (e) {
+              debugPrint("Error updating charge: $e");
+            }
+          }
+        }
+      }
+      _editedCharges.clear();
+    }
+
+    // 🔄 Process Pending Option Removals
+    for (final removal in _pendingOptionRemovals) {
+      final testId = removal['testId'];
+      final tests = widget.fee['TestingAndScanningPatients'] as List?;
+      final test = tests?.firstWhere(
+        (t) => t['id'] == testId,
+        orElse: () => null,
+      );
+
+      if (test != null) {
+        final updatedOptions = removal['updatedOptions'] as Map;
+        await TestingScanningService().updateTesting(testId, {
+          "selectedOptionAmounts": updatedOptions,
+          "selectedOptions": updatedOptions.keys
+              .map((e) => e.toString())
+              .toList(),
+          "amount": test['amount'],
+        });
+      }
+    }
+    _pendingOptionRemovals.clear();
+
+    // 🔄 Process Pending Test Removals
+    for (final testId in _pendingTestRemovals) {
+      await TestingScanningService().deleteTesting(testId);
+    }
+    _pendingTestRemovals.clear();
+
+    // 🔄 Process Pending Advance Fee Change
+    if (_pendingAdvanceFeeAmount != null &&
+        widget.fee['type'] == 'ADVANCEFEE') {
+      final int admissionId = widget.fee['Admission']['id'];
+      final List<int> chargesIds = (widget.fee['Admission']['charges'] as List)
+          .cast<Map<String, dynamic>>()
+          .where(
+            (charge) =>
+                charge['description'] == 'Inpatient Advance Fee' &&
+                charge['admissionId'] == admissionId,
+          )
+          .map((charge) => charge['id'] as int)
+          .toList();
+
+      await ChargeService().updateAdvanceChargesByAdmission(
+        chargesIds: chargesIds,
+        amount: _pendingAdvanceFeeAmount!,
+      );
+      _pendingAdvanceFeeAmount = null;
+    }
+
+    if (widget.fee['type'] == 'SUPPLEMENTARYFEE') {}
+
+    bool isDischarged = widget.fee['Admission']?['status'] == 'DISCHARGED';
+    final response = await PaymentService().updatePayment(paymentId, {
+      'amount': widget.fee['amount'],
+      'status': (widget.fee['type'] != 'ADMISSIONFEE')
+          ? 'PAID'
+          : isDischarged == false
+          ? 'PARTIALLY_PAID'
+          : 'PAID',
+      // 'transactionId': paymentResult['transactionId'],
+      "staff_Id": staffId.toString(),
+      "paymentType": paymentMode,
+      "updatedAt": DateTime.now().toString(),
+    });
+
+    if (widget.fee['type'] == 'ADVANCEFEE') {
+      final int admissionId = widget.fee['Admission']['id'];
+
+      final List<int> chargesIds = (widget.fee['Admission']['charges'] as List)
+          .cast<Map<String, dynamic>>()
+          .where(
+            (charge) =>
+                charge['description'] == 'Inpatient Advance Fee' &&
+                charge['admissionId'] == admissionId,
+          )
+          .map((charge) => charge['id'] as int)
+          .toList();
+
+      await ChargeService().updateChargesByAdmission(
+        chargesIds: chargesIds,
+        status: 'PAID',
+      );
+    }
+    if (widget.fee['type'] == 'DAILYTREATMENTFEE' ||
+        widget.fee['type'] == 'DISCHARGEFEE') {
+      final int admissionId = widget.fee['Admission']['id'];
+
+      final List<int> chargesIds = (widget.fee['Admission']['charges'] as List)
+          .cast<Map<String, dynamic>>()
+          .where((charge) => charge['admissionId'] == admissionId)
+          .map((charge) => charge['id'] as int)
+          .toList();
+
+      await ChargeService().updateChargesByAdmission(
+        chargesIds: chargesIds,
+        status: 'PAID',
+      );
+    }
+
+    // final Id = widget.patient['Consultation']?[0]?['id'];
+    final consultationId = widget.fee['consultation_Id'];
+
+    if (type == 'REGISTRATIONFEE') {
+      await ConsultationService().updateConsultation(consultationId, {
+        "paymentStatus": true,
+      });
+    } else if (type == 'TESTINGFEESANDSCANNINGFEE') {
+      final testings = widget.fee['TestingAndScanningPatients'];
+
+      final testId = (testings != null && testings.isNotEmpty)
+          ? testings[0]['payment_Id']
+          : null;
+
+      await TestingScanningService().updateTestAndScan(testId);
+      await ConsultationService().updateConsultation(consultationId, {
+        "queueStatus": 'PENDING',
+      });
+    } else {}
+    // else if (type == 'MEDICINEFEEANDINJECTIONFEE') {
+    // await ConsultationService().updateConsultation(Id, {
+    // "paymentStatus": true,
+    // });
+    // }
+
+    setState(() => _isProcessing = false);
+
+    if (response != null && response['status'] == 'success' && mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('✅ Payment Successful')));
+      //Navigator.pop(context, true);
+      await _showBillConfirmationDialog();
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('⚠️ Failed to update payment status.')),
+        );
+      }
+    }
+  }
+
+  Future<void> _updateSugarTest() async {
+    try {
+      final consultationId = widget.fee['consultation_Id'];
+      final paymentId = widget.fee['id'];
+
+      final consultation = widget.fee['Consultation'];
+      final num paymentAmount = widget.fee['amount'] ?? 0;
+      final num sugarFee = consultation?['sugarTestFee'] ?? 0;
+
+      // 🔒 Safety check
+      if (sugarFee <= 0) {
+        return;
+      }
+
+      final num finalTotal = (paymentAmount - sugarFee).clamp(
+        0,
+        double.infinity,
+      );
+
+      /// 🔹 Update Payment Amount
+      await PaymentService().updatePayment(paymentId, {
+        'amount': finalTotal,
+        'updatedAt': _dateTime.toString(),
+      });
+
+      /// 🔹 Update Consultation (remove sugar test)
+      await ConsultationService().updateConsultation(consultationId, {
+        "sugerTest": false,
+        "sugerTestQueue": false,
+        "sugarTestFee": 0,
+      });
+
+      /// 🔹 Update local UI state
+      setState(() {
+        widget.fee['amount'] = finalTotal;
+        consultation['sugarTestFee'] = 0;
+      });
+    } catch (e) {
+      setState(() {});
+    }
+  }
+
+  bool isValid(String? value) {
+    return value != null &&
+        value.trim() != 'null' &&
+        value.trim().isNotEmpty &&
+        value.trim() != '0' &&
+        value.trim() != 'N/A' &&
+        value.trim() != '-' &&
+        value.trim() != '_' &&
+        value.trim() != '-mg/dL';
+  }
+
+  bool hasAnyVital({
+    String? temperature,
+    String? bloodPressure,
+    String? sugar,
+    String? height,
+    String? weight,
+    String? BMI,
+    String? PK,
+    String? SpO2,
+  }) {
+    return isValid(temperature) ||
+        isValid(bloodPressure) ||
+        isValid(sugar) ||
+        isValid(height) ||
+        isValid(weight) ||
+        isValid(BMI) ||
+        isValid(PK) ||
+        isValid(SpO2);
+  }
+
+  Future<bool> _confirmRemove(String title) async {
+    return await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            title: const Text("Confirm Remove"),
+            content: Text("Remove $title from bill?"),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text(
+                  "Cancel",
+                  style: TextStyle(color: Colors.black),
+                ),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                ),
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text(
+                  "Remove",
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  String _normalize(String s) {
+    if (s == 'ROOM RENT') return 'Room Rent';
+    if (s == 'DOCTOR FEE') return 'Doctor Fee';
+    if (s == 'NURSE FEE') return 'Nurse Fee';
+    return s;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    print('widget.fee ${widget.fee['Supplementary']} ');
+    final List tests = widget.fee["TestingAndScanningPatients"] ?? [];
+    final List ctScanOnly = tests
+        .where((test) => test["type"] == "CT-SCAN")
+        .toList();
+    final consultation = widget.fee['Consultation'] ?? {};
+    // final temperature = consultation['temperature'] ?? '';
+    final bloodPressure = consultation['bp'] ?? {} ?? '_';
+    final sugar = consultation['sugar'] ?? '_';
+    final height = consultation['height'].toString();
+    final weight = consultation['weight'].toString();
+    final BMI = consultation['BMI'].toString();
+    final PK = consultation['PK'].toString();
+    final SpO2 = consultation['SPO2'].toString();
+
+    final num? registrationFee = consultation?['registrationFee'];
+
+    final num consultationFee =
+        (consultation?['consultationFee'] ?? 0) + (registrationFee ?? 0);
+
+    final num? emergencyFee = consultation?['emergencyFee'];
+    final num? sugarTestFee = consultation?['sugarTestFee'];
+    final tokenNo =
+        (consultation['displayToken'] == null ||
+            consultation['displayToken'] == 0)
+        ? '-'
+        : consultation['displayToken'].toString();
+
+    final Color themeColor = const Color(0xFFBF955E);
+    const Color background = Color(0xFFF8F8F8);
+    final admission = widget.fee['Admission'];
+    final bed = admission?['bed'];
+    final ward = bed?['ward'];
+
+    List<MapEntry<String, num>> parseSelectedOption(dynamic selectedOption) {
+      if (selectedOption is Map) {
+        return selectedOption.entries
+            .map(
+              (e) => MapEntry(
+                e.key.toString(),
+                num.tryParse(e.value.toString()) ?? 0,
+              ),
+            )
+            .where((e) => e.value > 0)
+            .toList();
+      }
+
+      if (selectedOption is List) {
+        return selectedOption
+            .whereType<Map>()
+            .map(
+              (e) => MapEntry(
+                e['name']?.toString() ?? '',
+                num.tryParse(e['amount']?.toString() ?? '') ?? 0,
+              ),
+            )
+            .where((e) => e.key.isNotEmpty && e.value > 0)
+            .toList();
+      }
+
+      return [];
+    }
+
+    Future<void> removeOption({
+      required int testIndex,
+      required String optionKey,
+      required num optionAmount,
+    }) async {
+      final tests = widget.fee['TestingAndScanningPatients'];
+      final List ctScanOnly = tests
+          .where((test) => test["type"] == "CT-SCAN")
+          .toList();
+      final test = ctScanOnly[testIndex];
+      final Map options = Map.from(test['selectedOptionAmounts'] ?? {});
+
+      if (options.length <= 1) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("At least one option must remain")),
+        );
+        return;
+      }
+
+      final confirm = await _confirmRemove(optionKey);
+      if (!confirm) return;
+
+      // 🔹 Store removal locally - will be processed on Pay Bill click
+      options.remove(optionKey);
+      _pendingOptionRemovals.add({
+        'testId': test['id'],
+        'optionKey': optionKey,
+        'optionAmount': optionAmount,
+        'updatedOptions': Map.from(options),
+      });
+
+      // 🔹 Update UI locally
+      final num updatedTotal = (widget.fee['amount'] - optionAmount).clamp(
+        0,
+        double.infinity,
+      );
+      test['selectedOptionAmounts'] = options;
+      test['amount'] = (test['amount'] ?? 0) - optionAmount;
+      setState(() {
+        widget.fee['amount'] = updatedTotal;
+      });
+    }
+
+    Future<void> removeTestAt(int index) async {
+      final List tests = widget.fee['TestingAndScanningPatients'] ?? [];
+      final List ctScanOnly = tests
+          .where((test) => test["type"] == "CT-SCAN")
+          .toList();
+
+      if (ctScanOnly.length <= 1) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("At least one test/scan must remain")),
+        );
+        return;
+      }
+
+      final test = ctScanOnly[index];
+      final num testAmount = test['amount'] ?? 0;
+      if (testAmount <= 0) return;
+
+      final confirm = await _confirmRemove(test['title'] ?? 'Test');
+      if (!confirm) return;
+
+      // 🔹 Store removal locally - will be processed on Pay Bill click
+      _pendingTestRemovals.add(test['id'] as int);
+
+      // 🔹 Update UI locally
+      final num updatedTotal = (widget.fee['amount'] - testAmount).clamp(
+        0,
+        double.infinity,
+      );
+      ctScanOnly.removeAt(index);
+      setState(() {
+        widget.fee['amount'] = updatedTotal;
+        widget.fee['TestingAndScanningPatients'] = ctScanOnly;
+      });
+    }
+
+    //// ===================== Daily charges cal..---------------------
+    final charges = (admission?['charges'] ?? [])
+        .where(
+          (c) =>
+              (c['status'] ?? '').toString().toUpperCase() ==
+              (widget.index == 1 ? 'PAID' : 'PENDING'),
+        )
+        .toList();
+    charges.sort((a, b) {
+      DateTime parse(dynamic c) {
+        final dateStr = c['chargeDate'] ?? c['createdAt'];
+        return DateTime.tryParse(dateStr?.toString() ?? '') ??
+            DateTime.fromMillisecondsSinceEpoch(0);
+      }
+
+      return parse(a).compareTo(parse(b));
+    });
+    Map<String, List<Map<String, dynamic>>> groupByDate(List charges) {
+      Map<String, List<Map<String, dynamic>>> dayWise = {};
+
+      for (final c in charges) {
+        // Skip advance fee
+        if ((c['description'] ?? '').toString().toUpperCase() ==
+            'INPATIENT ADVANCE FEE')
+          continue;
+
+        final date = c['createdAt'] ?? c['chargeDate'];
+        if (date == null) continue;
+
+        final day = DateTime.tryParse(date.toString());
+        if (day == null) continue;
+
+        final dateKey =
+            "${day.day.toString().padLeft(2, '0')} "
+            "${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][day.month - 1]} "
+            "${day.year}";
+
+        if (!dayWise.containsKey(dateKey)) {
+          dayWise[dateKey] = [];
+        }
+        dayWise[dateKey]!.add(c);
+      }
+
+      return dayWise;
+    }
+
+    // In your widget
+    final dayWiseCharges = groupByDate(charges);
+
+    String formatDate(DateTime d) =>
+        "${d.day.toString().padLeft(2, '0')} "
+        "${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][d.month - 1]} "
+        "${d.year}";
+
+    Widget dateHeader(List charges) {
+      if (charges.isEmpty) return const SizedBox.shrink();
+
+      final dates = charges.map((c) => DateTime.parse(c['createdAt'])).toList();
+
+      final from = dates.first;
+      final to = dates.last;
+
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Text(
+          from.day == to.day
+              ? formatDate(from)
+              : "${formatDate(from)} → ${formatDate(to)}",
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 15,
+            color: Colors.black87,
+          ),
+        ),
+      );
+    }
+
+    const knownCharges = {'ROOM RENT', 'DOCTOR FEE', 'NURSE FEE'};
+
+    Map<String, List<Map<String, dynamic>>> grouped = {
+      'Room Rent': [],
+      'Doctor Fee': [],
+      'Nurse Fee': [],
+      'Others': [],
+    };
+
+    Map<String, List<Map<String, dynamic>>> _groupByCategory(
+      List<Map<String, dynamic>> charges,
+    ) {
+      const knownCharges = {'ROOM RENT', 'DOCTOR FEE', 'NURSE FEE'};
+
+      Map<String, List<Map<String, dynamic>>> grouped = {
+        'Room Rent': [],
+        'Doctor Fee': [],
+        'Nurse Fee': [],
+        'Others': [],
+      };
+
+      for (final c in charges) {
+        final desc = (c['description'] ?? '').toString().toUpperCase();
+        if (knownCharges.contains(desc)) {
+          if (desc == 'ROOM RENT') grouped['Room Rent']!.add(c);
+          if (desc == 'DOCTOR FEE') grouped['Doctor Fee']!.add(c);
+          if (desc == 'NURSE FEE') grouped['Nurse Fee']!.add(c);
+        } else {
+          grouped['Others']!.add(c);
+        }
+      }
+
+      return grouped;
+    }
+
+    for (final c in charges) {
+      final desc = (c['description'] ?? '').toString().toUpperCase();
+
+      // ⛔ Always skip advance fee
+      if (desc == 'INPATIENT ADVANCE FEE') {
+        continue;
+      }
+
+      if (knownCharges.contains(desc)) {
+        grouped[_normalize(desc)]!.add(c);
+      } else {
+        grouped['Others']!.add(c);
+      }
+    }
+    final num advanceAmount = (admission?['charges'] ?? [])
+        .where(
+          (c) =>
+              (c['status'] ?? '').toString().toUpperCase() == 'PAID' &&
+              (c['description'] ?? '').toString().toUpperCase() ==
+                  'INPATIENT ADVANCE FEE' &&
+              c['admissionId'] == widget.fee['Admission']['id'],
+        )
+        .fold<num>(
+          0,
+          (num sum, dynamic c) =>
+              sum + (num.tryParse(c['amount']?.toString() ?? '0') ?? 0),
+        );
+    final num chargePendingAmount = (admission?['charges'] ?? [])
+        .where(
+          (c) =>
+              (c['status'] ?? '').toString().toUpperCase() == 'PENDING' &&
+              c['admissionId'] == widget.fee['Admission']['id'],
+        )
+        .fold<num>(
+          0,
+          (num sum, dynamic c) =>
+              sum + (num.tryParse(c['amount']?.toString() ?? '0') ?? 0),
+        );
+
+    final num chargePaidAmount = (admission?['charges'] ?? [])
+        .where(
+          (c) =>
+              (c['status'] ?? '').toString().toUpperCase() == 'PAID' &&
+              (c['description'] ?? '').toString().toUpperCase() !=
+                  'INPATIENT ADVANCE FEE' &&
+              c['admissionId'] == widget.fee['Admission']['id'],
+        )
+        .fold<num>(
+          0,
+          (num sum, dynamic c) =>
+              sum + (num.tryParse(c['amount']?.toString() ?? '0') ?? 0),
+        );
+    final total = widget.index != 1
+        ? calculateTotal(widget.fee['amount']) -
+              (widget.fee['received_Amount'] ?? 0)
+        : calculateTotal(widget.fee['amount']);
+
+    final bool isDischarge = widget.fee['type'] == 'DISCHARGEFEE';
+    final num safeAdvance = advanceAmount;
+
+    final num diff = widget.index != 1
+        ? chargePendingAmount - safeAdvance
+        : chargePaidAmount - safeAdvance;
+
+    final String label = isDischarge && diff < 0
+        ? 'Return ${widget.index == 1 ? '' : 'Amount'}'
+        : 'Total';
+
+    final num displayAmount = isDischarge ? diff.abs() : total;
+    final supplementary = widget.fee['Supplementary'];
+
+    return Scaffold(
+      backgroundColor: background,
+
+      appBar: widget.page == 'reg'
+          ? null
+          : PreferredSize(
+              preferredSize: const Size.fromHeight(100),
+              child: Container(
+                height: 100,
+                decoration: BoxDecoration(
+                  color: themeColor,
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(16),
+                    bottomRight: Radius.circular(16),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 6,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(
+                            Icons.arrow_back_ios,
+                            color: Colors.white,
+                          ),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        const Text(
+                          "Fees Payment",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          icon: const Icon(
+                            Icons.notifications,
+                            color: Colors.white,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const NotificationPage(),
+                              ),
+                            );
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.home, color: Colors.white),
+                          onPressed: () {
+                            int count = 0;
+                            Navigator.popUntil(
+                              context,
+                              (route) => count++ >= 2,
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 🧾 Bill Header
+                  Center(
+                    child: Column(
+                      children: [
+                        const Text(
+                          "INVOICE / HOSPITAL BILL",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          "Date: ${DateTime.now().toString().split(' ').first}",
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisSize: MainAxisSize
+                              .min, // row takes minimal horizontal space
+                          children: [
+                            Text(
+                              'Token No: ',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                            Text(
+                              tokenNo,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Divider(thickness: 1.2, height: 25),
+                      ],
+                    ),
+                  ),
+
+                  // 👤 Patient Information
+                  const Text(
+                    "Patient Details",
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  _infoRow("Name ", nameController.text),
+                  _infoRow("PID ", idController.text),
+                  _infoRow("Cell No ", cellController.text),
+                  _infoRow("DOB ", dobController.text),
+                  _infoRow("AGE ", calculateAge(dobController.text)),
+                  _infoRow("Address ", addressController.text),
+
+                  const Divider(thickness: 1.2, height: 30),
+                  if (widget.fee['type'] == 'DAILYTREATMENTFEE' ||
+                      widget.fee['type'] == 'DISCHARGEFEE' ||
+                      widget.fee['type'] == 'ADVANCEFEE') ...[
+                    const Text(
+                      "Admission Details",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    _infoRow(
+                      "Admit Id ",
+                      widget.fee['Admission']['id'].toString(),
+                    ),
+                    _infoRow(
+                      "Ward Name",
+                      '${widget.fee['Admission']['bed']['ward']['name']} - '
+                          '${widget.fee['Admission']['bed']['ward']['type']}',
+                    ),
+                    _infoRow(
+                      "Ward No ",
+                      widget.fee['Admission']['bed']['ward']['id'].toString(),
+                    ),
+                    _infoRow(
+                      "Bed No ",
+                      widget.fee['Admission']['bed']['bedNo'].toString(),
+                    ),
+
+                    _infoRow(
+                      "Admit Date ",
+                      widget.fee['Admission']['admitTime']
+                          .toString()
+                          .split('T')
+                          .first,
+                    ),
+                    if (widget.fee['type'] == 'DISCHARGEFEE')
+                      _infoRow(
+                        "Discharge Date ",
+                        widget.fee['Admission']['dischargeTime']
+                            .toString()
+                            .split('T')
+                            .first,
+                      ),
+
+                    //_infoRow("Dr Name ", ['name']),
+                    const Divider(thickness: 1.2, height: 30),
+                  ],
+                  // 💳 Fee Details
+                  Center(
+                    child: const Text(
+                      "Fee Summary",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                  const Divider(thickness: 1.5, height: 20),
+                  const SizedBox(height: 2),
+
+                  // if (widget.fee['type'] == 'REGISTRATIONFEE') ...[
+                  //   Column(
+                  //     children: [
+                  //       feeRowWithRemove(
+                  //         title: "Consultation Fee",
+                  //         amount: consultationFee,
+                  //         removable: false, // ❌ disabled
+                  //       ),
+                  //
+                  //       feeRowWithRemove(
+                  //         title: "Emergency Fee",
+                  //         amount: emergencyFee,
+                  //         removable: false, // ❌ disabled
+                  //       ),
+                  //
+                  //       feeRowWithRemove(
+                  //         title: "Sugar Test Fee",
+                  //         amount: sugarTestFee,
+                  //         removable: true, // ✅ enabled
+                  //         onRemove: () {
+                  //           _updateSugarTest();
+                  //           setState(() {
+                  //             consultation['sugarTestFee'] = 0;
+                  //           });
+                  //         },
+                  //       ),
+                  //     ],
+                  //   ),
+                  // ],
+                  if (widget.fee['type'] == 'SUPPLEMENTARYFEE') ...[
+                    Column(
+                      children: [
+                        Column(
+                          children: [
+                            if (supplementary != null &&
+                                supplementary.isNotEmpty)
+                              ...supplementary.map<Widget>((item) {
+                                return feeRowWithRemove(
+                                  title: item['description'] == '-'
+                                      ? 'Supplementary Fee'
+                                      : item['description'],
+                                  amount: item['amount'] ?? 0,
+                                  removable: false,
+                                  // originalAmount:
+                                  //     widget.fee['originalAmount'] ??
+                                  //     widget.fee['amount'],
+                                  // onAmountChanged: (e) {
+                                  //   setState(() {
+                                  //     widget.fee['amount'] = e;
+                                  //   });
+                                  // },
+                                );
+                              }).toList()
+                            else
+                              feeRowWithRemove(
+                                title: 'Supplementary Fee',
+                                amount: 0,
+                                removable: false,
+                              ),
+                          ],
+                        ),
+
+                        // feeRowWithRemove(
+                        //   title: "Emergency Fee",
+                        //   amount: emergencyFee,
+                        //   removable: false, // ❌ disabled
+                        // ),
+                        //
+                        // feeRowWithRemove(
+                        //   title: "Sugar Test Fee",
+                        //   amount: sugarTestFee,
+                        //   removable: true, // ✅ enabled
+                        //   onRemove: () {
+                        //     _updateSugarTest();
+                        //     setState(() {
+                        //       consultation['sugarTestFee'] = 0;
+                        //     });
+                        //   },
+                        // ),
+                      ],
+                    ),
+                  ],
+
+                  // if (widget.fee['type'] == 'ADMISSIONFEE') ...[
+                  //   // 🔹 Header only
+                  //   feeHeader("Room & Bed charges"),
+                  //   if (widget.index != 1) ...[
+                  //     if (widget.fee['received_Amount'] != null &&
+                  //         widget.fee['received_Amount'] != 0) ...[
+                  //       const SizedBox(height: 5),
+                  //       feeHeaderWithAmount(
+                  //         "Received Amount",
+                  //         widget.fee['received_Amount'],
+                  //       ),
+                  //     ],
+                  //   ],
+                  //
+                  //   // 🔹 Room
+                  //   if (ward?['name'] != null)
+                  //     feeRowWithRemove(
+                  //       title:
+                  //           "${ward['type']} - ${ward['name']}( ${widget.fee['Admission']['bed']['bedNo']} )",
+                  //       amount:
+                  //           num.tryParse(ward?['rent']?.toString() ?? '0') ?? 0,
+                  //       removable: false,
+                  //     ),
+                  //
+                  //   if (widget.index == 1)
+                  //     for (final charge in admission?['charges'] ?? [])
+                  //       if ((charge['status'] ?? '').toString().toUpperCase() ==
+                  //           'PAID')
+                  //         feeRowWithRemove(
+                  //           title: charge['description'] ?? 'Charge',
+                  //           amount:
+                  //               num.tryParse(
+                  //                 charge['amount']?.toString() ?? '0',
+                  //               ) ??
+                  //               0,
+                  //           removable: false,
+                  //         ),
+                  //   if (widget.index != 1)
+                  //     for (final charge in admission?['charges'] ?? [])
+                  //       if ((charge['status'] ?? '').toString().toUpperCase() ==
+                  //           'PENDING')
+                  //         feeRowWithRemove(
+                  //           title: charge['description'] ?? 'Charge',
+                  //           amount:
+                  //               num.tryParse(
+                  //                 charge['amount']?.toString() ?? '0',
+                  //               ) ??
+                  //               0,
+                  //           removable: false,
+                  //         ),
+                  // ],
+                  // if (widget.fee['type'] == 'ADVANCEFEE') ...[
+                  //   feeRowWithRemove(
+                  //     title: "Inpatient Advance",
+                  //     amount: widget.fee['amount'],
+                  //     removable: false,
+                  //     originalAmount:
+                  //         widget.fee['originalAmount'] ?? widget.fee['amount'],
+                  //     onAmountChanged: (newAmount) {
+                  //       // Store original amount if not already stored
+                  //       widget.fee['originalAmount'] ??= widget.fee['amount'];
+                  //
+                  //       // Store new amount locally - will be saved on Pay Bill click
+                  //       _pendingAdvanceFeeAmount = newAmount;
+                  //
+                  //       setState(() {
+                  //         widget.fee['amount'] = newAmount;
+                  //       });
+                  //     },
+                  //   ),
+                  // ],
+                  // if (widget.fee['type'] == 'DAILYTREATMENTFEE' ||
+                  //     widget.fee['type'] == 'DISCHARGEFEE') ...[
+                  //   Column(
+                  //     crossAxisAlignment: CrossAxisAlignment.start,
+                  //     children: dayWiseCharges.entries.map((entry) {
+                  //       final grouped = _groupByCategory(entry.value);
+                  //       final total = grouped.values
+                  //           .expand((e) => e)
+                  //           .fold<num>(
+                  //             0,
+                  //             (sum, c) =>
+                  //                 sum +
+                  //                 (num.tryParse(c['amount'].toString()) ?? 0),
+                  //           );
+                  //       return Column(
+                  //         crossAxisAlignment: CrossAxisAlignment.start,
+                  //         children: [
+                  //           // Date Header
+                  //           Padding(
+                  //             padding: const EdgeInsets.symmetric(vertical: 8),
+                  //             child: Row(
+                  //               children: [
+                  //                 Text(
+                  //                   entry.key,
+                  //                   style: const TextStyle(
+                  //                     fontWeight: FontWeight.w800,
+                  //                     fontSize: 20,
+                  //                     color: Colors.black87,
+                  //                   ),
+                  //                 ),
+                  //                 const Spacer(),
+                  //                 Text(
+                  //                   '₹$total',
+                  //                   style: const TextStyle(
+                  //                     fontWeight: FontWeight.w800,
+                  //                     fontSize: 20,
+                  //                   ),
+                  //                 ),
+                  //               ],
+                  //             ),
+                  //           ),
+                  //
+                  //           // Categories
+                  //           if (grouped['Room Rent']!.isNotEmpty)
+                  //             _groupedFeeRow(
+                  //               'Room Rent',
+                  //               grouped['Room Rent']!,
+                  //             ),
+                  //           if (grouped['Doctor Fee']!.isNotEmpty)
+                  //             _groupedFeeRow(
+                  //               'Doctor Fee',
+                  //               grouped['Doctor Fee']!,
+                  //             ),
+                  //           if (grouped['Nurse Fee']!.isNotEmpty)
+                  //             _groupedFeeRow(
+                  //               'Nurse Fee',
+                  //               grouped['Nurse Fee']!,
+                  //             ),
+                  //           if (grouped['Others']!.isNotEmpty)
+                  //             _groupedFeeRow('Others', grouped['Others']!),
+                  //         ],
+                  //       );
+                  //     }).toList(),
+                  //   ),
+                  // ],
+
+                  // if (ctScanOnly.isNotEmpty) ...[
+                  //   const SizedBox(height: 10),
+                  //   Text(
+                  //     "${widget.fee['reason']}",
+                  //     style: const TextStyle(
+                  //       fontSize: 16,
+                  //       fontWeight: FontWeight.bold,
+                  //     ),
+                  //   ),
+                  //   const SizedBox(height: 8),
+                  //   ...ctScanOnly.asMap().entries.expand((entry) {
+                  //     final testIndex = entry.key;
+                  //     final test = entry.value;
+                  //
+                  //     final title = test["title"]?.toString() ?? "-";
+                  //     final testAmount = test["amount"]?.toDouble() ?? 0;
+                  //     final selectedOption = test['selectedOptionAmounts'];
+                  //     final entries = parseSelectedOption(selectedOption);
+                  //
+                  //     final bool isLastTest = ctScanOnly.length == 1;
+                  //
+                  //     return [
+                  //       // Parent test row
+                  //       _billRowWithRemove(
+                  //         label: title,
+                  //         value: testAmount.toStringAsFixed(0),
+                  //         isDisabled: isLastTest,
+                  //         onRemove: () => removeTestAt(testIndex),
+                  //       ),
+                  //
+                  //       // Sub-options
+                  //       if (entries.isNotEmpty)
+                  //         ...entries.asMap().entries.map((optEntry) {
+                  //           final option = optEntry.value;
+                  //           final bool isLastOption = entries.length == 1;
+                  //
+                  //           return _subBillRowWithRemove(
+                  //             label: option.key,
+                  //             amount: option.value,
+                  //             isDisabled: isLastOption,
+                  //             onRemove: () {
+                  //               removeOption(
+                  //                 testIndex: testIndex,
+                  //                 optionKey: option.key,
+                  //                 optionAmount: option.value,
+                  //               );
+                  //             },
+                  //           );
+                  //         }),
+                  //
+                  //       const SizedBox(height: 6),
+                  //     ];
+                  //   }),
+                  // ],
+
+                  // if (widget.fee['type'] == 'DISCHARGEFEE')
+                  //   Column(
+                  //     children: [
+                  //       if (advanceAmount > 0) ...[
+                  //         const Divider(thickness: 1.5, height: 6),
+                  //         feeRowAdvance(
+                  //           title: 'Inpatient Advance',
+                  //           amount: advanceAmount,
+                  //         ),
+                  //       ],
+                  //     ],
+                  //   ),
+                  const Divider(thickness: 1.5, height: 22),
+                  // 🧮 Total Amount
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      if (widget.index == 1) ...[
+                        Icon(Icons.check_circle, color: Colors.green),
+                        SizedBox(width: 6),
+                        Text('PAID', style: TextStyle(color: Colors.black)),
+
+                        Spacer(),
+                      ],
+
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          "$label : ₹ $displayAmount",
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: widget.index == 1
+                                ? (label == 'Return '
+                                      ? Colors.blue
+                                      : Colors.black87)
+                                : (label == 'Return Amount'
+                                      ? Colors.blue
+                                      : Colors.black87),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 25),
+
+                  // 💰 Pay Button
+                  widget.index == 0
+                      ? Row(
+                          children: [
+                            Shortcuts(
+                              shortcuts: {
+                                LogicalKeySet(LogicalKeyboardKey.enter):
+                                    const ActivateIntent(),
+                              },
+                              child: Actions(
+                                actions: {
+                                  ActivateIntent:
+                                      CallbackAction<ActivateIntent>(
+                                        onInvoke: (intent) {
+                                          if (!_isProcessing) {
+                                            _handlePayment();
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                },
+                                child: Focus(
+                                  autofocus: true,
+                                  child: Center(
+                                    child: AnimatedContainer(
+                                      duration: const Duration(
+                                        milliseconds: 200,
+                                      ),
+                                      width: _isProcessing ? 140 : 120,
+                                      child: ElevatedButton.icon(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor:
+                                              label == 'Return Amount'
+                                              ? Colors.blue
+                                              : Colors.green,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 14,
+                                          ),
+                                        ),
+                                        icon: const Icon(
+                                          Icons.receipt_long,
+                                          color: Colors.white,
+                                        ),
+                                        label: _isProcessing
+                                            ? const Text(
+                                                "Processing...",
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                ),
+                                              )
+                                            : Text(
+                                                label == 'Return Amount'
+                                                    ? "Get Bill"
+                                                    : "Pay Bill",
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                        onPressed: _isProcessing
+                                            ? null
+                                            : _handlePayment,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            if (widget.fee['type'] != 'DISCHARGEFEE') ...[
+                              Spacer(),
+                              ElevatedButton.icon(
+                                onPressed: () async {
+                                  final prefs =
+                                      await SharedPreferences.getInstance();
+                                  final paymentId = widget.fee['id'];
+                                  final consultationId =
+                                      widget.fee['type'] == 'ADMISSIONFEE' ||
+                                          widget.fee['type'] ==
+                                              'DAILYTREATMENTFEE'
+                                      ? widget.fee['Admission']['id']
+                                      : widget.fee['consultation_Id'];
+                                  final staffId = prefs.getString('userId');
+                                  if (context.mounted) {
+                                    _showCancelDialog(
+                                      context,
+                                      paymentId: paymentId,
+                                      consultationId: consultationId,
+                                      staffId: staffId,
+                                    );
+                                  }
+                                },
+                                icon: Icon(
+                                  widget.fee['type'] == 'DAILYTREATMENTFEE'
+                                      ? Icons.skip_next
+                                      : Icons.cancel,
+                                  size: 22,
+                                ),
+                                label: Text(
+                                  widget.fee['type'] == 'DAILYTREATMENTFEE'
+                                      ? "Pay Later "
+                                      : "Cancel ",
+                                  style: TextStyle(fontSize: 18),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor:
+                                      widget.fee['type'] == 'DAILYTREATMENTFEE'
+                                      ? Colors.blueAccent
+                                      : Colors.redAccent,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 14,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.orangeAccent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 12,
+                                ),
+                              ),
+                              onPressed: () async {
+                                final newType =
+                                    _selectedPaperSize == PaperSizeType.a4
+                                    ? PaperSizeType.receipt3inch
+                                    : PaperSizeType.a4;
+
+                                setState(() {
+                                  _selectedPaperSize = newType;
+                                });
+
+                                final prefs =
+                                    await SharedPreferences.getInstance();
+                                await prefs.setString(
+                                  'paper_size',
+                                  newType == PaperSizeType.a4 ? 'a4' : '3inch',
+                                );
+                              },
+                              // icon: Icon(
+                              //   _selectedPaperSize == PaperSizeType.a4
+                              //       ? Icons.picture_as_pdf
+                              //       : Icons.receipt_long,
+                              // ),
+                              label: Text(
+                                _selectedPaperSize == PaperSizeType.a4
+                                    ? "A4"
+                                    : "3inch",
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            // 🔹 Print Button
+                            ElevatedButton.icon(
+                              onPressed: _isLoading
+                                  ? null
+                                  : () async {
+                                      setState(() {
+                                        _isLoading = true;
+                                        _isBuildingPdf = true;
+                                      });
+
+                                      try {
+                                        final pdf = await buildPdf(
+                                          cellController: cellController,
+                                          dobController: dobController,
+                                          addressController: addressController,
+                                          fee: widget.fee,
+                                          hospitalName: hospitalName!,
+                                          hospitalPlace: hospitalPlace!,
+                                          nameController: nameController,
+                                          logo: logo!,
+                                          loadStaff: allStaff,
+                                          pageFormat: _selectedPaperSize,
+                                        );
+
+                                        await Printing.layoutPdf(
+                                          onLayout: (format) async =>
+                                              pdf.save(),
+                                        );
+                                      } finally {
+                                        setState(() => _isLoading = false);
+                                        setState(() => _isBuildingPdf = false);
+                                      }
+                                    },
+                              icon: _isLoading
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Icon(
+                                      Icons.print,
+                                      color: Colors.white,
+                                    ),
+                              label: Text(
+                                _isLoading ? "Printing..." : "Print",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blueAccent.shade400,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 15,
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 5,
+                              ),
+                            ),
+
+                            InkWell(
+                              borderRadius: BorderRadius.circular(10),
+                              onTap: () async {
+                                if (widget.fee['type'] == 'REGISTRATIONFEE') {
+                                  await WhatsAppSendPaymentBill.sendRegistrationBill(
+                                    phoneNumber: cellController.text.replaceAll(
+                                      '+',
+                                      '',
+                                    ),
+                                    patientName: nameController.text,
+                                    patientId: idController.text,
+                                    tokenNo: tokenNo,
+                                    age: calculateAge(dobController.text),
+                                    address: addressController.text,
+                                    registrationFee:
+                                        widget
+                                            .fee['Consultation']?['registrationFee'] ??
+                                        0,
+                                    consultationFee:
+                                        widget
+                                            .fee['Consultation']?['consultationFee'] ??
+                                        0,
+                                    emergencyFee:
+                                        widget
+                                            .fee['Consultation']?['emergencyFee'] ??
+                                        0,
+                                    sugarTestFee:
+                                        widget
+                                            .fee['Consultation']?['sugarTestFee'] ??
+                                        0,
+                                    // temperature: temperature,
+                                    bloodPressure: bloodPressure,
+                                    sugar: sugar,
+                                    height: height,
+                                    weight: weight,
+                                    BMI: BMI,
+                                    PK: PK,
+                                    SpO2: SpO2,
+                                  );
+                                } else if (widget.fee['type'] ==
+                                    'TESTINGFEESANDSCANNINGFEE') {
+                                  final List tests =
+                                      widget
+                                          .fee['TestingAndScanningPatients'] ??
+                                      [];
+                                  final List ctScanOnly = tests
+                                      .where(
+                                        (test) => test["type"] == "CT-SCAN",
+                                      )
+                                      .toList();
+
+                                  if (ctScanOnly.isEmpty) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          "No testing data to send",
+                                        ),
+                                      ),
+                                    );
+                                    return;
+                                  }
+
+                                  await WhatsAppSendPaymentBill.sendTestingBill(
+                                    phoneNumber: cellController.text.replaceAll(
+                                      '+',
+                                      '',
+                                    ),
+                                    patientName: nameController.text,
+                                    patientId: idController.text,
+                                    tokenNo: tokenNo,
+                                    fee: widget.fee,
+                                    age: calculateAge(dobController.text),
+                                    address: addressController.text,
+                                    tests: List<Map<String, dynamic>>.from(
+                                      ctScanOnly,
+                                    ),
+                                  );
+                                } else if (widget.fee['type'] == 'ADVANCEFEE') {
+                                  await WhatsAppSendPaymentBill.sendAdvanceBill(
+                                    phoneNumber: cellController.text.replaceAll(
+                                      '+',
+                                      '',
+                                    ),
+                                    patientName: nameController.text,
+                                    patientId: idController.text,
+                                    tokenNo: tokenNo,
+                                    age: calculateAge(dobController.text),
+                                    address: addressController.text,
+                                    advancedFee: widget.fee['amount'] ?? 0,
+                                  );
+                                } else if (widget.fee['type'] ==
+                                        'DISCHARGEFEE' ||
+                                    widget.fee['type'] == 'DAILYTREATMENTFEE') {
+                                  await WhatsAppSendPaymentBill.sendDischargeBill(
+                                    phoneNumber: cellController.text.replaceAll(
+                                      '+',
+                                      '',
+                                    ),
+                                    patientName: nameController.text,
+                                    patientId: idController.text,
+                                    tokenNo: tokenNo,
+                                    age: calculateAge(dobController.text),
+                                    address: addressController.text,
+                                    advancedFee: widget.fee['amount'] ?? 0,
+                                    fee: widget.fee,
+                                  );
+                                } else if (widget.fee['type'] ==
+                                    'SUPPLEMENTARYFEE') {
+                                  await WhatsAppSendPaymentBill.sendSupplementaryBill(
+                                    phoneNumber: cellController.text.replaceAll(
+                                      '+',
+                                      '',
+                                    ),
+                                    patientName: nameController.text,
+                                    patientId: idController.text,
+                                    tokenNo: tokenNo,
+                                    age: calculateAge(dobController.text),
+                                    address: addressController.text,
+                                    fee: widget.fee,
+                                  );
+                                }
+                              },
+
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 15,
+                                  vertical: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.green,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const FaIcon(
+                                  FontAwesomeIcons.whatsapp,
+                                  color: Colors.white,
+                                  size: 26,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                ],
+              ),
+            ),
+          ),
+
+          if (_isProcessing || _isBuildingPdf)
+            Container(
+              color: Colors.black38,
+              child: const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _groupedFeeRow(String title, List<Map<String, dynamic>> items) {
+    //print('items $items');
+    final total = items.fold<num>(
+      0,
+      (sum, c) => sum + (num.tryParse(c['amount'].toString()) ?? 0),
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        feeRowWithRemove(title: title, amount: total, removable: false),
+
+        ...items.map((c) => _breakupRow(c)),
+      ],
+    );
+  }
+
+  DateTime parseStaffDate(String value) {
+    // Format: yyyy-MM-dd hh:mm a
+    final parts = value.split(' ');
+    final date = parts[0];
+    final time = parts[1];
+    final period = parts[2];
+
+    final d = DateTime.parse(date);
+    final t = time.split(':');
+
+    int hour = int.parse(t[0]);
+    final minute = int.parse(t[1]);
+
+    if (period == 'PM' && hour != 12) hour += 12;
+    if (period == 'AM' && hour == 12) hour = 0;
+
+    return DateTime(d.year, d.month, d.day, hour, minute);
+  }
+
+  Map<String, dynamic>? getStaffForCharge(
+    Map<String, dynamic> admission,
+    DateTime chargeDate,
+  ) {
+    final List staffChanges = admission['staffChange'] ?? [];
+
+    if (staffChanges.isEmpty) return null;
+
+    // Sort by dateTime
+    staffChanges.sort((a, b) {
+      return parseStaffDate(
+        a['dateTime'],
+      ).compareTo(parseStaffDate(b['dateTime']));
+    });
+
+    Map<String, dynamic>? staff;
+
+    for (final change in staffChanges) {
+      final changeTime = parseStaffDate(change['dateTime']);
+      if (!chargeDate.isBefore(changeTime)) {
+        staff = change;
+      }
+    }
+
+    return staff;
+  }
+
+  Map<String, dynamic>? getWardForCharge(
+    Map<String, dynamic> admission,
+    DateTime chargeDate,
+  ) {
+    final List wardChanges = admission['wardChange'] ?? [];
+
+    // If no ward change → use current bed ward
+    if (wardChanges.isEmpty) {
+      return admission['bed']?['ward'];
+    }
+
+    // Sort ward changes by movedAt (ASC)
+    wardChanges.sort((a, b) {
+      return DateTime.parse(
+        a['movedAt'],
+      ).compareTo(DateTime.parse(b['movedAt']));
+    });
+
+    // 🔑 Initial ward = fromWard of first change
+    Map<String, dynamic>? currentWard = {
+      'name': wardChanges.first['fromWard']['wardName'],
+      'type': admission['bed']?['ward']?['type'],
+      'bedNo': admission['bed']?['bedNo'],
+    };
+
+    // Apply changes if chargeDate >= movedAt
+    for (final change in wardChanges) {
+      final movedAt = DateTime.parse(change['movedAt']);
+
+      if (!chargeDate.isBefore(movedAt)) {
+        currentWard = {
+          'name': change['toWard']['wardName'],
+          'type': admission['bed']?['ward']?['type'],
+          'bedNo': admission['bed']?['bedNo'],
+        };
+      }
+    }
+
+    return currentWard;
+  }
+
+  String getStaffDisplayName(String? userId) {
+    if (userId == null || allStaff.isEmpty) return '';
+
+    final staff = allStaff.firstWhere(
+      (s) => s['user_Id'].toString() == userId.toString(),
+      orElse: () => {},
+    );
+
+    if (staff.isEmpty) return '';
+
+    final role = (staff['role'] ?? '').toString().toUpperCase();
+    final name = staff['name'] ?? '';
+
+    if (role == 'DOCTOR') {
+      final specialist = staff['specialist'];
+      return specialist != null && specialist.toString().isNotEmpty
+          ? '$name ($specialist)'
+          : name;
+    }
+
+    if (role == 'NURSE') {
+      return name;
+    }
+
+    return name;
+  }
+
+  Widget _breakupRow(Map<String, dynamic> charge) {
+    final desc = (charge['description'] ?? '').toString().toUpperCase();
+    final admission = widget.fee['Admission'];
+    // print('admission $admission');
+    // print('admission ${admission['staffChanges']}');
+
+    String title;
+
+    // ⏰ Charge date
+    final chargeDate = DateTime.parse(
+      (charge['createdAt'] ?? charge['chargeDate']).toString(),
+    );
+
+    /// ROOM RENT → resolve ward by date
+    if (desc == 'ROOM RENT') {
+      final ward = getWardForCharge(admission, chargeDate);
+      title =
+          '${ward?['name'] ?? 'Ward'} - ${ward?['type'] ?? ''} • ${ward?['bedNo'] ?? ''}'
+              .trim();
+    }
+    /// DOCTOR FEE
+    else if (desc == 'DOCTOR FEE') {
+      final staff = getStaffForCharge(admission, chargeDate);
+      title = getStaffDisplayName(staff?['doctor']);
+    } else if (desc == 'NURSE FEE') {
+      final staff = getStaffForCharge(admission, chargeDate);
+      title = getStaffDisplayName(staff?['nurse']);
+    }
+    /// OTHERS
+    else {
+      title = charge['description'] ?? 'Charge';
+    }
+
+    final num currentAmount =
+        num.tryParse(charge['amount']?.toString() ?? '0') ?? 0;
+    // Store original amount if not already stored
+    charge['originalAmount'] ??= currentAmount;
+    final num maxAmount = charge['originalAmount'];
+
+    return Padding(
+      padding: const EdgeInsets.only(left: 8, bottom: 3, right: 8, top: 3),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+              '• $title',
+              style: TextStyle(
+                fontSize: 13,
+                overflow: TextOverflow.ellipsis,
+                color: Colors.grey.shade600,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          // Editable amount field for pending payments
+          if (widget.index != 1)
+            SizedBox(
+              width: 80,
+              child: _EditableAmountField(
+                initialAmount: currentAmount,
+                maxAmount: maxAmount,
+                onAmountChanged: (newAmount) {
+                  // Store changes locally - will be saved on Pay Bill click
+                  final chargeId = charge['id'] as int;
+                  setState(() {
+                    _editedCharges[chargeId] = newAmount;
+                    charge['amount'] = newAmount;
+                  });
+                },
+              ),
+            )
+          else
+            Text('₹${charge['amount']}', style: const TextStyle(fontSize: 13)),
+        ],
+      ),
+    );
+  }
+
+  Widget feeHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Text(
+        title,
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+
+  Widget feeHeaderWithAmount(String title, num? amount) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          Text(
+            "₹ ${amount?.toStringAsFixed(0) ?? '0'}",
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _billRowWithRemove({
+    required String label,
+    required String value,
+    required VoidCallback onRemove,
+    required bool isDisabled,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+          ),
+
+          Text("₹ $value", style: const TextStyle(fontSize: 15)),
+
+          /// 🔴 Remove icon (always shown)
+          if (widget.index == 0)
+            IconButton(
+              icon: Icon(
+                Icons.remove_circle_outline,
+                size: 22,
+                color: isDisabled ? Colors.grey : Colors.redAccent,
+              ),
+              onPressed: isDisabled
+                  ? null // 🔒 disabled only for last item
+                  : onRemove,
+              tooltip: isDisabled
+                  ? "At least one test/scan must remain"
+                  : "Remove",
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget feeRowWithRemove({
+    required String title,
+    required num? amount,
+    required bool removable,
+    VoidCallback? onRemove,
+    VoidCallback? onEdit,
+    num? originalAmount,
+    Function(num)? onAmountChanged,
+  }) {
+    if (amount == null || amount < 0) return const SizedBox.shrink();
+
+    // Use original amount if provided, otherwise use current amount as original
+    final num maxAmount = originalAmount ?? amount;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          /// Title
+          Expanded(
+            flex: 2,
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: Colors.grey[800],
+              ),
+            ),
+          ),
+
+          /// Editable Amount Text Field (only for pending payments)
+          if (widget.index != 1 && onAmountChanged != null)
+            SizedBox(
+              width: 100,
+              child: _EditableAmountField(
+                initialAmount: amount,
+                maxAmount: maxAmount,
+                onAmountChanged: onAmountChanged,
+              ),
+            )
+          else
+            Text(
+              "₹ ${amount.toStringAsFixed(0)}",
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+
+          /// Remove Icon (only if removable and no edit callback)
+          if (widget.index != 1 && onEdit == null && removable)
+            IconButton(
+              icon: Icon(
+                Icons.remove_circle_outline,
+                size: 20,
+                color: Colors.redAccent,
+              ),
+              onPressed: onRemove,
+              tooltip: "Remove $title",
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget feeRowAdvance({required String title, required num? amount}) {
+    if (amount == null || amount == 0) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          /// Amount Row (tap to edit)
+          Expanded(child: InkWell(child: feeRow(title, amount))),
+          if (widget.index != 1)
+            IconButton(
+              icon: Icon(Icons.check_circle, size: 22, color: Colors.green),
+              onPressed: () {},
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _subBillRowWithRemove({
+    required String label,
+    required num amount,
+    required bool isDisabled,
+    required VoidCallback onRemove,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 16, top: 4, bottom: 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text("• $label", style: const TextStyle(fontSize: 14)),
+          ),
+          Text("₹ ${amount.toStringAsFixed(0)}"),
+          if (widget.index == 0)
+            IconButton(
+              icon: Icon(
+                Icons.remove_circle_outline,
+                size: 18,
+                color: isDisabled ? Colors.grey : Colors.redAccent,
+              ),
+              onPressed: isDisabled ? null : onRemove,
+              tooltip: isDisabled
+                  ? "At least one option must remain"
+                  : "Remove option",
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget buildPaperToggleButton() {
+    final isA4 = _selectedPaperSize == PaperSizeType.a4;
+
+    return GestureDetector(
+      onTap: () async {
+        final newType = isA4 ? PaperSizeType.receipt3inch : PaperSizeType.a4;
+
+        setState(() {
+          _selectedPaperSize = newType;
+        });
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(
+          'paper_size',
+          newType == PaperSizeType.a4 ? 'a4' : '3inch',
+        );
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isA4
+                ? [Colors.deepPurple, Colors.purpleAccent]
+                : [Colors.blueAccent, Colors.lightBlue],
+          ),
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isA4 ? Icons.picture_as_pdf : Icons.receipt_long,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 8),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              transitionBuilder: (child, animation) =>
+                  FadeTransition(opacity: animation, child: child),
+              child: Text(
+                isA4 ? "A4 Size" : "3 Inch",
+                key: ValueKey(isA4),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  //////////////////////////////////////////////feee///////////////////////////
+  Widget feeRow(String title, num? amount, {bool isTotal = false}) {
+    if (amount == null || amount == 0) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: isTotal ? 17 : 15,
+                fontWeight: isTotal ? FontWeight.w800 : FontWeight.w700,
+                color: isTotal ? Colors.black : Colors.grey[800],
+              ),
+            ),
+          ),
+          Text(
+            "₹ ${amount.toStringAsFixed(0)}",
+            style: TextStyle(
+              fontSize: isTotal ? 17 : 15,
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.w600,
+              color: isTotal ? Colors.green[700] : Colors.black87,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCancelDialog(
+    BuildContext context, {
+    required int paymentId,
+    required int consultationId,
+    required String? staffId,
+  }) {
+    bool isLoading = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              title: Text(
+                widget.fee['type'] == 'DAILYTREATMENTFEE'
+                    ? "Pay Later Confirmation"
+                    : "Cancel Confirmation",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              content: Text(
+                "Are you sure you want to ${widget.fee['type'] == 'DAILYTREATMENTFEE' ? 'Pay later' : 'cancel'} this payment and consultation?",
+              ),
+              actions: [
+                /// ❌ CANCEL BUTTON
+                TextButton(
+                  onPressed: isLoading ? null : () => Navigator.pop(ctx),
+                  child: const Text(
+                    "Cancel",
+                    style: TextStyle(color: Colors.black),
+                  ),
+                ),
+
+                /// ✅ OK BUTTON WITH LOADER
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.redAccent,
+                  ),
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          setState(() => isLoading = true);
+
+                          try {
+                            final dateTime = DateTime.now();
+
+                            /// 🔹 Update Payment
+                            await PaymentService().updatePayment(paymentId, {
+                              'status':
+                                  widget.fee['type'] == 'DAILYTREATMENTFEE'
+                                  ? 'PAYLATER'
+                                  : 'CANCELLED',
+                              'staff_Id': staffId.toString(),
+                              'updatedAt': dateTime.toString(),
+                            });
+                            if (widget.fee['type'] != 'DAILYTREATMENTFEE') {
+                              widget.fee['type'] == 'ADMISSIONFEE'
+                                  ? await ChargeService()
+                                        .updateStatusByAdmission(
+                                          admissionId: consultationId,
+                                          status: 'CANCELLED',
+                                        )
+                                  :
+                                    /// 🔹 Update Consultation
+                                    await ConsultationService()
+                                        .updateConsultation(consultationId, {
+                                          'status': 'CANCELLED',
+                                        });
+                            }
+
+                            if (context.mounted) {
+                              Navigator.pop(ctx); // close dialog
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    widget.fee['type'] == 'DAILYTREATMENTFEE'
+                                        ? " Pay later successfully"
+                                        : "❌ Cancelled successfully",
+                                  ),
+                                  backgroundColor:
+                                      widget.fee['type'] == 'DAILYTREATMENTFEE'
+                                      ? Colors.blueAccent
+                                      : Colors.redAccent,
+                                ),
+                              );
+                              Navigator.pop(context, true);
+                            }
+                          } catch (e) {
+                            setState(() => isLoading = false);
+
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Failed to cancel"),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          "YES",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  List<pw.TableRow> buildFeeRows({
+    required num registrationFee,
+    required num consultationFee,
+    required num emergencyFee,
+    required num sugarTestFee,
+  }) {
+    final rows = <pw.TableRow>[];
+    // 🔹 Section Header
+    rows.add(
+      pw.TableRow(
+        children: [
+          pw.Padding(
+            padding: const pw.EdgeInsets.only(top: 6, bottom: 10, left: 8),
+            child: pw.Text(
+              "Bill Details",
+              style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold),
+            ),
+          ),
+          pw.SizedBox(),
+        ],
+      ),
+    );
+
+    void addRow(String title, num? amount) {
+      if (amount == null || amount == 0) return;
+
+      rows.add(
+        pw.TableRow(
+          children: [
+            pw.Padding(
+              padding: const pw.EdgeInsets.symmetric(
+                vertical: 6,
+                horizontal: 8,
+              ),
+              child: pw.Text(
+                title,
+                style: pw.TextStyle(fontSize: 12, color: PdfColors.grey900),
+              ),
+            ),
+            pw.Padding(
+              padding: const pw.EdgeInsets.symmetric(
+                vertical: 6,
+                horizontal: 8,
+              ),
+              child: pw.Align(
+                alignment: pw.Alignment.centerRight,
+                child: pw.Text(
+                  "₹ ${amount.toStringAsFixed(0)}",
+                  style: pw.TextStyle(
+                    fontSize: 11,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 🔹 Fee Rows
+    addRow("Registration Fee", registrationFee);
+    addRow("Consultation Fee", consultationFee);
+    addRow("Emergency Fee", emergencyFee);
+    addRow("Sugar Test Fee", sugarTestFee);
+
+    return rows;
+  }
+
+  // --- UI Helpers ---
+  Widget _infoRow(String label, String value) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+              "$label:",
+              style: const TextStyle(
+                color: Colors.black87,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              value.isEmpty ? "-" : value,
+              style: const TextStyle(color: Colors.black87),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static double calculateTotal(dynamic amount) {
+    if (amount == null) return 0.0;
+    return (amount as num).toDouble();
+  }
+
+  static String extractString(dynamic value, [String? key]) {
+    if (value == null) return '';
+    if (value is String) return value;
+    if (value is Map && key != null) {
+      return value[key]?.toString() ?? '';
+    }
+    return value.toString();
+  }
+
+  static String extractName(dynamic name) {
+    if (name == null) return '';
+    if (name is String) return name;
+    if (name is Map) {
+      final first = name['first'] ?? '';
+      final last = name['last'] ?? '';
+      return '$first $last'.trim();
+    }
+    return name.toString();
+  }
+}
+
+/// Editable Amount Field Widget for Fee Summary
+class _EditableAmountField extends StatefulWidget {
+  final num initialAmount;
+  final num maxAmount;
+  final Function(num) onAmountChanged;
+
+  const _EditableAmountField({
+    required this.initialAmount,
+    required this.maxAmount,
+    required this.onAmountChanged,
+  });
+
+  @override
+  State<_EditableAmountField> createState() => _EditableAmountFieldState();
+}
+
+class _EditableAmountFieldState extends State<_EditableAmountField> {
+  late TextEditingController _controller;
+  bool _hasError = false;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(
+      text: widget.initialAmount.toStringAsFixed(0),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _validateAndUpdate(String value) {
+    final newAmount = num.tryParse(value);
+
+    if (newAmount == null) {
+      setState(() {
+        _hasError = true;
+        _errorMessage = 'Invalid';
+      });
+      return;
+    }
+
+    if (newAmount > widget.maxAmount) {
+      setState(() {
+        _hasError = true;
+        _errorMessage = 'Max: ₹${widget.maxAmount.toStringAsFixed(0)}';
+      });
+      // Revert to max amount
+      _controller.text = widget.maxAmount.toStringAsFixed(0);
+      widget.onAmountChanged(widget.maxAmount);
+      return;
+    }
+
+    if (newAmount < 0) {
+      setState(() {
+        _hasError = true;
+        _errorMessage = 'Min: ₹0';
+      });
+      _controller.text = '0';
+      widget.onAmountChanged(0);
+      return;
+    }
+
+    setState(() {
+      _hasError = false;
+      _errorMessage = null;
+    });
+    widget.onAmountChanged(newAmount);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          height: 36,
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: _hasError ? Colors.red : Colors.grey.shade300,
+              width: 1,
+            ),
+          ),
+          child: TextField(
+            controller: _controller,
+            keyboardType: TextInputType.number,
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: _hasError ? Colors.red : Colors.black87,
+            ),
+            decoration: InputDecoration(
+              prefixText: '₹ ',
+              prefixStyle: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 10,
+                vertical: 8,
+              ),
+              border: InputBorder.none,
+              isDense: true,
+            ),
+            onChanged: _validateAndUpdate,
+            onSubmitted: _validateAndUpdate,
+          ),
+        ),
+        if (_hasError && _errorMessage != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(
+              _errorMessage!,
+              style: const TextStyle(color: Colors.red, fontSize: 10),
+            ),
+          ),
+      ],
+    );
+  }
+}

@@ -57,6 +57,8 @@ Future<pw.Document> buildPdf({
   final bool isTestOnly = consultation?['isTestOnly'] ?? false;
   final referredDoctorName =
       consultation?['referredByDoctorName'].toString() ?? '-';
+
+  final supplementary = fee['Supplementary'] ?? {};
   // String admitId ;
   // String bedNo ;
   // String wardName ;
@@ -803,6 +805,39 @@ Future<pw.Document> buildPdf({
                 ),
               ),
             ],
+            if (fee['type'] == 'SUPPLEMENTARYFEE') ...[
+              pw.Table(
+                columnWidths: {
+                  0: const pw.FlexColumnWidth(3),
+                  1: const pw.FlexColumnWidth(1),
+                },
+                children: supplementary.expand<pw.TableRow>((item) {
+                  return buildSupplementaryFeeRows(
+                    description: item['description'] ?? '-',
+                    amount: item['amount'] ?? 0,
+                  );
+                }).toList(),
+              ),
+              // if (supplementary != null &&
+              //     supplementary.isNotEmpty)
+              //   ...supplementary.map<Widget>((item) {
+              //     return feeRowWithRemove(
+              //       title: item['description'] == '-'
+              //           ? 'Supplementary Fee'
+              //           : item['description'],
+              //       amount: item['amount'] ?? 0,
+              //       removable: false,
+              //       originalAmount:
+              //       widget.fee['originalAmount'] ??
+              //           widget.fee['amount'],
+              //       onAmountChanged: (e) {
+              //         setState(() {
+              //           widget.fee['amount'] = e;
+              //         });
+              //       },
+              //     );
+              //   }).toList()
+            ],
             if (fee['type'] == 'DAILYTREATMENTFEE' ||
                 fee['type'] == 'DISCHARGEFEE') ...[
               // pw.Column(
@@ -1548,6 +1583,50 @@ List<pw.TableRow> buildAdvancedFeeRows({required num advancedFee}) {
   // 🔹 Fee Rows
   //addRow("Registration Fee", registrationFee);
   addRow("Advance Fee", advancedFee);
+
+  return rows;
+}
+
+List<pw.TableRow> buildSupplementaryFeeRows({
+  required num amount,
+  required String description,
+}) {
+  final rows = <pw.TableRow>[];
+
+  void addRow(String title, num? amount) {
+    if (amount == null || amount == 0) return;
+
+    rows.add(
+      pw.TableRow(
+        children: [
+          pw.Padding(
+            padding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 5),
+            child: pw.Text(
+              title,
+              style: pw.TextStyle(fontSize: 12, color: PdfColors.grey900),
+            ),
+          ),
+          pw.Padding(
+            padding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+            child: pw.Align(
+              alignment: pw.Alignment.centerRight,
+              child: pw.Text(
+                "₹ ${amount.toStringAsFixed(0)}",
+                style: pw.TextStyle(
+                  fontSize: 11,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 🔹 Fee Rows
+  //addRow("Registration Fee", registrationFee);
+  addRow(description, amount);
 
   return rows;
 }
