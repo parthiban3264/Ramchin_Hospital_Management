@@ -43,30 +43,65 @@ class AccountsReportPdf {
       };
     }
 
-    final regTotals = getModeTotals('REGISTRATIONFEE');
+    Map<String, double> getFeeTotals(String key) {
+      final m = data[key] as Map<String, dynamic>? ?? {};
+      return {
+        'cash': ((m['ManualPay'] ?? 0) as num).toDouble(),
+        'online': ((m['OnlinePay'] ?? 0) as num).toDouble(),
+      };
+    }
+
+    final regTotals = getFeeTotals('registerationFee');
     // Actually, looking at the provided JSON, REGISTRATIONFEE under 'type' has the breakdown.
     final double registrationCash = regTotals['cash'] ?? 0.0;
     final double registrationOnline = regTotals['online'] ?? 0.0;
 
     // Consultation breakdown usually comes from 'consultationDrFee'
+    // final Map<String, dynamic> drFeeMap = data['consultationDrFee'] is Map
+    //     ? data['consultationDrFee'] as Map<String, dynamic>
+    //     : {};
+    // final Map<String, Map<String, double>> doctorTotals = {};
+    // drFeeMap.forEach((name, amount) {
+    //   // Truncate name to fit 58mm layout
+    //   final displayName = name.length > 12
+    //       ? '${name.substring(0, 10)}...'
+    //       : name;
+    //   doctorTotals[displayName] = {
+    //     'cash': (amount ?? 0).toDouble(),
+    //     'online': 0.0,
+    //   };
+    // });
+
     final Map<String, dynamic> drFeeMap = data['consultationDrFee'] is Map
-        ? data['consultationDrFee'] as Map<String, dynamic>
+        ? Map<String, dynamic>.from(data['consultationDrFee'])
         : {};
+
     final Map<String, Map<String, double>> doctorTotals = {};
+
     drFeeMap.forEach((name, amount) {
-      // Truncate name to fit 58mm layout
       final displayName = name.length > 12
           ? '${name.substring(0, 10)}...'
           : name;
+
+      final feeMap = Map<String, dynamic>.from(amount ?? {});
+
       doctorTotals[displayName] = {
-        'cash': (amount ?? 0).toDouble(),
-        'online': 0.0,
+        'cash': ((feeMap['ManualPay'] ?? 0) as num).toDouble(),
+        'online': ((feeMap['OnlinePay'] ?? 0) as num).toDouble(),
       };
     });
 
-    final testScanTotals = getModeTotals('TESTINGFEESANDSCANNINGFEE');
-    final double testScanCash = testScanTotals['cash'] ?? 0.0;
-    final double testScanOnline = testScanTotals['online'] ?? 0.0;
+    // final testScanTotals = getModeTotals('TESTINGFEESANDSCANNINGFEE');
+    // final double testScanCash = testScanTotals['cash'] ?? 0.0;
+    // final double testScanOnline = testScanTotals['online'] ?? 0.0;
+
+    final testingTotals = getFeeTotals('testingAmount');
+    final scanningTotals = getFeeTotals('ScanningAmount');
+
+    final double testScanCash =
+        testingTotals['cash']! + scanningTotals['cash']!;
+    final double testScanOnline =
+        testingTotals['online']! + scanningTotals['online']!;
 
     final dischargeTotals = getModeTotals('DISCHARGEFEE');
     final double dischargeCash = dischargeTotals['cash'] ?? 0.0;
@@ -84,13 +119,13 @@ class AccountsReportPdf {
     final double dailyTreatmentCash = dailyTotals['cash'] ?? 0.0;
     final double dailyTreatmentOnline = dailyTotals['online'] ?? 0.0;
 
-    final sugarTotals = getModeTotals(
+    final sugarTotals = getFeeTotals(
       'SUGARTESTFEE',
     ); // If backend provides this key
     final double sugarCash = sugarTotals['cash'] ?? 0.0;
     final double sugarOnline = sugarTotals['online'] ?? 0.0;
 
-    final emergencyTotals = getModeTotals('EMERGENCYFEE');
+    final emergencyTotals = getFeeTotals('EMERGENCYFEE');
     final double emergencyCash = emergencyTotals['cash'] ?? 0.0;
     final double emergencyOnline = emergencyTotals['online'] ?? 0.0;
 

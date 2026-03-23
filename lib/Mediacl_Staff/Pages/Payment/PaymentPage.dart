@@ -635,7 +635,24 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
         status: 'PAID',
       );
     }
+    if (widget.fee['type'] == 'ROOMFEE') {
+      final int admissionId = widget.fee['Admission']['id'];
 
+      final List<int> chargesIds = (widget.fee['Admission']['charges'] as List)
+          .cast<Map<String, dynamic>>()
+          .where(
+            (charge) =>
+                charge['admissionId'] == admissionId &&
+                charge['description'] == 'Room Rent',
+          ) // ✅ added condition
+          .map((charge) => charge['id'] as int)
+          .toList();
+
+      await ChargeService().updateChargesByAdmission(
+        chargesIds: chargesIds,
+        status: 'PAID',
+      );
+    }
     // final Id = widget.patient['Consultation']?[0]?['id'];
     final consultationId = widget.fee['consultation_Id'];
 
@@ -1501,7 +1518,8 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                   const Divider(thickness: 1.2, height: 30),
                   if (widget.fee['type'] == 'DAILYTREATMENTFEE' ||
                       widget.fee['type'] == 'DISCHARGEFEE' ||
-                      widget.fee['type'] == 'ADVANCEFEE') ...[
+                      widget.fee['type'] == 'ADVANCEFEE' ||
+                      widget.fee['type'] == 'ROOMFEE') ...[
                     const Text(
                       "Admission Details",
                       style: TextStyle(
@@ -1780,47 +1798,7 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                     ),
                   ],
 
-                  if (widget.fee['type'] == 'DAILYTREATMENTFEE' ||
-                      widget.fee['type'] == 'DISCHARGEFEE') ...[
-                    // if (widget.index == 1)
-                    //   for (final charge in admission?['charges'] ?? [])
-                    //     if ((charge['status'] ?? '').toString().toUpperCase() ==
-                    //         'PAID')
-                    //       feeRowWithRemove(
-                    //         title: charge['description'] ?? 'Charge',
-                    //         amount:
-                    //             num.tryParse(
-                    //               charge['amount']?.toString() ?? '0',
-                    //             ) ??
-                    //             0,
-                    //         removable: false,
-                    //       ),
-                    // if (widget.index != 1)
-                    //   for (final charge in admission?['charges'] ?? [])
-                    //     if ((charge['status'] ?? '').toString().toUpperCase() ==
-                    //         'PENDING')
-                    //       feeRowWithRemove(
-                    //         title: charge['description'] ?? 'Charge',
-                    //         amount:
-                    //             num.tryParse(
-                    //               charge['amount']?.toString() ?? '0',
-                    //             ) ??
-                    //             0,
-                    //         removable: false,
-                    //       ),
-                    // Column(
-                    //   crossAxisAlignment: CrossAxisAlignment.center,
-                    //   children: [
-                    //     // 📅 Date range header
-                    //     dateHeader(charges),
-                    //
-                    //     const SizedBox(height: 4),
-                    //
-                    //     // 💰 Grouped charges
-                    //     for (final entry in groupedCharges.entries)
-                    //       _buildGroupedFee(entry.key, entry.value),
-                    //   ],
-                    // ),
+                  if (widget.fee['type'] == 'DISCHARGEFEE') ...[
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: dayWiseCharges.entries.map((entry) {
@@ -1861,7 +1839,7 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                               ),
                             ),
 
-                            // Categories
+                            //Categories
                             if (grouped['Room Rent']!.isNotEmpty)
                               _groupedFeeRow(
                                 'Room Rent',
@@ -1879,6 +1857,150 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                               ),
                             if (grouped['Others']!.isNotEmpty)
                               _groupedFeeRow('Others', grouped['Others']!),
+                          ],
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                  if (widget.fee['type'] == 'DAILYTREATMENTFEE') ...[
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: dayWiseCharges.entries.map((entry) {
+                        final grouped = _groupByCategory(entry.value);
+                        // final total = grouped.values
+                        //     .expand((e) => e)
+                        //     .fold<num>(
+                        //       0,
+                        //       (sum, c) =>
+                        //           sum +
+                        //           (num.tryParse(c['amount'].toString()) ?? 0),
+                        //     );
+                        final total =
+                            [
+                              ...grouped['Doctor Fee']!,
+                              ...grouped['Nurse Fee']!,
+                              ...grouped['Others']!,
+                            ].fold<num>(
+                              0,
+                              (sum, c) =>
+                                  sum +
+                                  (num.tryParse(c['amount'].toString()) ?? 0),
+                            );
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Date Header
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Row(
+                                children: [
+                                  Text(
+                                    entry.key,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 20,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  Text(
+                                    '₹$total',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 20,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            //Categories
+                            // if (grouped['Room Rent']!.isNotEmpty)
+                            //   _groupedFeeRow(
+                            //     'Room Rent',
+                            //     grouped['Room Rent']!,
+                            //   ),
+                            if (grouped['Doctor Fee']!.isNotEmpty)
+                              _groupedFeeRow(
+                                'Doctor Fee',
+                                grouped['Doctor Fee']!,
+                              ),
+                            if (grouped['Nurse Fee']!.isNotEmpty)
+                              _groupedFeeRow(
+                                'Nurse Fee',
+                                grouped['Nurse Fee']!,
+                              ),
+                            if (grouped['Others']!.isNotEmpty)
+                              _groupedFeeRow('Others', grouped['Others']!),
+                          ],
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                  if (widget.fee['type'] == 'ROOMFEE') ...[
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: dayWiseCharges.entries.map((entry) {
+                        final grouped = _groupByCategory(entry.value);
+                        // final total = grouped.values
+                        //     .expand((e) => e)
+                        //     .fold<num>(
+                        //       0,
+                        //       (sum, c) =>
+                        //           sum +
+                        //           (num.tryParse(c['amount'].toString()) ?? 0),
+                        //     );
+                        final total = grouped['Room Rent']!.fold<num>(
+                          0,
+                          (sum, c) =>
+                              sum + (num.tryParse(c['amount'].toString()) ?? 0),
+                        );
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Date Header
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Row(
+                                children: [
+                                  Text(
+                                    entry.key,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 20,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  Text(
+                                    '₹$total',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 20,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            //Categories
+                            if (grouped['Room Rent']!.isNotEmpty)
+                              _groupedFeeRow(
+                                'Room Rent',
+                                grouped['Room Rent']!,
+                              ),
+                            // if (grouped['Doctor Fee']!.isNotEmpty)
+                            //   _groupedFeeRow(
+                            //     'Doctor Fee',
+                            //     grouped['Doctor Fee']!,
+                            //   ),
+                            // if (grouped['Nurse Fee']!.isNotEmpty)
+                            //   _groupedFeeRow(
+                            //     'Nurse Fee',
+                            //     grouped['Nurse Fee']!,
+                            //   ),
+                            // if (grouped['Others']!.isNotEmpty)
+                            //   _groupedFeeRow('Others', grouped['Others']!),
                           ],
                         );
                       }).toList(),
@@ -3199,7 +3321,7 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
     );
   }
 
-  //////////////////////////////////////////////feee///////////////////////////
+  //////////////////////////////////////////////fees///////////////////////////
   Widget feeRow(String title, num? amount, {bool isTotal = false}) {
     if (amount == null || amount == 0) {
       return const SizedBox.shrink();

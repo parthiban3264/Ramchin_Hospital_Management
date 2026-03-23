@@ -5,9 +5,11 @@ import '../../Admin/Colors/custom_colors.dart';
 import '../Admin/Pages/admin_edit_profile_page.dart';
 import '../Admin/Pages/admin_profile_page.dart';
 import '../Admin/Pages/change_password_page.dart';
+import '../Admin/Pages/contact_page.dart';
 import '../Admin/Pages/flow_instruction_page.dart';
 import '../Admin/Pages/privacy_policy_page.dart';
 import '../Admin/Pages/terms_conditions_page.dart';
+import '../Admin/Pages/version_update_page.dart';
 import '../Pages/NotificationsPage.dart';
 import '../Pages/login/widget/HospitalLoginPage.dart';
 import '../Services/auth_service.dart';
@@ -54,9 +56,19 @@ class AdminMobileDrawer extends StatelessWidget {
         "page": const TermsConditionsPage(),
       },
       {
-        "icon": Icons.privacy_tip_outlined,
+        "icon": Icons.integration_instructions,
         "label": "FlowChart & Instruction",
         "page": FlowChartInstructionPage(),
+      },
+      {
+        "icon": Icons.contact_phone,
+        "label": "Contact Us",
+        "page": ContactPage(),
+      },
+      {
+        "icon": Icons.update,
+        "label": "App Version Check",
+        "page": VersionUpdatePage(),
       },
 
       // {

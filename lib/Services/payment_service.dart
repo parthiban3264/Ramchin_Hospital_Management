@@ -538,21 +538,28 @@ class PaymentService {
     String? day,
     int? month,
     int? year,
+    String? fromDate,
+    String? toDate,
   }) async {
     try {
       final hospitalId = await getHospitalId();
 
-      final Uri uri = Uri.parse('$baseUrl/payments/all/paid/Accounts/filterData/$hospitalId').replace(
-        queryParameters: {
-          if (day != null) 'day': day,
-          if (month != null) 'month': month.toString(),
-          if (year != null) 'year': year.toString(),
-        },
-      );
+      final Uri uri =
+          Uri.parse(
+            '$baseUrl/payments/all/paid/Accounts/filterData/$hospitalId',
+          ).replace(
+            queryParameters: {
+              if (day != null) 'day': day,
+              if (month != null) 'month': month.toString(),
+              if (year != null) 'year': year.toString(),
+              if (fromDate != null) 'fromDate': fromDate,
+              if (toDate != null) 'toDate': toDate,
+            },
+          );
 
       final response = await http.get(uri);
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final decoded = jsonDecode(response.body);
 
         if (decoded is Map<String, dynamic> && decoded.containsKey('data')) {

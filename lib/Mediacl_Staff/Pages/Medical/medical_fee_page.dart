@@ -36,6 +36,7 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
   final MedicineService medicineService = MedicineService();
   bool _isLoading = false;
   bool paymentSuccess = false;
+  bool isLoadings = false;
 
   late List medicines;
   late List injections;
@@ -566,83 +567,177 @@ class _MedicalFeePageState extends State<MedicalFeePage> {
                                 borderRadius: BorderRadius.circular(14),
                               ),
                             ),
-                            onPressed: () {
-                              final medicalBillSelectedMedicines =
-                                  widget.index == 1
-                                  ? medicines
-                                        .where(
-                                          (m) =>
-                                              m['selected'] == true &&
-                                              m['status'] != 'CANCELLED',
-                                        )
-                                        .map(
-                                          (m) => {
-                                            'name':
-                                                m['medicine']?['name'] ??
-                                                'Medicine',
-                                            'quantityNeeded':
-                                                m['quantityNeeded'] -
-                                                m['dispensed_quantity'],
-                                            'total':
-                                                m['total_amount'] -
-                                                m['dispenses'][0]['amount'],
-                                            'batchNo':
-                                                m['dispenses'][0]['batch_Id'],
-                                            'days': m['days'],
-                                            'after_Eat': m['after_Eat'],
-                                            'morning': m['morning'],
-                                            'afternoon': m['afternoon'],
-                                            'night': m['night'],
-                                            'category':
-                                                m['medicine']['category'],
-                                            'medicine': m['medicine'],
-                                          },
-                                        )
-                                        .toList()
-                                  : medicines
-                                        .where(
-                                          (m) =>
-                                              m['selected'] == true &&
-                                              m['status'] != 'CANCELLED',
-                                        )
-                                        .map(
-                                          (m) => {
-                                            'name':
-                                                m['medicine']?['name'] ??
-                                                'Medicine',
-                                            'quantityNeeded':
-                                                m['quantityNeeded'],
-                                            'total': m['total'],
-                                            'batchNo':
-                                                m['dispenses'][0]['batch_Id'],
-                                            'days': m['days'],
-                                            'after_Eat': m['after_Eat'],
-                                            'morning': m['morning'],
-                                            'afternoon': m['afternoon'],
-                                            'night': m['night'],
-                                            'category':
-                                                m['medicine']['category'],
-                                            'medicine': m['medicine'],
-                                          },
-                                        )
-                                        .toList();
 
-                              MedicalPdfBillMaker.generateMedicalBillPdf(
-                                patientData: widget.consultation['patient'],
-                                allConsultation: widget.consultation,
-                                totalAmount: totalCharges,
-                                medicines: medicalBillSelectedMedicines,
-                              );
-                              // Your print logic here
-                              print("Printing Bill...");
-                            },
-                            child: const Text(
-                              "Yes, Print",
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                            // onPressed: () {
+                            //   final medicalBillSelectedMedicines =
+                            //       widget.index == 1
+                            //       ? medicines
+                            //             .where(
+                            //               (m) =>
+                            //                   m['selected'] == true &&
+                            //                   m['status'] != 'CANCELLED',
+                            //             )
+                            //             .map(
+                            //               (m) => {
+                            //                 'name':
+                            //                     m['medicine']?['name'] ??
+                            //                     'Medicine',
+                            //                 'quantityNeeded':
+                            //                     m['quantityNeeded'] -
+                            //                     m['dispensed_quantity'],
+                            //                 'total':
+                            //                     m['total_amount'] -
+                            //                     m['dispenses'][0]['amount'],
+                            //                 'batchNo':
+                            //                     m['dispenses'][0]['batch_Id'],
+                            //                 'days': m['days'],
+                            //                 'after_Eat': m['after_Eat'],
+                            //                 'morning': m['morning'],
+                            //                 'afternoon': m['afternoon'],
+                            //                 'night': m['night'],
+                            //                 'category':
+                            //                     m['medicine']['category'],
+                            //                 'medicine': m['medicine'],
+                            //               },
+                            //             )
+                            //             .toList()
+                            //       : medicines
+                            //             .where(
+                            //               (m) =>
+                            //                   m['selected'] == true &&
+                            //                   m['status'] != 'CANCELLED',
+                            //             )
+                            //             .map(
+                            //               (m) => {
+                            //                 'name':
+                            //                     m['medicine']?['name'] ??
+                            //                     'Medicine',
+                            //                 'quantityNeeded':
+                            //                     m['quantityNeeded'],
+                            //                 'total': m['total'],
+                            //                 'batchNo':
+                            //                     m['dispenses'][0]['batch_Id'],
+                            //                 'days': m['days'],
+                            //                 'after_Eat': m['after_Eat'],
+                            //                 'morning': m['morning'],
+                            //                 'afternoon': m['afternoon'],
+                            //                 'night': m['night'],
+                            //                 'category':
+                            //                     m['medicine']['category'],
+                            //                 'medicine': m['medicine'],
+                            //               },
+                            //             )
+                            //             .toList();
+                            //
+                            //   MedicalPdfBillMaker.generateMedicalBillPdf(
+                            //     patientData: widget.consultation['patient'],
+                            //     allConsultation: widget.consultation,
+                            //     totalAmount: totalCharges,
+                            //     medicines: medicalBillSelectedMedicines,
+                            //   );
+                            //   // Your print logic here
+                            //   print("Printing Bill...");
+                            // },
+                            onPressed: isLoadings
+                                ? null
+                                : () async {
+                                    setState(() => isLoadings = true);
+
+                                    try {
+                                      final medicalBillSelectedMedicines =
+                                          widget.index == 1
+                                          ? medicines
+                                                .where(
+                                                  (m) =>
+                                                      m['selected'] == true &&
+                                                      m['status'] !=
+                                                          'CANCELLED',
+                                                )
+                                                .map(
+                                                  (m) => {
+                                                    'name':
+                                                        m['medicine']?['name'] ??
+                                                        'Medicine',
+                                                    'quantityNeeded':
+                                                        m['quantityNeeded'] -
+                                                        m['dispensed_quantity'],
+                                                    'total':
+                                                        m['total_amount'] -
+                                                        m['dispenses'][0]['amount'],
+                                                    'batchNo':
+                                                        m['dispenses'][0]['batch_Id'],
+                                                    'days': m['days'],
+                                                    'after_Eat': m['after_Eat'],
+                                                    'morning': m['morning'],
+                                                    'afternoon': m['afternoon'],
+                                                    'night': m['night'],
+                                                    'category':
+                                                        m['medicine']['category'],
+                                                    'medicine': m['medicine'],
+                                                  },
+                                                )
+                                                .toList()
+                                          : medicines
+                                                .where(
+                                                  (m) =>
+                                                      m['selected'] == true &&
+                                                      m['status'] !=
+                                                          'CANCELLED',
+                                                )
+                                                .map(
+                                                  (m) => {
+                                                    'name':
+                                                        m['medicine']?['name'] ??
+                                                        'Medicine',
+                                                    'quantityNeeded':
+                                                        m['quantityNeeded'],
+                                                    'total': m['total'],
+                                                    'batchNo':
+                                                        m['dispenses'][0]['batch_Id'],
+                                                    'days': m['days'],
+                                                    'after_Eat': m['after_Eat'],
+                                                    'morning': m['morning'],
+                                                    'afternoon': m['afternoon'],
+                                                    'night': m['night'],
+                                                    'category':
+                                                        m['medicine']['category'],
+                                                    'medicine': m['medicine'],
+                                                  },
+                                                )
+                                                .toList();
+
+                                      await MedicalPdfBillMaker.generateMedicalBillPdf(
+                                        patientData:
+                                            widget.consultation['patient'],
+                                        allConsultation: widget.consultation,
+                                        totalAmount: totalCharges,
+                                        medicines: medicalBillSelectedMedicines,
+                                      );
+
+                                      print("Printing Bill...");
+                                    } catch (e) {
+                                      print("Error: $e");
+                                    } finally {
+                                      setState(() => isLoadings = false);
+                                    }
+                                  },
+                            child: isLoadings
+                                ? const SizedBox(
+                                    height: 18,
+                                    width: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Text(
+                                    "Yes, Print",
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
+                                  ),
                           ),
                         ),
                       ],

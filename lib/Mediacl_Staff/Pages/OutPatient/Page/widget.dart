@@ -42,29 +42,13 @@ Future<pw.Document> buildPdf({
   required TextEditingController addressController,
   required List<Map<String, dynamic>> loadStaff,
 }) async {
-  // print('fee $fee');
-  // print('feeType ${fee['type']}');
   final consultation = fee['Consultation'];
-  // final temperature = consultation['temperature'].toString();
-  // final bloodPressure = consultation['bp'] ?? '_';
-  // final sugar = consultation['sugar'] ?? '_';
-  // final height = consultation['height'].toString() ?? '_';
-  // final weight = consultation['weight'].toString() ?? '_';
-  // final BMI = consultation['BMI'].toString() ?? '_';
-  // final PK = consultation['PK'].toString() ?? '_';
-  // final SpO2 = consultation['SPO2'].toString() ?? '_';
   final tokenNo = fee['Consultation']?['displayToken'];
   final bool isTestOnly = consultation?['isTestOnly'] ?? false;
   final referredDoctorName =
       consultation?['referredByDoctorName'].toString() ?? '-';
 
   final supplementary = fee['Supplementary'] ?? {};
-  // String admitId ;
-  // String bedNo ;
-  // String wardName ;
-  // String wardNo ;
-  // String admitDate ;
-  // final String dischargeDate ;
 
   final admitId = fee['Admission']?['id'].toString() ?? '-';
   final bedNo = fee['Admission']?['bed']['bedNo'].toString() ?? '-';
@@ -93,8 +77,6 @@ Future<pw.Document> buildPdf({
 
   ///===========================charges ------------------------------------
   final admission = fee['Admission'];
-  // final bed = admission?['bed'];
-  // final ward = bed?['ward'];
   final charges = (admission?['charges'] ?? [])
       .where((c) => (c['status'] ?? '').toString().toUpperCase() == 'PAID')
       .toList();
@@ -128,31 +110,6 @@ Future<pw.Document> buildPdf({
     return s;
   }
 
-  pw.Widget dateHeader(List charges, ttf, ttfBold) {
-    if (charges.isEmpty) return pw.SizedBox.shrink();
-
-    final dates = charges.map((c) => DateTime.parse(c['createdAt'])).toList();
-
-    final from = dates.first;
-    final to = dates.last;
-
-    return pw.Padding(
-      padding: const pw.EdgeInsets.symmetric(vertical: 8),
-      child: pw.Text(
-        from.day == to.day
-            ? formatDate(from)
-            : "${formatDate(from)} - ${formatDate(to)}",
-        style: pw.TextStyle(
-          fontWeight: pw.FontWeight.bold,
-          fontSize: 12,
-          color: PdfColors.black,
-          font: ttf,
-          fontBold: ttfBold,
-        ),
-      ),
-    );
-  }
-
   for (final c in charges) {
     final desc = (c['description'] ?? '').toString().toUpperCase();
 
@@ -180,17 +137,6 @@ Future<pw.Document> buildPdf({
         (num sum, dynamic c) =>
             sum + (num.tryParse(c['amount']?.toString() ?? '0') ?? 0),
       );
-  // final num chargePendingAmount = (admission?['charges'] ?? [])
-  //     .where(
-  //       (c) =>
-  //           (c['status'] ?? '').toString().toUpperCase() == 'PENDING' &&
-  //           c['admissionId'] == fee['Admission']['id'],
-  //     )
-  //     .fold<num>(
-  //       0,
-  //       (num sum, dynamic c) =>
-  //           sum + (num.tryParse(c['amount']?.toString() ?? '0') ?? 0),
-  //     );
 
   final num chargePaidAmount = (admission?['charges'] ?? [])
       .where(
@@ -284,6 +230,7 @@ Future<pw.Document> buildPdf({
       ? PdfPageFormat.a4.availableWidth
       : 72 * PdfPageFormat.mm;
   // ~72mm
+  //final pageHeight = 600 * PdfPageFormat.mm; // or 800
 
   final ttf = await PdfGoogleFonts.notoSansRegular();
   final ttfBold = await PdfGoogleFonts.notoSansBold();
@@ -327,137 +274,20 @@ Future<pw.Document> buildPdf({
     }
   }
 
-  // pw.Widget vitalTile({required String label, required String value}) {
-  //   return pw.Row(
-  //     crossAxisAlignment: pw.CrossAxisAlignment.start,
-  //     children: [
-  //       pw.SizedBox(
-  //         width: 40,
-  //         child: pw.Text(
-  //           "$label :",
-  //           style: pw.TextStyle(fontSize: 9, color: PdfColors.black),
-  //         ),
-  //       ),
-  //
-  //       pw.Expanded(
-  //         child: pw.Text(
-  //           value,
-  //           style: pw.TextStyle(
-  //             fontSize: 9,
-  //             fontWeight: pw.FontWeight.bold,
-  //             color: PdfColors.grey800,
-  //           ),
-  //         ),
-  //       ),
-  //     ],
-  //   );
-  // }
-
-  // bool isValid(String? value) {
-  //   return value != null &&
-  //       value.trim() != 'null' &&
-  //       value.trim().isNotEmpty &&
-  //       value.trim() != '0' &&
-  //       value.trim() != 'N/A' &&
-  //       value.trim() != '-' &&
-  //       value.trim() != '_' &&
-  //       value.trim() != '-mg/dL';
-  // }
-
-  // bool hasAnyVital({
-  //   String? temperature,
-  //   String? bloodPressure,
-  //   String? sugar,
-  //   String? height,
-  //   String? weight,
-  //   String? BMI,
-  //   String? PK,
-  //   String? SpO2,
-  // }) {
-  //   return isValid(temperature) ||
-  //       isValid(bloodPressure) ||
-  //       isValid(sugar) ||
-  //       isValid(height) ||
-  //       isValid(weight) ||
-  //       isValid(BMI) ||
-  //       isValid(PK) ||
-  //       isValid(SpO2);
-  // }
-
-  // pw.Widget buildVitalsDetailsCards({
-  //   String? temperature,
-  //   String? bloodPressure,
-  //   String? sugar,
-  //   String? height,
-  //   String? weight,
-  //   String? BMI,
-  //   String? PK,
-  //   String? SpO2,
-  // }) {
-  //   pw.Widget buildColumn(List<pw.Widget> children) {
-  //     return pw.Expanded(
-  //       child: pw.Column(
-  //         crossAxisAlignment: pw.CrossAxisAlignment.start,
-  //         children: children,
-  //       ),
-  //     );
-  //   }
-  //
-  //   return pw.Column(
-  //     children: [
-  //       pw.SizedBox(height: 5),
-  //       pw.Divider(),
-  //
-  //       // pw.Center(
-  //       //   child: pw.Text(
-  //       //     "VITALS",
-  //       //     style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
-  //       //   ),
-  //       // ),
-  //
-  //       pw.SizedBox(height: 6),
-  //       if (isValid(bloodPressure))
-  //         vitalTile(label: "BP", value: bloodPressure!),
-  //
-  //       if (isValid(sugar)) vitalTile(label: "Sugar", value: "$sugar mg/dL"),
-  //       pw.Row(
-  //         crossAxisAlignment: pw.CrossAxisAlignment.start,
-  //         children: [
-  //           // LEFT TABLE
-  //           buildColumn([
-  //             if (isValid(temperature))
-  //               vitalTile(label: "Temp", value: "$temperature °F"),
-  //
-  //             if (isValid(PK)) vitalTile(label: "PR", value: "$PK bpm"),
-  //             if (isValid(SpO2)) vitalTile(label: "SpO₂", value: "$SpO2 %"),
-  //           ]),
-  //
-  //           pw.SizedBox(width: 10),
-  //
-  //           // RIGHT TABLE
-  //           buildColumn([
-  //             if (isValid(weight))
-  //               vitalTile(label: "Weight", value: "$weight kg"),
-  //
-  //             if (isValid(height))
-  //               vitalTile(label: "Height", value: "$height cm"),
-  //
-  //             if (isValid(BMI)) vitalTile(label: "BMI", value: BMI!),
-  //           ]),
-  //         ],
-  //       ),
-  //     ],
-  //   );
-  // }
-
   pdf.addPage(
     pw.Page(
       theme: pw.ThemeData.withFont(base: ttf, bold: ttfBold),
+
       pageFormat: PdfPageFormat(
         receiptWidth,
         double.infinity,
         marginAll: 4 * PdfPageFormat.mm,
       ),
+      // pageFormat: PdfPageFormat(
+      //   receiptWidth,
+      //   pageHeight,
+      //   marginAll: 4 * PdfPageFormat.mm,
+      // ),
       build: (context) {
         return pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.center,
@@ -476,6 +306,7 @@ Future<pw.Document> buildPdf({
                   child: pw.ClipOval(
                     child: logoWidget, // pw.Image(...)
                   ),
+                  //child: pw.Container(width: 40, height: 40, child: logoWidget),
                 ),
 
                 pw.SizedBox(width: 4),
@@ -653,7 +484,8 @@ Future<pw.Document> buildPdf({
 
             if (fee['type'] == 'ADVANCEFEE' ||
                 fee['type'] == 'DAILYTREATMENTFEE' ||
-                fee['type'] == 'DISCHARGEFEE') ...[
+                fee['type'] == 'DISCHARGEFEE' ||
+                fee['type'] == 'ROOMFEE') ...[
               //pw.Divider(),
               dashDivider(),
 
@@ -713,29 +545,6 @@ Future<pw.Document> buildPdf({
                 ],
               ),
             ],
-
-            // if (fee['type'] == 'REGISTRATIONFEE')
-            //   if (hasAnyVital(
-            //     temperature: temperature,
-            //     bloodPressure: bloodPressure,
-            //     sugar: sugar,
-            //     height: height,
-            //     weight: weight,
-            //     BMI: BMI,
-            //     PK: PK,
-            //     SpO2: SpO2,
-            //   ))
-            //     buildVitalsDetailsCards(
-            //       temperature: temperature,
-            //       bloodPressure: bloodPressure,
-            //       sugar: sugar,
-            //       height: height,
-            //       weight: weight,
-            //       BMI: BMI,
-            //       PK: PK,
-            //       SpO2: SpO2,
-            //     ),
-            //pw.Divider(),
             dashDivider(),
 
             // HEADLINE
@@ -795,14 +604,7 @@ Future<pw.Document> buildPdf({
                   0: const pw.FlexColumnWidth(3),
                   1: const pw.FlexColumnWidth(1),
                 },
-                children: buildAdvancedFeeRows(
-                  advancedFee: fee['amount'],
-                  // consultationFee:
-                  // fee['Consultation']?['consultationFee'] +
-                  //     fee['Consultation']?['registrationFee'],
-                  // emergencyFee: fee['Consultation']?['emergencyFee'],
-                  // sugarTestFee: fee['Consultation']?['sugarTestFee'],
-                ),
+                children: buildAdvancedFeeRows(advancedFee: fee['amount']),
               ),
             ],
             if (fee['type'] == 'SUPPLEMENTARYFEE') ...[
@@ -818,38 +620,8 @@ Future<pw.Document> buildPdf({
                   );
                 }).toList(),
               ),
-              // if (supplementary != null &&
-              //     supplementary.isNotEmpty)
-              //   ...supplementary.map<Widget>((item) {
-              //     return feeRowWithRemove(
-              //       title: item['description'] == '-'
-              //           ? 'Supplementary Fee'
-              //           : item['description'],
-              //       amount: item['amount'] ?? 0,
-              //       removable: false,
-              //       originalAmount:
-              //       widget.fee['originalAmount'] ??
-              //           widget.fee['amount'],
-              //       onAmountChanged: (e) {
-              //         setState(() {
-              //           widget.fee['amount'] = e;
-              //         });
-              //       },
-              //     );
-              //   }).toList()
             ],
-            if (fee['type'] == 'DAILYTREATMENTFEE' ||
-                fee['type'] == 'DISCHARGEFEE') ...[
-              // pw.Column(
-              //   crossAxisAlignment: pw.CrossAxisAlignment.center,
-              //   children: [
-              //     dateHeader(charges, ttf, ttfBold),
-              //
-              //     for (final entry in grouped.entries)
-              //       if (entry.value.isNotEmpty)
-              //         _groupedFeeRow(entry.key, entry.value),
-              //   ],
-              // ),
+            if (fee['type'] == 'DISCHARGEFEE') ...[
               pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: dayWiseCharges.entries.map((entry) {
@@ -873,7 +645,7 @@ Future<pw.Document> buildPdf({
                               entry.key,
                               style: pw.TextStyle(
                                 fontWeight: pw.FontWeight.bold,
-                                fontSize: 16,
+                                fontSize: 14,
                                 color: PdfColors.black,
                               ),
                             ),
@@ -882,7 +654,7 @@ Future<pw.Document> buildPdf({
                               '₹$total',
                               style: pw.TextStyle(
                                 fontWeight: pw.FontWeight.bold,
-                                fontSize: 16,
+                                fontSize: 14,
                               ),
                             ),
                           ],
@@ -918,6 +690,169 @@ Future<pw.Document> buildPdf({
                           fee,
                           loadStaff,
                         ),
+                    ],
+                  );
+                }).toList(),
+              ),
+            ],
+            if (fee['type'] == 'DAILYTREATMENTFEE') ...[
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: dayWiseCharges.entries.map((entry) {
+                  final grouped = _groupByCategory(entry.value);
+                  // final total = grouped.values
+                  //     .expand((e) => e)
+                  //     .fold<num>(
+                  //       0,
+                  //       (sum, c) =>
+                  //           sum + (num.tryParse(c['amount'].toString()) ?? 0),
+                  //     );
+                  final total =
+                      [
+                        ...grouped['Doctor Fee']!,
+                        ...grouped['Nurse Fee']!,
+                        ...grouped['Others']!,
+                      ].fold<num>(
+                        0,
+                        (sum, c) =>
+                            sum + (num.tryParse(c['amount'].toString()) ?? 0),
+                      );
+                  return pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      // Date Header
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.symmetric(vertical: 8),
+                        child: pw.Row(
+                          children: [
+                            pw.Text(
+                              entry.key,
+                              style: pw.TextStyle(
+                                fontWeight: pw.FontWeight.bold,
+                                fontSize: 14,
+                                color: PdfColors.black,
+                              ),
+                            ),
+                            pw.Spacer(),
+                            pw.Text(
+                              '₹$total',
+                              style: pw.TextStyle(
+                                fontWeight: pw.FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Categories
+                      // if (grouped['Room Rent']!.isNotEmpty)
+                      //   _groupedFeeRow(
+                      //     'Room Rent',
+                      //     grouped['Room Rent']!,
+                      //     fee,
+                      //     loadStaff,
+                      //   ),
+                      if (grouped['Doctor Fee']!.isNotEmpty)
+                        _groupedFeeRow(
+                          'Doctor Fee',
+                          grouped['Doctor Fee']!,
+                          fee,
+                          loadStaff,
+                        ),
+                      if (grouped['Nurse Fee']!.isNotEmpty)
+                        _groupedFeeRow(
+                          'Nurse Fee',
+                          grouped['Nurse Fee']!,
+                          fee,
+                          loadStaff,
+                        ),
+                      if (grouped['Others']!.isNotEmpty)
+                        _groupedFeeRow(
+                          'Others',
+                          grouped['Others']!,
+                          fee,
+                          loadStaff,
+                        ),
+                    ],
+                  );
+                }).toList(),
+              ),
+            ],
+            if (fee['type'] == 'ROOMFEE') ...[
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: dayWiseCharges.entries.map((entry) {
+                  final grouped = _groupByCategory(entry.value);
+                  // final total = grouped.values
+                  //     .expand((e) => e)
+                  //     .fold<num>(
+                  //       0,
+                  //       (sum, c) =>
+                  //           sum + (num.tryParse(c['amount'].toString()) ?? 0),
+                  //     );
+                  final total = grouped['Room Rent']!.fold<num>(
+                    0,
+                    (sum, c) =>
+                        sum + (num.tryParse(c['amount'].toString()) ?? 0),
+                  );
+                  return pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      // Date Header
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.symmetric(vertical: 8),
+                        child: pw.Row(
+                          children: [
+                            pw.Text(
+                              entry.key,
+                              style: pw.TextStyle(
+                                fontWeight: pw.FontWeight.bold,
+                                fontSize: 14,
+                                color: PdfColors.black,
+                              ),
+                            ),
+                            pw.Spacer(),
+                            pw.Text(
+                              '₹$total',
+                              style: pw.TextStyle(
+                                fontWeight: pw.FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Categories
+                      if (grouped['Room Rent']!.isNotEmpty)
+                        _groupedFeeRow(
+                          'Room Rent',
+                          grouped['Room Rent']!,
+                          fee,
+                          loadStaff,
+                        ),
+                      // if (grouped['Doctor Fee']!.isNotEmpty)
+                      //   _groupedFeeRow(
+                      //     'Doctor Fee',
+                      //     grouped['Doctor Fee']!,
+                      //     fee,
+                      //     loadStaff,
+                      //   ),
+                      // if (grouped['Nurse Fee']!.isNotEmpty)
+                      //   _groupedFeeRow(
+                      //     'Nurse Fee',
+                      //     grouped['Nurse Fee']!,
+                      //     fee,
+                      //     loadStaff,
+                      //   ),
+                      // if (grouped['Others']!.isNotEmpty)
+                      //   _groupedFeeRow(
+                      //     'Others',
+                      //     grouped['Others']!,
+                      //     fee,
+                      //     loadStaff,
+                      //   ),
                     ],
                   );
                 }).toList(),
@@ -1383,7 +1318,7 @@ pw.Widget _breakupRow(
           child: pw.Text(
             '• $title',
             style: pw.TextStyle(
-              fontSize: 13,
+              fontSize: 12,
               //overflow: TextOverflow.ellipsis,
               color: PdfColors.grey500,
               fontWeight: pw.FontWeight.bold,
@@ -1393,7 +1328,7 @@ pw.Widget _breakupRow(
         // Editable amount field for pending payments
         pw.Text(
           '₹${charge['amount']}',
-          style: const pw.TextStyle(fontSize: 13),
+          style: const pw.TextStyle(fontSize: 12),
         ),
       ],
     ),
@@ -1414,28 +1349,6 @@ pw.Widget feeRowAdvance({required String title, required num? amount}) {
     ),
   );
 }
-
-// pw.Widget _groupedFeeRow(String title, List<Map<String, dynamic>> items) {
-//   final total = items.fold<num>(
-//     0,
-//     (sum, c) => sum + (num.tryParse(c['amount'].toString()) ?? 0),
-//   );
-//   final uniqueDays = <String>{};
-//   for (final c in items) {
-//     final date = DateTime.parse(c['createdAt']);
-//     uniqueDays.add('${date.year}-${date.month}-${date.day}');
-//   }
-//
-//   final days = uniqueDays.length;
-//
-//   //final days = items.length;
-//
-//   final displayTitle = (title != 'Others' && days > 1)
-//       ? "$title × ${days}d"
-//       : title;
-//
-//   return feeRowWithRemove(title: displayTitle, amount: total);
-// }
 
 pw.Widget feeRowWithRemove({required String title, required num? amount}) {
   if (amount == null || amount == 0) {
@@ -1499,7 +1412,7 @@ List<pw.TableRow> buildFeeRows({
           padding: const pw.EdgeInsets.only(top: 6, bottom: 2, left: 8),
           child: pw.Text(
             "Bill Details",
-            style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold),
+            style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold),
           ),
         ),
         pw.SizedBox(),
@@ -1516,7 +1429,7 @@ List<pw.TableRow> buildFeeRows({
             padding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 8),
             child: pw.Text(
               title,
-              style: pw.TextStyle(fontSize: 12, color: PdfColors.grey900),
+              style: pw.TextStyle(fontSize: 11, color: PdfColors.grey900),
             ),
           ),
           pw.Padding(
@@ -1559,7 +1472,7 @@ List<pw.TableRow> buildAdvancedFeeRows({required num advancedFee}) {
             padding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 5),
             child: pw.Text(
               title,
-              style: pw.TextStyle(fontSize: 12, color: PdfColors.grey900),
+              style: pw.TextStyle(fontSize: 11, color: PdfColors.grey900),
             ),
           ),
           pw.Padding(
@@ -1603,7 +1516,7 @@ List<pw.TableRow> buildSupplementaryFeeRows({
             padding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 5),
             child: pw.Text(
               title,
-              style: pw.TextStyle(fontSize: 12, color: PdfColors.grey900),
+              style: pw.TextStyle(fontSize: 11, color: PdfColors.grey900),
             ),
           ),
           pw.Padding(

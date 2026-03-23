@@ -5,8 +5,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../Admin/Colors/custom_colors.dart';
 import '../Admin/Pages/admin_edit_profile_page.dart';
 import '../Admin/Pages/change_password_page.dart';
+import '../Admin/Pages/contact_page.dart';
+import '../Admin/Pages/flow_instruction_page.dart';
 import '../Admin/Pages/privacy_policy_page.dart';
 import '../Admin/Pages/terms_conditions_page.dart';
+import '../Admin/Pages/version_update_page.dart';
 import '../Pages/NotificationsPage.dart';
 import '../Pages/login/widget/HospitalLoginPage.dart';
 import '../Services/auth_service.dart';
@@ -90,6 +93,45 @@ class _MedicalStaffMobileDrawerState extends State<MedicalStaffMobileDrawer> {
       "icon": Icons.privacy_tip_outlined,
       "label": "Terms & Conditions",
       "page": const TermsConditionsPage(),
+      "roles": [
+        "cashier",
+        "doctor",
+        "nurse",
+        "lab technician",
+        "medical staff",
+        "assistant doctor",
+      ],
+    },
+    {
+      "icon": Icons.integration_instructions,
+      "label": "FlowChart & Instruction",
+      "page": FlowChartInstructionPage(),
+      "roles": [
+        "cashier",
+        "doctor",
+        "nurse",
+        "lab technician",
+        "medical staff",
+        "assistant doctor",
+      ],
+    },
+    {
+      "icon": Icons.contact_phone,
+      "label": "Contact Us",
+      "page": ContactPage(),
+      "roles": [
+        "cashier",
+        "doctor",
+        "nurse",
+        "lab technician",
+        "medical staff",
+        "assistant doctor",
+      ],
+    },
+    {
+      "icon": Icons.update,
+      "label": "App Version Check",
+      "page": VersionUpdatePage(),
       "roles": [
         "cashier",
         "doctor",

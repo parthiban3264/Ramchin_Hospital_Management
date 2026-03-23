@@ -147,6 +147,31 @@ class PatientService {
     return _handleResponse(response);
   }
 
+  Future<Map<String, dynamic>> getBloodGroupData() async {
+    try {
+      final hospitalId = await _getHospitalId();
+      final response = await http.get(
+        Uri.parse('$baseUrl/patients/get/bldGrp/$hospitalId'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+
+        return {
+          "bloodGroupCount": Map<String, dynamic>.from(
+            data["bloodGroupCount"] ?? {},
+          ),
+          "patients": data["patients"] ?? [],
+        };
+      } else {
+        throw Exception("Failed to load data");
+      }
+    } catch (e) {
+      throw Exception("Error: $e");
+    }
+  }
+
   // Future<Map<String, dynamic>> getPatientById(String userId) async {
   //   final hospitalId = await _getHospitalId();
   //

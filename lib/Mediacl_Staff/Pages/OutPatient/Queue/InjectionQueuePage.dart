@@ -104,6 +104,7 @@ class _InjectionQueuePageState extends State<InjectionQueuePage> {
               ),
             );
           }
+          print('consultations ${snapshot.data}');
 
           final consultations = (snapshot.data ?? [])
               .where(

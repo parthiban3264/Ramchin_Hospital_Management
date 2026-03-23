@@ -15,11 +15,16 @@ class _FlowChartInstructionPageState extends State<FlowChartInstructionPage> {
     RowItem(
       image: "assets/reg.jpeg",
       title: "Register",
-      description: "Tap this button to register your account in the system.",
+      description:
+          "To register a patient, enter basic details like mobile number, name, gender, and address. Fields marked with * are required. You can also use the microphone icon to enter details by voice.\n\n"
+          "If needed, add medical information such as emergency case, sugar test, blood group, and the patient’s problem.\n\n"
+          "Next, choose a doctor from the list. Make sure the correct doctor is selected.\n\n"
+          "Then tap the 'Register Patient' button to complete the process. The patient will be saved successfully.\n\n"
+          "Make sure all required details are filled correctly before submitting. An internet connection may be needed. You can view and manage patients later in the app.",
     ),
     RowItem(
       image: "assets/reg.jpeg",
-      title: "Login",
+      title: "vitals",
       description: "Use this button to login and access your dashboard.",
     ),
     RowItem(
@@ -30,11 +35,13 @@ class _FlowChartInstructionPageState extends State<FlowChartInstructionPage> {
     RowItem(
       image: "assets/reg.jpeg",
       title: "Submit",
-      description: "Submit your data after completing all required steps.",
+      description:
+          "Submit your data after completing all required step.Submit your data after completing all required steps.Submit your data after completing all required steps.Submit your data after completing all required steps.",
     ),
   ];
 
   List<RowItem> filteredItems = [];
+  Set<int> expandedIndexes = {};
 
   @override
   void initState() {
@@ -256,18 +263,52 @@ class _FlowChartInstructionPageState extends State<FlowChartInstructionPage> {
                           ),
                         ),
                         const SizedBox(height: 6),
+
+                        /// DESCRIPTION TEXT
                         Text(
                           item.description,
+                          maxLines: expandedIndexes.contains(index) ? null : 2,
+                          overflow: expandedIndexes.contains(index)
+                              ? TextOverflow.visible
+                              : TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey.shade700,
                             height: 1.4,
                           ),
                         ),
+
+                        /// READ MORE / LESS BUTTON
+                        if (item.description.length > 60) // optional condition
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                if (expandedIndexes.contains(index)) {
+                                  expandedIndexes.remove(index);
+                                } else {
+                                  expandedIndexes.add(index);
+                                }
+                              });
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text(
+                                expandedIndexes.contains(index)
+                                    ? "Read Less"
+                                    : "Read More",
+                                style: const TextStyle(
+                                  color: Colors.blue,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
                 );
+                ;
 
                 return Container(
                   margin: const EdgeInsets.symmetric(
@@ -287,6 +328,7 @@ class _FlowChartInstructionPageState extends State<FlowChartInstructionPage> {
                     ],
                   ),
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start, // ✅ ADD THIS
                     children: isEven
                         ? [imageBox, const SizedBox(width: 12), description]
                         : [description, const SizedBox(width: 12), imageBox],

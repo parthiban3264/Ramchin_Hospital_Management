@@ -114,6 +114,8 @@ class _AccountsReportState extends State<AccountsReport> {
       String? dayParam;
       int? monthParam;
       int? yearParam;
+      String? fromDate;
+      String? toDate;
 
       if (reportType == DateFilter.day) {
         dayParam =
@@ -123,12 +125,19 @@ class _AccountsReportState extends State<AccountsReport> {
         yearParam = selectedDate.year;
       } else if (reportType == DateFilter.year) {
         yearParam = selectedDate.year;
+      } else if (reportType == DateFilter.periodical) {
+        fromDate =
+            "${from.year}-${from.month.toString().padLeft(2, '0')}-${from.day.toString().padLeft(2, '0')}";
+        toDate =
+            "${to.year}-${to.month.toString().padLeft(2, '0')}-${to.day.toString().padLeft(2, '0')}";
       }
 
       final result = await _paymentService.getAllPaidAccountsFilterData(
         day: dayParam,
         month: monthParam,
         year: yearParam,
+        fromDate: fromDate,
+        toDate: toDate,
       );
       if (mounted) {
         setState(() {
@@ -260,18 +269,36 @@ class _AccountsReportState extends State<AccountsReport> {
         ? (data['totalAmount'] ?? 0).toDouble()
         : 0.0;
 
-    final double regFee = data != null
-        ? (data['registerationFee'] ?? 0).toDouble()
-        : 0.0;
-    final double consultationFee = data != null
-        ? (data['consultationFee'] ?? 0).toDouble()
-        : 0.0;
-    final double sugarFee = data != null
-        ? (data['sugarTestFee'] ?? 0).toDouble()
-        : 0.0;
-    final double emergencyFee = data != null
-        ? (data['emergencyFee'] ?? 0).toDouble()
-        : 0.0;
+    double toDouble(dynamic value) {
+      if (value == null) return 0.0;
+      if (value is int) return value.toDouble();
+      if (value is double) return value;
+      return double.tryParse(value.toString()) ?? 0.0;
+    }
+
+    double sumFee(Map? fee) {
+      if (fee == null) return 0.0;
+
+      return toDouble(fee['ManualPay']) + toDouble(fee['OnlinePay']);
+    }
+
+    final regFee = sumFee(data?['registerationFee']);
+    final consultationFee = sumFee(data?['consultationFee']);
+    final sugarFee = sumFee(data?['sugarTestFee']);
+    final emergencyFee = sumFee(data?['emergencyFee']);
+
+    // final double regFee = data != null
+    //     ? (data['registerationFee'] ?? 0).toDouble()
+    //     : 0.0;
+    // final double consultationFee = data != null
+    //     ? (data['consultationFee'] ?? 0).toDouble()
+    //     : 0.0;
+    // final double sugarFee = data != null
+    //     ? (data['sugarTestFee'] ?? 0).toDouble()
+    //     : 0.0;
+    // final double emergencyFee = data != null
+    //     ? (data['emergencyFee'] ?? 0).toDouble()
+    //     : 0.0;
     final double dischargeFee = data != null
         ? ((data['type']?['DISCHARGEFEE']?['ManualPay'] ?? 0) +
                   (data['type']?['DISCHARGEFEE']?['OnlinePay'] ?? 0))
@@ -288,12 +315,15 @@ class _AccountsReportState extends State<AccountsReport> {
               .toDouble()
         : 0.0;
 
-    final double testFee = data != null
-        ? (data['testingAmount'] ?? 0).toDouble()
-        : 0.0;
-    final double scanFee = data != null
-        ? (data['ScanningAmount'] ?? 0).toDouble()
-        : 0.0;
+    // final double testFee = data != null
+    //     ? (data['testingAmount'] ?? 0).toDouble()
+    //     : 0.0;
+    // final double scanFee = data != null
+    //     ? (data['ScanningAmount'] ?? 0).toDouble()
+    //     : 0.0;
+
+    final testFee = sumFee(data?['testingAmount']);
+    final scanFee = sumFee(data?['ScanningAmount']);
 
     final double cashIncome = data != null
         ? (data['paymentType']?['ManualPay'] ?? 0).toDouble()
@@ -324,6 +354,14 @@ class _AccountsReportState extends State<AccountsReport> {
     final Map<String, dynamic> doctorFeeTotals = data != null
         ? (data['consultationDrFee'] ?? {})
         : {};
+
+    double getTotal(dynamic value) {
+      if (value is Map) {
+        return ((value['ManualPay'] ?? 0) as num).toDouble() +
+            ((value['OnlinePay'] ?? 0) as num).toDouble();
+      }
+      return (value ?? 0).toDouble();
+    }
 
     return Scaffold(
       appBar: _buildAppBar(),
@@ -568,7 +606,7 @@ class _AccountsReportState extends State<AccountsReport> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                "₹ ${formatAmount((e.value ?? 0).toDouble())}",
+                                "₹ ${formatAmount(getTotal(e.value))}",
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,

@@ -106,7 +106,7 @@ class _InjectionPageState extends State<InjectionPage> {
       backgroundColor: Colors.grey[100],
       appBar: _buildAppBar(),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(10),
         children: [
           // pass dobDisplay & ageDisplay into the patient card
           _buildPatientCard(patient, consultation, dobDisplay, ageDisplay),
@@ -267,92 +267,165 @@ class _InjectionPageState extends State<InjectionPage> {
   // ALL INJECTIONS INSIDE ONE CARD WITH CHECKBOXES
   // --------------------------------------------------------------
   Widget _buildInjectionCard(Map<String, dynamic> consultation) {
-    final injectionList = consultation['Prescription'] ?? [];
-    print('injectionList $injectionList');
+    final prescriptions = consultation['Prescription'] ?? [];
 
-    // Ensure injectionChecks length matches list length (in case consultation changed)
-    if (injectionChecks.length != injectionList.length) {
+    final injectionMedicines = prescriptions.expand((p) {
+      final meds = p['medicines'];
+      if (meds == null || meds is! List) return [];
+
+      return meds
+          .where((m) => m['route'] == 'INJECTIONS')
+          .map((m) => {...m, 'prescription': p})
+          .toList();
+    }).toList();
+
+    if (injectionChecks.length != injectionMedicines.length) {
       injectionChecks = List.generate(
-        injectionList.length,
+        injectionMedicines.length,
         (i) => injectionChecks.length > i ? injectionChecks[i] : false,
       );
     }
 
     return Card(
-      elevation: 6,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      elevation: 8,
+      shadowColor: Colors.black12,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Padding(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(6),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "Injection List",
-              style: TextStyle(
-                color: primaryColor,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+            /// HEADER
+            Row(
+              children: const [
+                Icon(Icons.vaccines, color: primaryColor),
+                SizedBox(width: 8),
+                Text(
+                  "Injection List",
+                  style: TextStyle(
+                    color: primaryColor,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
+
+            const SizedBox(height: 10),
             const Divider(),
-            if (injectionList.isEmpty)
+
+            if (injectionMedicines.isEmpty)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 12),
                 child: Text("No injections found"),
               ),
 
-            ...List.generate(injectionList.length, (index) {
-              final injData = injectionList[index];
-              final inj = injData['medicines'][0]['medicine'] ?? {};
-              print('inj $inj');
-              return Column(
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              inj['name'] ?? 'Unknown Injection',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: primaryColor,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              "Dose: ${injData['medicines'][0]['dosage']}",
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                            const SizedBox(height: 2),
-                            // Text(
-                            //   "Total: ${injData['total'] ?? '-'}",
-                            //   style: const TextStyle(
-                            //     fontSize: 13,
-                            //     color: Colors.black54,
-                            //   ),
-                            // ),
-                          ],
-                        ),
+            const SizedBox(height: 6),
+
+            ...List.generate(injectionMedicines.length, (index) {
+              final med = injectionMedicines[index];
+              final medicine = med['medicine'] ?? {};
+
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.shade200,
+                      blurRadius: 6,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                  border: Border.all(color: Colors.grey.shade100),
+                ),
+                child: Row(
+                  children: [
+                    /// ICON
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        shape: BoxShape.circle,
                       ),
-                      Checkbox(
+                      child: const Icon(
+                        Icons.medical_services,
+                        color: primaryColor,
+                        size: 20,
+                      ),
+                    ),
+
+                    const SizedBox(width: 12),
+
+                    /// DETAILS
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            medicine['name'] ?? 'Unknown Injection',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: primaryColor,
+                            ),
+                          ),
+
+                          const SizedBox(height: 6),
+
+                          /// INFO CHIPS
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 4,
+                            children: [
+                              _buildChip("Dose: ${med['dosage'] ?? '-'}"),
+                              // _buildChip("Days: ${med['days'] ?? 0}"),
+                              // _buildChip("Qty: ${med['total_quantity'] ?? 0}"),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    /// CHECKBOX
+                    Transform.scale(
+                      scale: 1.1,
+                      child: Checkbox(
                         value: injectionChecks[index],
                         activeColor: primaryColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4),
+                        ),
                         onChanged: (val) {
-                          setState(() => injectionChecks[index] = val ?? false);
+                          setState(() {
+                            injectionChecks[index] = val ?? false;
+                          });
                         },
                       ),
-                    ],
-                  ),
-                  if (index != injectionList.length - 1)
-                    const Divider(height: 15),
-                ],
+                    ),
+                  ],
+                ),
               );
             }),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildChip(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(fontSize: 12, color: Colors.black87),
       ),
     );
   }

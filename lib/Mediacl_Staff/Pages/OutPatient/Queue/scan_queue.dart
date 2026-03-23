@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../Pages/NotificationsPage.dart';
+import '../../../../Services/consultation_service.dart';
 import '../../../../Services/testing&scanning_service.dart';
 
 class ScanQueue extends StatefulWidget {
@@ -29,18 +31,28 @@ class _ScanQueueState extends State<ScanQueue>
   final Color primaryColor = const Color(0xFFBF955E);
   int _currentIndex = 0;
   late TabController _tabController;
+  int? loadingId;
 
   @override
   void initState() {
     super.initState();
     _loadQueue();
     _tabController = TabController(length: 2, vsync: this);
+    _updateTime();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  String? _dateTime;
+
+  void _updateTime() {
+    setState(() {
+      _dateTime = DateFormat('yyyy-MM-dd hh:mm a').format(DateTime.now());
+    });
   }
 
   // @override
@@ -439,6 +451,8 @@ class _ScanQueueState extends State<ScanQueue>
       itemBuilder: (context, index) {
         final record = records[index];
         final patient = record['Patient'] ?? {};
+        print(records);
+        print(patient);
         final createdAt = record['createdAt'];
         final title = (record['title']?.toString().trim().isNotEmpty ?? false)
             ? record['title']
@@ -452,7 +466,9 @@ class _ScanQueueState extends State<ScanQueue>
         final gender = patient['gender'] ?? 'other';
         final color = genderColor(gender);
         final queueStatus = record['queueStatus'];
-        final mode = (queueStatus == 'PENDING') ? 1 : 2;
+        final mode = (queueStatus == 'PENDING')
+            ? 1
+            : 2; // track which item is loading
 
         return GestureDetector(
           onTap: () async {
@@ -476,127 +492,349 @@ class _ScanQueueState extends State<ScanQueue>
             }
           },
           child: Container(
-            margin: const EdgeInsets.only(bottom: 16),
+            margin: const EdgeInsets.only(bottom: 12),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: primaryColor.withValues(alpha: 0.7)),
+              border: Border(
+                left: BorderSide(
+                  color: queueStatus == 'COMPLETED'
+                      ? Colors.green
+                      : primaryColor,
+                  width: 5,
+                ),
+                right: BorderSide(
+                  color: queueStatus == 'COMPLETED'
+                      ? Colors.green
+                      : primaryColor,
+                  width: 3,
+                ),
+                bottom: BorderSide(
+                  color: queueStatus == 'COMPLETED'
+                      ? Colors.green
+                      : primaryColor,
+                  width: 1,
+                ),
+                top: BorderSide(
+                  color: queueStatus == 'COMPLETED'
+                      ? Colors.green
+                      : primaryColor,
+                  width: 1,
+                ),
+              ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black45.withValues(alpha: 0.35),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 12,
+                  offset: const Offset(0, 9),
                 ),
               ],
             ),
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(14),
               child: Column(
                 children: [
+                  /// 🔷 TOP ROW
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(genderIcon(gender), size: 28, color: color),
-                      const SizedBox(width: 8),
-                      Text(
-                        patient['name'] ?? 'Unknown',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: color,
+                      /// AVATAR
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
                         ),
+                        child: Icon(genderIcon(gender), color: color, size: 22),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Divider(
-                    color: Colors.grey.shade400,
-                    thickness: 1.4,
-                    endIndent: 25,
-                    indent: 25,
-                  ),
-                  Row(
-                    //crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Token No: ',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                      Text(
-                        tokenNo,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    color: Colors.white,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            title,
-                            style: const TextStyle(
-                              color: Colors.black,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
+
+                      const SizedBox(width: 10),
+
+                      /// NAME + SUB
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              patient['name'] ?? 'Unknown',
+                              style: TextStyle(
+                                fontSize: 16.5,
+                                fontWeight: FontWeight.w700,
+                                color: color,
+                              ),
                             ),
-                          ),
-                          if (queueStatus == 'COMPLETED') ...[
-                            const SizedBox(width: 12),
-                            const Icon(
-                              Icons.check_circle,
-                              color: Colors.green,
-                              size: 18,
+                            const SizedBox(height: 2),
+                            Text(
+                              "ID: ${patient['id']} • ${calculateAge(patient['dob'])}",
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                color: Colors.grey[600],
+                              ),
                             ),
                           ],
-                        ],
+                        ),
                       ),
-                    ),
+
+                      /// TOKEN
+                    ],
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  /// 🔶 TITLE + STATUS
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+
+                      /// STATUS PILL
+                      // Container(
+                      //   padding: const EdgeInsets.symmetric(
+                      //     horizontal: 10,
+                      //     vertical: 5,
+                      //   ),
+                      //   decoration: BoxDecoration(
+                      //     color: queueStatus == 'COMPLETED'
+                      //         ? Colors.green.withValues(alpha: 0.15)
+                      //         : Colors.orange.withValues(alpha: 0.15),
+                      //     borderRadius: BorderRadius.circular(20),
+                      //   ),
+                      //   child: Row(
+                      //     children: [
+                      //       Icon(
+                      //         queueStatus == 'COMPLETED'
+                      //             ? Icons.check_circle
+                      //             : Icons.access_time,
+                      //         size: 14,
+                      //         color: queueStatus == 'COMPLETED'
+                      //             ? Colors.green
+                      //             : Colors.orange,
+                      //       ),
+                      //       const SizedBox(width: 4),
+                      //       // Text(
+                      //       //   queueStatus,
+                      //       //   style: TextStyle(
+                      //       //     fontSize: 11.5,
+                      //       //     fontWeight: FontWeight.w600,
+                      //       //     color: queueStatus == 'COMPLETED'
+                      //       //         ? Colors.green
+                      //       //         : Colors.orange,
+                      //       //   ),
+                      //       // ),
+                      //
+                      //
+                      //     ],
+                      //   ),
+                      // ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          "$tokenNo",
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // /// 🧾 DETAILS
+                  Row(
+                    children: [
+                      Expanded(child: _infoText("Phone", patient['phone'])),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
                       Expanded(
-                        child: _infoText("ID", patient['id'].toString()),
+                        child: _infoText(
+                          "Address",
+                          patient['address']['Address'],
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+
+                  // Row(
+                  //   children: [
+                  //     Expanded(
+                  //       child: _infoText("Created", formatDate(createdAt)),
+                  //     ),
+                  //   ],
+                  // ),
+                  const SizedBox(height: 8),
+
+                  /// 🔘 ACTION ROW
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(
-                        child: _infoText("DOB", formatDob(patient['dob'])),
+                      /// SMALL LABEL
+                      Text(
+                        "Tap to view details",
+                        style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _infoText("Age", calculateAge(patient['dob'])),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _infoText("Created", formatDate(createdAt)),
-                      ),
+
+                      /// FINISH BUTTON
+                      if (queueStatus != 'COMPLETED')
+                        SizedBox(
+                          height: 34,
+                          child: ElevatedButton(
+                            onPressed: loadingId == record['id']
+                                ? null
+                                : () async {
+                                    setState(() => loadingId = record['id']);
+
+                                    try {
+                                      /// 👇 FORCE UI TO SHOW LOADER FIRST
+                                      await Future.delayed(
+                                        const Duration(milliseconds: 300),
+                                      );
+
+                                      final consultationId =
+                                          record['consulateId'];
+                                      final id = record['id'];
+
+                                      final prefs =
+                                          await SharedPreferences.getInstance();
+                                      final staffId = prefs.getString('userId');
+
+                                      /// 🧾 UPDATE SCANNING
+                                      await TestingScanningService()
+                                          .updateScanning(id, {
+                                            'result': '',
+                                            'updatedAt': _dateTime.toString(),
+                                            'staff_Id': staffId.toString(),
+                                            'selectedOptionResults': {},
+                                          }, []);
+
+                                      /// 🧾 UPDATE TESTING
+                                      await TestingScanningService()
+                                          .updateTesting(id, {
+                                            'status': 'COMPLETED',
+                                            'queueStatus': 'COMPLETED',
+                                          });
+
+                                      /// 📡 CONSULTATION
+                                      if (consultationId != null) {
+                                        final con = await ConsultationService()
+                                            .getConsultationByID(
+                                              id: consultationId,
+                                            );
+
+                                        final status = con['data']['status']
+                                            .toString()
+                                            .toUpperCase();
+
+                                        final bool isIP = status == 'ADMITTED';
+
+                                        final bool consultationTest =
+                                            record['Patient']['isTestOnly'] ??
+                                            false;
+
+                                        await ConsultationService()
+                                            .updateConsultation(
+                                              consultationId,
+                                              {
+                                                'status':
+                                                    consultationTest == false
+                                                    ? 'ENDPROCESSING'
+                                                    : isIP
+                                                    ? 'ADMITTED'
+                                                    : "COMPLETED",
+                                                'scanningTesting': false,
+                                                'updatedAt': DateTime.now()
+                                                    .toString(),
+                                              },
+                                            );
+                                      }
+
+                                      /// 🔄 REFRESH
+                                      setState(() {
+                                        futureQueue = TestingScanningService()
+                                            .getAllTestingAndScanning(
+                                              widget.type,
+                                            );
+                                      });
+                                    } catch (e) {
+                                      print("Error: $e");
+                                    } finally {
+                                      setState(() => loadingId = null);
+                                    }
+                                  },
+
+                            style: ElevatedButton.styleFrom(
+                              elevation: 2,
+                              backgroundColor: loadingId == record['id']
+                                  ? Colors.grey
+                                  : Colors.green,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                              ),
+                            ),
+
+                            /// 🔥 BUTTON UI
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (loadingId == record['id']) ...[
+                                  const SizedBox(
+                                    height: 14,
+                                    width: 14,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Text(
+                                    "Processing...",
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ] else ...[
+                                  const Icon(
+                                    Icons.check_circle,
+                                    size: 16,
+                                    color: Colors.white,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  const Text(
+                                    "Finish",
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ],
@@ -622,7 +860,7 @@ class _ScanQueueState extends State<ScanQueue>
             text: value,
             style: const TextStyle(
               fontWeight: FontWeight.normal,
-              fontSize: 18,
+              fontSize: 15,
               color: Colors.black87,
             ),
           ),

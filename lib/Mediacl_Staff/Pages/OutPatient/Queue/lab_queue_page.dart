@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../Pages/NotificationsPage.dart';
 import '../../../../Services/consultation_service.dart';
@@ -38,6 +39,15 @@ class _LabQueuePageState extends State<LabQueuePage>
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
       setState(() {});
+    });
+    _updateTime();
+  }
+
+  String? _dateTime;
+
+  void _updateTime() {
+    setState(() {
+      _dateTime = DateFormat('yyyy-MM-dd hh:mm a').format(DateTime.now());
     });
   }
 
@@ -100,42 +110,6 @@ class _LabQueuePageState extends State<LabQueuePage>
     }
   }
 
-  // Map<String, List<dynamic>> _getFilteredRecords() {
-  //   if (_selectedTabIndex == 1) {
-  //     // TESTED TAB → only completed
-  //     return Map.fromEntries(
-  //       groupedRecords.entries
-  //           .map((entry) {
-  //             final completedTests = entry.value.where((test) {
-  //               return (test['queueStatus'] ?? '').toString().toUpperCase() ==
-  //                   'COMPLETED';
-  //             }).toList();
-  //
-  //             return MapEntry(entry.key, completedTests);
-  //           })
-  //           .where((entry) => entry.value.isNotEmpty),
-  //     );
-  //   }
-  //
-  //   // LAB TEST TAB → pending / normal queue
-  //   if (_selectedTabIndex == 0) {
-  //     return Map.fromEntries(
-  //       groupedRecords.entries
-  //           .map((entry) {
-  //             final pendingTests = entry.value.where((test) {
-  //               final qs = (test['queueStatus'] ?? '').toString().toUpperCase();
-  //               return qs == 'PENDING';
-  //             }).toList();
-  //
-  //             return MapEntry(entry.key, pendingTests);
-  //           })
-  //           .where((entry) => entry.value.isNotEmpty),
-  //     );
-  //   }
-  //
-  //   // SUGAR TEST TAB (no backend change yet)
-  //   return groupedRecords;
-  // }
   bool _matchesDate(dynamic record) {
     final createdAt = record['createdAt'];
     if (createdAt == null) return false;
@@ -428,6 +402,7 @@ class _LabQueuePageState extends State<LabQueuePage>
           genderColor: _genderColor(gender),
           genderIcon: _genderIcon(gender),
           selectedIndex: _selectedTabIndex,
+          dateTime: _dateTime,
           onRefresh: () {
             setState(() {
               futureXRayQueue = TestingScanningService()
@@ -438,115 +413,6 @@ class _LabQueuePageState extends State<LabQueuePage>
       },
     );
   }
-
-  // Widget _buildSugarQueue() {
-  //   print('work $futureSugarQueue');
-  //
-  //   return FutureBuilder<List<dynamic>>(
-  //     future: futureSugarQueue,
-  //     builder: (context, snapshot) {
-  //       if (snapshot.connectionState == ConnectionState.waiting) {
-  //         return const Center(child: CircularProgressIndicator());
-  //       }
-  //       if (snapshot.hasError) {
-  //         return _emptyView("Failed to load sugar tests");
-  //       }
-  //
-  //       final records = snapshot.data ?? [];
-  //       print('recordss $records');
-  //
-  //       final sugarRecords = records.where((item) {
-  //         print('itemss $item');
-  //         return item['paymentStatus'] == true &&
-  //             item['symptoms'] == true &&
-  //             item['status'] == 'PENDING' &&
-  //             item['sugerTestQueue'] == true &&
-  //             item['sugerTest'] == true;
-  //       }).toList();
-  //       for (var r in records) {
-  //         debugPrint(
-  //           'SugarCheck → id:${r['id']} '
-  //           'pay:${r['paymentStatus']} '
-  //           'sym:${r['symptoms']} '
-  //           'stat:${r['status']} '
-  //           'queue:${r['sugerTestQueue']} '
-  //           'test:${r['sugerTest']}',
-  //         );
-  //       }
-  //
-  //       final int sugarCount = sugarRecords.length;
-  //
-  //       return Column(
-  //         children: [
-  //           Padding(
-  //             padding: const EdgeInsets.all(10),
-  //             child: Container(
-  //               height: 60,
-  //               decoration: BoxDecoration(
-  //                 borderRadius: BorderRadius.circular(18),
-  //                 border: Border.all(color: primaryColor, width: 2),
-  //                 color: Colors.white,
-  //               ),
-  //               child: Center(
-  //                 child: Text(
-  //                   "Sugar Test Patients ( $sugarCount )",
-  //                   style: const TextStyle(
-  //                     fontSize: 20,
-  //                     fontWeight: FontWeight.bold,
-  //                     letterSpacing: 0.6,
-  //                   ),
-  //                 ),
-  //               ),
-  //             ),
-  //           ),
-  //           if (sugarRecords.isEmpty)
-  //             Expanded(child: _emptyView("No Sugar Test patients"))
-  //           else
-  //             Expanded(
-  //               child: RefreshIndicator(
-  //                 color: primaryColor,
-  //                 onRefresh: () async {
-  //                   setState(() {
-  //                     futureSugarQueue = ConsultationService()
-  //                         .getAllSugarConsultation();
-  //                   });
-  //                   await futureSugarQueue;
-  //                 },
-  //                 child: ListView.builder(
-  //                   physics: const AlwaysScrollableScrollPhysics(),
-  //                   padding: const EdgeInsets.all(16),
-  //                   itemCount: sugarRecords.length,
-  //                   itemBuilder: (context, index) {
-  //                     final record = sugarRecords[index];
-  //                     final patient = record['Patient'] ?? {};
-  //                     final gender = (patient['gender'] ?? 'other').toString();
-  //                     final tokenNo =
-  //                         (record['tokenNo'] == null || record['tokenNo'] == 0)
-  //                         ? '-'
-  //                         : record['tokenNo'].toString();
-  //
-  //                     return _SugarPatientCard(
-  //                       patient: patient,
-  //                       consultationId: record['id'].toString(),
-  //                       tokenNo: tokenNo,
-  //                       genderColor: _genderColor(gender),
-  //                       genderIcon: _genderIcon(gender),
-  //                       onRefresh: () {
-  //                         setState(() {
-  //                           futureSugarQueue = ConsultationService()
-  //                               .getAllSugarConsultation();
-  //                         });
-  //                       },
-  //                     );
-  //                   },
-  //                 ),
-  //               ),
-  //             ),
-  //         ],
-  //       );
-  //     },
-  //   );
-  // }
 
   Widget _emptyView(String message) {
     return Center(
@@ -570,6 +436,7 @@ class PatientTestCard extends StatefulWidget {
   final IconData genderIcon;
   final VoidCallback onRefresh;
   final int selectedIndex;
+  final String? dateTime;
 
   const PatientTestCard({
     super.key,
@@ -580,6 +447,7 @@ class PatientTestCard extends StatefulWidget {
     required this.onRefresh,
     required this.tokenNo,
     required this.selectedIndex,
+    this.dateTime,
   });
 
   @override
@@ -596,6 +464,8 @@ class _PatientTestCardState extends State<PatientTestCard> {
           (test['queueStatus'] ?? '').toString().toUpperCase() == 'COMPLETED',
     );
   }
+
+  int? loadingId;
 
   @override
   Widget build(BuildContext context) {
@@ -711,22 +581,24 @@ class _PatientTestCardState extends State<PatientTestCard> {
                 trailingIcon = const Icon(Icons.chevron_right);
               }
 
-              return Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+              return Container(
                 margin: const EdgeInsets.symmetric(vertical: 6),
-                child: ListTile(
-                  title: Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.black,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey.shade300),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 6,
+                      offset: const Offset(0, 3),
                     ),
-                  ),
-                  trailing: trailingIcon,
+                  ],
+                ),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+
+                  /// 🔥 FULL CARD CLICK
                   onTap: () async {
                     final result = await Navigator.push(
                       context,
@@ -737,11 +609,12 @@ class _PatientTestCardState extends State<PatientTestCard> {
                               .toList(),
                           currentIndex: index,
                           queueStaus: queueStatus.toUpperCase(),
-                          mode: 0, // individual test click
+                          mode: 0,
                           selectedIndex: widget.selectedIndex,
                         ),
                       ),
                     );
+
                     if (result == true && testId != null) {
                       setState(() {
                         _completedTestIds.add(testId);
@@ -749,6 +622,173 @@ class _PatientTestCardState extends State<PatientTestCard> {
                       widget.onRefresh();
                     }
                   },
+
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    child: Row(
+                      children: [
+                        /// 🔹 LEFT CONTENT
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              /// TITLE
+                              Text(
+                                title,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+
+                              const SizedBox(height: 6),
+                            ],
+                          ),
+                        ),
+
+                        if (widget.selectedIndex == 0) ...[
+                          SizedBox(width: 12),
+
+                          /// 🔥 RIGHT BUTTON (SEPARATE TAP)
+                          GestureDetector(
+                            onTap: () {}, // prevent card tap
+                            child: SizedBox(
+                              height: 32,
+                              child: ElevatedButton(
+                                onPressed: loadingId == testId
+                                    ? null
+                                    : () async {
+                                        setState(() => loadingId = testId);
+
+                                        try {
+                                          await Future.delayed(
+                                            const Duration(milliseconds: 300),
+                                          );
+
+                                          final consultationId =
+                                              test['consulateId'];
+                                          final id = testId;
+
+                                          final prefs =
+                                              await SharedPreferences.getInstance();
+                                          final staffId = prefs.getString(
+                                            'userId',
+                                          );
+
+                                          await TestingScanningService()
+                                              .updateScanning(id, {
+                                                'result': '',
+                                                'updatedAt': widget.dateTime
+                                                    .toString(),
+                                                'staff_Id': staffId.toString(),
+                                                'selectedOptionResults': {},
+                                              }, []);
+
+                                          await TestingScanningService()
+                                              .updateTesting(id, {
+                                                'status': 'COMPLETED',
+                                                'queueStatus': 'COMPLETED',
+                                              });
+
+                                          if (consultationId != null) {
+                                            final con =
+                                                await ConsultationService()
+                                                    .getConsultationByID(
+                                                      id: consultationId,
+                                                    );
+
+                                            final status = con['data']['status']
+                                                .toString()
+                                                .toUpperCase();
+
+                                            final bool isIP =
+                                                status == 'ADMITTED';
+
+                                            final bool consultationTest =
+                                                test['Patient']['isTestOnly'] ??
+                                                false;
+
+                                            await ConsultationService()
+                                                .updateConsultation(
+                                                  consultationId,
+                                                  {
+                                                    'status':
+                                                        consultationTest ==
+                                                            false
+                                                        ? 'ENDPROCESSING'
+                                                        : isIP
+                                                        ? 'ADMITTED'
+                                                        : "COMPLETED",
+                                                    'scanningTesting': false,
+                                                    'updatedAt': DateTime.now()
+                                                        .toString(),
+                                                  },
+                                                );
+                                          }
+
+                                          widget.onRefresh();
+                                        } catch (e) {
+                                          print("Error: $e");
+                                        } finally {
+                                          setState(() => loadingId = null);
+                                        }
+                                      },
+
+                                style: ElevatedButton.styleFrom(
+                                  elevation: 0,
+                                  backgroundColor: loadingId == testId
+                                      ? Colors.grey.shade300
+                                      : Colors.green,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                  ),
+                                ),
+
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (loadingId == testId) ...[
+                                      const SizedBox(
+                                        height: 13,
+                                        width: 13,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ] else ...[
+                                      const Icon(
+                                        Icons.check_circle,
+                                        size: 14,
+                                        color: Colors.white,
+                                      ),
+                                    ],
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      loadingId == testId ? "" : "Finish",
+                                      style: const TextStyle(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                 ),
               );
             },

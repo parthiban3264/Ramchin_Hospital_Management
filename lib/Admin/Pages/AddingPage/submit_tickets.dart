@@ -141,177 +141,200 @@ class _SubmitTicketPageState extends State<SubmitTicketPage> {
       body: SingleChildScrollView(
         child: Center(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(12),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 520),
               child: Card(
+                color: Colors.white,
                 elevation: 6,
                 shadowColor: primaryColor.withValues(alpha: 0.2),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(24),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 22,
-                    vertical: 28,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+
+                    /// 🔥 BORDER
+                    border: Border.all(
+                      color: primaryColor.withValues(alpha: 0.50),
+                      width: 1.2,
+                    ),
+
+                    /// 🔥 SHADOW (more soft & professional)
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.10),
+                        blurRadius: 12,
+                        offset: const Offset(0, 9),
+                      ),
+                    ],
+
+                    color: Colors.white,
                   ),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        // 🔔 Header Icon
-                        Container(
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: primaryColor.withValues(alpha: 0.12),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.support_agent_rounded,
-                            color: primaryColor,
-                            size: 36,
-                          ),
-                        ),
-
-                        const SizedBox(height: 18),
-
-                        // 🧾 Title
-                        const Text(
-                          "Submit a Support Ticket",
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: primaryColor,
-                          ),
-                        ),
-
-                        const SizedBox(height: 8),
-
-                        // 📝 Subtitle
-                        Text(
-                          "Describe the issue you are facing. Our support team will review and get back to you shortly.",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 14,
-                            height: 1.4,
-                            color: Colors.black.withValues(alpha: 0.7),
-                          ),
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        // 🖊 Issue Input
-                        TextFormField(
-                          controller: _issueController,
-                          maxLines: 5,
-                          cursorColor: primaryColor,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.black87,
-                          ),
-                          decoration: InputDecoration(
-                            labelText: "Issue Description",
-                            alignLabelWithHint: true,
-                            labelStyle: const TextStyle(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 22,
+                      vertical: 28,
+                    ),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // 🔔 Header Icon
+                          Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: primaryColor.withValues(alpha: 0.12),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.support_agent_rounded,
                               color: primaryColor,
-                              fontWeight: FontWeight.w600,
+                              size: 36,
                             ),
-                            hintText:
-                                "Example: Unable to login, OTP not received, page not loading...",
-                            hintStyle: TextStyle(
-                              color: Colors.black.withValues(alpha: 0.4),
+                          ),
+
+                          const SizedBox(height: 18),
+
+                          // 🧾 Title
+                          const Text(
+                            "Submit a Support Ticket",
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: primaryColor,
                             ),
-                            filled: true,
-                            fillColor: primaryColor.withValues(alpha: 0.06),
-                            contentPadding: const EdgeInsets.all(16),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide(
-                                color: primaryColor.withValues(alpha: 0.4),
-                              ),
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          // 📝 Subtitle
+                          Text(
+                            "Describe the issue you are facing. Our support team will review and get back to you shortly.",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 14,
+                              height: 1.4,
+                              color: Colors.black.withValues(alpha: 0.7),
                             ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: const BorderSide(
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          // 🖊 Issue Input
+                          TextFormField(
+                            controller: _issueController,
+                            maxLines: 5,
+                            cursorColor: primaryColor,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.black87,
+                            ),
+                            decoration: InputDecoration(
+                              labelText: "Issue Description",
+                              alignLabelWithHint: true,
+                              labelStyle: const TextStyle(
                                 color: primaryColor,
-                                width: 1.8,
+                                fontWeight: FontWeight.w600,
                               ),
-                            ),
-                            errorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: const BorderSide(
-                                color: Colors.redAccent,
+                              hintText:
+                                  "Example: Unable to login, OTP not received, page not loading...",
+                              hintStyle: TextStyle(
+                                color: Colors.black.withValues(alpha: 0.4),
                               ),
-                            ),
-                          ),
-                          validator: (value) =>
-                              value == null || value.trim().isEmpty
-                              ? "Please describe the issue"
-                              : null,
-                        ),
-
-                        const SizedBox(height: 26),
-
-                        // 🚀 Submit Button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: primaryColor,
-                              foregroundColor: Colors.white,
-                              elevation: 3,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
+                              filled: true,
+                              fillColor: primaryColor.withValues(alpha: 0.06),
+                              contentPadding: const EdgeInsets.all(16),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: BorderSide(
+                                  color: primaryColor.withValues(alpha: 0.4),
+                                ),
                               ),
-                            ),
-                            onPressed: _isLoading ? null : _submitTicket,
-                            child: _isLoading
-                                ? const SizedBox(
-                                    width: 22,
-                                    height: 22,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Text(
-                                    "Submit Ticket",
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // ℹ Helper Note
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Icon(
-                              Icons.access_time_rounded,
-                              size: 14,
-                              color: Colors.black.withValues(alpha: 0.5),
-                            ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                "Don’t worry — our support team will get back to you within 24 hours.",
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  height: 1.4,
-                                  color: Colors.black.withValues(alpha: 0.6),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: const BorderSide(
+                                  color: primaryColor,
+                                  width: 1.8,
+                                ),
+                              ),
+                              errorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                borderSide: const BorderSide(
+                                  color: Colors.redAccent,
                                 ),
                               ),
                             ),
-                          ],
-                        ),
-                      ],
+                            validator: (value) =>
+                                value == null || value.trim().isEmpty
+                                ? "Please describe the issue"
+                                : null,
+                          ),
+
+                          const SizedBox(height: 26),
+
+                          // 🚀 Submit Button
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: primaryColor,
+                                foregroundColor: Colors.white,
+                                elevation: 3,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
+                              onPressed: _isLoading ? null : _submitTicket,
+                              child: _isLoading
+                                  ? const SizedBox(
+                                      width: 22,
+                                      height: 22,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Text(
+                                      "Submit Ticket",
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // ℹ Helper Note
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(
+                                Icons.access_time_rounded,
+                                size: 14,
+                                color: Colors.black.withValues(alpha: 0.5),
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  "Don’t worry — our support team will get back to you within 24 hours.",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    height: 1.4,
+                                    color: Colors.black.withValues(alpha: 0.6),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),

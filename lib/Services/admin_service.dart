@@ -349,4 +349,26 @@ class AdminService {
       throw Exception("Failed to delete admin");
     }
   }
+
+  Future<Map<String, dynamic>> updateUser(
+    int id,
+    Map<String, dynamic> data,
+  ) async {
+    print('data $data');
+    // final prefs = await SharedPreferences.getInstance();
+    // final hospitalId = prefs.getString('hospitalId');
+    final url = Uri.parse('$baseUrl/admins/isFirstLogin/updateById/$id');
+
+    final response = await http.patch(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode(data),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception("Failed to update user: ${response.body}");
+    }
+  }
 }

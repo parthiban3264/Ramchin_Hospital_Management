@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:health_icons/health_icons.dart';
+import 'package:hospitrax/Mediacl_Staff/Pages/tracking_status/blood_grp_page.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -437,7 +438,7 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                               ),
                               _buildActionItem(
                                 Icons.payments,
-                                "INITIAL\nPAYMENT",
+                                "MISCELL...\nPAYMENT",
                                 () {
                                   Navigator.push(
                                     context,
@@ -776,6 +777,18 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                     MaterialPageRoute(
                                       builder: (_) =>
                                           const TrackingPatientStatus(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              _buildActionItem(
+                                Icons.bloodtype,
+                                "Blood Group",
+                                () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const BloodGrpPage(),
                                     ),
                                   );
                                 },

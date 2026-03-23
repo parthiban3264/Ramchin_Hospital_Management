@@ -6,10 +6,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../Admin/Pages/admin_app_wrapper.dart';
 import '../../../Admin/Pages/admin_dashboard.dart';
 import '../../../Administrator/Overall_Administrator_Dashboard.dart';
+import '../../../FirstLoginWrapper.dart';
 import '../../../Services/auth_service.dart';
 import '../../../app_wrapper.dart';
 import '../../DashboardPages/medicalStaff_dashboard.dart';
 import '../../DashboardPages/patient_dashboard.dart';
+import 'demo_ids_page.dart';
 
 class HospitalLoginPage extends StatefulWidget {
   const HospitalLoginPage({super.key});
@@ -206,6 +208,55 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
                                 ),
                               ),
                               const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  TextButton.icon(
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: const Color(0xFFBF955E),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 2,
+                                        vertical: 6,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                    ),
+                                    onPressed: () async {
+                                      final result = await Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => const DemoIdsPage(),
+                                        ),
+                                      );
+
+                                      if (result != null) {
+                                        _hospitalIdController.text =
+                                            result["hospitalId"];
+                                        _userIdController.text =
+                                            result["userId"];
+                                        _passwordController.text =
+                                            result["password"];
+
+                                        _handleLogin(); // 🔥 Auto login
+                                      }
+                                    },
+
+                                    label: const Text(
+                                      "Explore Demo ",
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                  Icon(
+                                    Icons.arrow_forward,
+                                    size: 20,
+                                    color: Color(0xFFBF955E),
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
                         ),
@@ -356,6 +407,7 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
         }
         return;
       }
+      print('user $user');
 
       final role = user["role"] ?? "Unknown";
       final designation = user["admin"] != null
@@ -383,6 +435,12 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
       final String hospitalPlace = user["Hospital"] != null
           ? (user["Hospital"]["address"] ?? "Unknown Place")
           : "Unknown Place";
+      final bool isFirstLogin = user["Admin"] != null
+          ? (user["Admin"][0]["isFirstLogin"] ?? false)
+          : false;
+      final int id = user["Admin"] != null
+          ? (user["Admin"][0]["id"] ?? false)
+          : false;
 
       final String hospitalPhoto = user["Hospital"] != null
           ? (user["Hospital"]["photo"] ??
@@ -394,11 +452,14 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
 
       await prefs.setString('isLogged', 'true');
       await prefs.setString('role', role);
+      await prefs.setInt('id', id);
       await prefs.setString('designation', designation);
       await prefs.setString('hospitalName', hospitalName);
       await prefs.setString('hospitalPlace', hospitalPlace);
       await prefs.setString('hospitalPhoto', hospitalPhoto);
       await prefs.setString('accessToken', token);
+      await prefs.setBool('isFirstLogin', isFirstLogin);
+      print('isFirstLogin $isFirstLogin');
       // await prefs.setString( 'userId',   userId);
       await prefs.setString('hospitalId', hospitalId);
       await prefs.setString('hospitalStatus', hospitalStatus);
@@ -420,7 +481,6 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
         hospitalName,
         hospitalStatus,
         staffStatus,
-
         staffName,
         staffPhoto,
       );
@@ -485,74 +545,86 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
       //   );
       //   break;
       case "doctor":
-        page = AppWrapper(
-          child: AdminAppWrapper(
-            child: MedicalStaffDashboardPage(
-              designation: "doctor",
-              hospitalName: hospitalName,
-              staffName: staffName,
-              staffPhoto: staffPhoto,
+        page = FirstLoginWrapper(
+          child: AppWrapper(
+            child: AdminAppWrapper(
+              child: MedicalStaffDashboardPage(
+                designation: "doctor",
+                hospitalName: hospitalName,
+                staffName: staffName,
+                staffPhoto: staffPhoto,
+              ),
             ),
           ),
         );
         break;
       case "nurse":
-        page = AppWrapper(
-          child: AdminAppWrapper(
-            child: MedicalStaffDashboardPage(
-              designation: "nurse",
-              hospitalName: hospitalName,
-              staffName: staffName,
-              staffPhoto: staffPhoto,
+        page = FirstLoginWrapper(
+          child: AppWrapper(
+            child: AdminAppWrapper(
+              child: MedicalStaffDashboardPage(
+                designation: "nurse",
+                hospitalName: hospitalName,
+                staffName: staffName,
+                staffPhoto: staffPhoto,
+              ),
             ),
           ),
         );
         break;
       case "lab technician":
-        page = AppWrapper(
-          child: AdminAppWrapper(
-            child: MedicalStaffDashboardPage(
-              designation: "lab technician",
-              hospitalName: hospitalName,
-              staffName: staffName,
-              staffPhoto: staffPhoto,
+        page = FirstLoginWrapper(
+          child: AppWrapper(
+            child: AdminAppWrapper(
+              child: MedicalStaffDashboardPage(
+                designation: "lab technician",
+                hospitalName: hospitalName,
+                staffName: staffName,
+                staffPhoto: staffPhoto,
+              ),
             ),
           ),
         );
         break;
 
       case "medical staff":
-        page = AppWrapper(
-          child: AdminAppWrapper(
-            child: MedicalStaffDashboardPage(
-              designation: "medical staff",
-              hospitalName: hospitalName,
-              staffName: staffName,
-              staffPhoto: staffPhoto,
+        page = FirstLoginWrapper(
+          child: AppWrapper(
+            child: AdminAppWrapper(
+              child: MedicalStaffDashboardPage(
+                designation: "medical staff",
+                hospitalName: hospitalName,
+                staffName: staffName,
+                staffPhoto: staffPhoto,
+              ),
             ),
           ),
         );
         break;
       case "cashier":
-        page = AppWrapper(
-          child: AdminAppWrapper(
-            child: MedicalStaffDashboardPage(
-              designation: "cashier",
-              hospitalName: hospitalName,
-              staffName: staffName,
-              staffPhoto: staffPhoto,
+        page = FirstLoginWrapper(
+          child: AppWrapper(
+            child: AdminAppWrapper(
+              child: MedicalStaffDashboardPage(
+                designation: "cashier",
+                hospitalName: hospitalName,
+                staffName: staffName,
+                staffPhoto: staffPhoto,
+              ),
             ),
           ),
         );
         break;
       case "assistant doctor":
-        page = AppWrapper(
-          child: AdminAppWrapper(
-            child: MedicalStaffDashboardPage(
-              designation: "assistant doctor",
-              hospitalName: hospitalName,
-              staffName: staffName,
-              staffPhoto: staffPhoto,
+        page = FirstLoginWrapper(
+          child: AppWrapper(
+            child: AdminAppWrapper(
+              child: MedicalStaffDashboardPage(
+                designation: "assistant doctor",
+                hospitalName: hospitalName,
+                staffName: staffName,
+                staffPhoto: staffPhoto,
+              ),
             ),
           ),
         );
@@ -563,7 +635,9 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
         break;
 
       case "admin":
-        page = const AppWrapper(child: AdminDashboardPage());
+        page = const FirstLoginWrapper(
+          child: AppWrapper(child: AdminDashboardPage()),
+        );
         break;
 
       case "administrator":
