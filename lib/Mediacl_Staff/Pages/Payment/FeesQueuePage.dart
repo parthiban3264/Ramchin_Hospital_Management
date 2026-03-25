@@ -660,10 +660,56 @@ class _FeesQueuePageState extends State<FeesQueuePage> {
                           .fold<num>(
                             0,
                             (num sum, dynamic c) =>
-                                sum +
                                 (num.tryParse(c['amount']?.toString() ?? '0') ??
                                     0),
                           );
+
+                      final num chargePendingTreatmentAmount =
+                          (admission?['charges'] ?? [])
+                              .where(
+                                (c) =>
+                                    (c['status'] ?? '')
+                                            .toString()
+                                            .toUpperCase() ==
+                                        'PENDING' &&
+                                    (c['description'] ?? '')
+                                            .toString()
+                                            .toUpperCase() !=
+                                        'ROOM RENT' &&
+                                    c['admissionId'] == item['Admission']['id'],
+                              )
+                              .fold<num>(
+                                0,
+                                (num sum, dynamic c) =>
+                                    sum +
+                                    (num.tryParse(c['amount']?.toString() ??
+                                            '0') ??
+                                        0),
+                              );
+
+                      final num chargePendingRoomAmount =
+                          (admission?['charges'] ?? [])
+                              .where(
+                                (c) =>
+                                    (c['status'] ?? '')
+                                            .toString()
+                                            .toUpperCase() ==
+                                        'PENDING' &&
+                                    (c['description'] ?? '')
+                                            .toString()
+                                            .toUpperCase() ==
+                                        'ROOM RENT' &&
+                                    c['admissionId'] == item['Admission']['id'],
+                              )
+                              .fold<num>(
+                                0,
+                                (num sum, dynamic c) =>
+                                    sum +
+                                    (num.tryParse(c['amount']?.toString() ??
+                                            '0') ??
+                                        0),
+                              );
+
                       final bool isDischarge = item['type'] == 'DISCHARGEFEE';
 
                       final num safeAdvance = advanceAmount;
@@ -677,9 +723,16 @@ class _FeesQueuePageState extends State<FeesQueuePage> {
                           ? 'Return Amount'
                           : 'Amount';
 
-                      final num displayAmount = isDischarge
-                          ? diff.abs()
-                          : item['amount'] ?? '-';
+                      final num displayAmount;
+                      if (isDischarge) {
+                        displayAmount = diff.abs();
+                      } else if (item['type'] == 'DAILYTREATMENTFEE') {
+                        displayAmount = chargePendingTreatmentAmount;
+                      } else if (item['type'] == 'ROOMFEE') {
+                        displayAmount = chargePendingRoomAmount;
+                      } else {
+                        displayAmount = item['amount'] ?? 0;
+                      }
                       return GestureDetector(
                         onTap: _currentIndex == 2
                             ? null // ❌ Disable tap for Cancelled

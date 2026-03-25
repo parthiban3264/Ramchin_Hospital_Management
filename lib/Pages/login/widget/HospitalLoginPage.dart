@@ -438,6 +438,9 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
       final bool isFirstLogin = user["Admin"] != null
           ? (user["Admin"][0]["isFirstLogin"] ?? false)
           : false;
+      final String accountType = user["Admin"] != null
+          ? (user["Admin"][0]["accountType"] ?? false)
+          : false;
       final int id = user["Admin"] != null
           ? (user["Admin"][0]["id"] ?? false)
           : false;

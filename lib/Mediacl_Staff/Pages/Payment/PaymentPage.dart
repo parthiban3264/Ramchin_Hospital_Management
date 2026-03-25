@@ -1141,11 +1141,15 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
     // }
 
     //// ===================== Daily charges cal..---------------------
+    final bool isDischargeType = widget.fee['type'] == 'DISCHARGEFEE';
     final charges = (admission?['charges'] ?? [])
         .where(
           (c) =>
               (c['status'] ?? '').toString().toUpperCase() ==
-              (widget.index == 1 ? 'PAID' : 'PENDING'),
+                  (widget.index == 1 ? 'PAID' : 'PENDING') ||
+              (isDischargeType &&
+                  widget.index == 0 &&
+                  (c['status'] ?? '').toString().toUpperCase() == 'PAID'),
         )
         .toList();
     charges.sort((a, b) {
@@ -1194,28 +1198,28 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
         "${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][d.month - 1]} "
         "${d.year}";
 
-    Widget dateHeader(List charges) {
-      if (charges.isEmpty) return const SizedBox.shrink();
-
-      final dates = charges.map((c) => DateTime.parse(c['createdAt'])).toList();
-
-      final from = dates.first;
-      final to = dates.last;
-
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Text(
-          from.day == to.day
-              ? formatDate(from)
-              : "${formatDate(from)} → ${formatDate(to)}",
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 15,
-            color: Colors.black87,
-          ),
-        ),
-      );
-    }
+    // Widget dateHeader(List charges) {
+    //   if (charges.isEmpty) return const SizedBox.shrink();
+    //
+    //   final dates = charges.map((c) => DateTime.parse(c['createdAt'])).toList();
+    //
+    //   final from = dates.first;
+    //   final to = dates.last;
+    //
+    //   return Padding(
+    //     padding: const EdgeInsets.symmetric(vertical: 8),
+    //     child: Text(
+    //       from.day == to.day
+    //           ? formatDate(from)
+    //           : "${formatDate(from)} → ${formatDate(to)}",
+    //       style: const TextStyle(
+    //         fontWeight: FontWeight.bold,
+    //         fontSize: 15,
+    //         color: Colors.black87,
+    //       ),
+    //     ),
+    //   );
+    // }
 
     const knownCharges = {'ROOM RENT', 'DOCTOR FEE', 'NURSE FEE'};
 
@@ -1331,6 +1335,49 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
           (num sum, dynamic c) =>
               sum + (num.tryParse(c['amount']?.toString() ?? '0') ?? 0),
         );
+    final num chargePendingRoomAmount = (admission?['charges'] ?? [])
+        .where(
+          (c) =>
+              (c['status'] ?? '').toString().toUpperCase() == 'PENDING' &&
+              (c['description'] ?? '').toString().toUpperCase() ==
+                  'ROOM RENT' &&
+              (c['description'] ?? '').toString().toUpperCase() !=
+                  'INPATIENT ADVANCE FEE' &&
+              c['admissionId'] == widget.fee['Admission']['id'],
+        )
+        .fold<num>(
+          0,
+          (num sum, dynamic c) =>
+              sum + (num.tryParse(c['amount']?.toString() ?? '0') ?? 0),
+        );
+
+    final num chargePaidRoomAmount = (admission?['charges'] ?? [])
+        .where(
+          (c) =>
+              (c['status'] ?? '').toString().toUpperCase() == 'PAID' &&
+              (c['description'] ?? '').toString().toUpperCase() !=
+                  'ROOM RENT' &&
+              c['admissionId'] == widget.fee['Admission']['id'],
+        )
+        .fold<num>(
+          0,
+          (num sum, dynamic c) =>
+              sum + (num.tryParse(c['amount']?.toString() ?? '0') ?? 0),
+        );
+
+    final num chargePendingTreatmentAmount = (admission?['charges'] ?? [])
+        .where(
+          (c) =>
+              (c['status'] ?? '').toString().toUpperCase() == 'PENDING' &&
+              (c['description'] ?? '').toString().toUpperCase() !=
+                  'ROOM RENT' &&
+              c['admissionId'] == widget.fee['Admission']['id'],
+        )
+        .fold<num>(
+          0,
+          (num sum, dynamic c) =>
+              sum + (num.tryParse(c['amount']?.toString() ?? '0') ?? 0),
+        );
     final total = widget.index != 1
         ? calculateTotal(widget.fee['amount']) -
               (widget.fee['received_Amount'] ?? 0)
@@ -1345,9 +1392,19 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
 
     final String label = isDischarge && diff < 0
         ? 'Return ${widget.index == 1 ? '' : 'Amount'}'
-        : 'Total';
+        : chargePaidAmount == 0
+        ? 'Total'
+        : 'Balance';
 
-    final num displayAmount = isDischarge ? diff.abs() : total;
+    final bool isDailyTreatment = widget.fee['type'] == 'DAILYTREATMENTFEE';
+    final bool isRoomFee = widget.fee['type'] == 'ROOMFEE';
+
+    num displayAmount = isDischarge ? diff.abs() : total;
+    if (widget.index == 0) {
+      if (isDailyTreatment) displayAmount = chargePendingTreatmentAmount;
+      if (isRoomFee) displayAmount = chargePendingRoomAmount;
+    }
+    final num alreadyPaidAmount = chargePaidAmount;
 
     return Scaffold(
       backgroundColor: background,
@@ -1886,6 +1943,10 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                                   sum +
                                   (num.tryParse(c['amount'].toString()) ?? 0),
                             );
+
+                        if (widget.index == 0 && total == 0) {
+                          return const SizedBox.shrink();
+                        }
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -1955,6 +2016,11 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                           (sum, c) =>
                               sum + (num.tryParse(c['amount'].toString()) ?? 0),
                         );
+
+                        if (widget.index == 0 && total == 0) {
+                          return const SizedBox.shrink();
+                        }
+
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -2193,44 +2259,115 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
 
                   const Divider(thickness: 1.5, height: 22),
                   // 🧮 Total Amount
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
+                  Column(
                     children: [
-                      if (widget.index == 1) ...[
-                        Icon(Icons.check_circle, color: Colors.green),
-                        SizedBox(width: 6),
-                        Text('PAID', style: TextStyle(color: Colors.black)),
-
-                        Spacer(),
-                      ],
-
-                      // Align(
-                      //   alignment: Alignment.centerRight,
-                      //   child: Text(
-                      //     "Total : ₹ $total",
-                      //     style: const TextStyle(
-                      //       fontSize: 22,
-                      //       fontWeight: FontWeight.bold,
-                      //       color: Colors.black87,
-                      //     ),
-                      //   ),
-                      // ),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: Text(
-                          "$label : ₹ $displayAmount",
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: widget.index == 1
-                                ? (label == 'Return '
-                                      ? Colors.blue
-                                      : Colors.black87)
-                                : (label == 'Return Amount'
-                                      ? Colors.blue
-                                      : Colors.black87),
+                      if (widget.fee['type'] == 'DISCHARGEFEE' &&
+                          widget.index == 0 &&
+                          (alreadyPaidAmount ?? 0) > 0) ...[
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 2,
+                            horizontal: 8,
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.receipt_long_rounded,
+                                color: Colors.blueGrey.shade900,
+                              ),
+                              SizedBox(width: 6),
+                              Text(
+                                'Gross Total',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Spacer(),
+                              Text(
+                                '₹ ${alreadyPaidAmount + displayAmount} ',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
+                        const SizedBox(height: 10),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 2,
+                            horizontal: 8,
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.check_circle, color: Colors.green),
+                              SizedBox(width: 6),
+                              Text(
+                                'Paid Amount',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Spacer(),
+                              Text(
+                                '₹ $alreadyPaidAmount',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        //const SizedBox(height: 10),
+                        const Divider(thickness: 1.5, height: 20),
+                      ],
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          if (widget.index == 1) ...[
+                            Icon(Icons.check_circle, color: Colors.green),
+                            SizedBox(width: 6),
+                            Text('PAID', style: TextStyle(color: Colors.black)),
+
+                            Spacer(),
+                          ],
+
+                          // Align(
+                          //   alignment: Alignment.centerRight,
+                          //   child: Text(
+                          //     "Total : ₹ $total",
+                          //     style: const TextStyle(
+                          //       fontSize: 22,
+                          //       fontWeight: FontWeight.bold,
+                          //       color: Colors.black87,
+                          //     ),
+                          //   ),
+                          // ),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: Text(
+                              "$label : ₹ $displayAmount",
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: widget.index == 1
+                                    ? (label == 'Return '
+                                          ? Colors.blue
+                                          : Colors.black87)
+                                    : (label == 'Return Amount'
+                                          ? Colors.blue
+                                          : Colors.black87),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -2323,7 +2460,8 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                                   final consultationId =
                                       widget.fee['type'] == 'ADMISSIONFEE' ||
                                           widget.fee['type'] ==
-                                              'DAILYTREATMENTFEE'
+                                              'DAILYTREATMENTFEE' ||
+                                          widget.fee['type'] == 'ROOMFEE'
                                       ? widget.fee['Admission']['id']
                                       : widget.fee['consultation_Id'];
                                   final staffId = prefs.getString('userId');
@@ -2337,20 +2475,24 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                                   }
                                 },
                                 icon: Icon(
-                                  widget.fee['type'] == 'DAILYTREATMENTFEE'
+                                  (widget.fee['type'] == 'DAILYTREATMENTFEE' ||
+                                          widget.fee['type'] == 'ROOMFEE')
                                       ? Icons.skip_next
                                       : Icons.cancel,
                                   size: 22,
                                 ),
                                 label: Text(
-                                  widget.fee['type'] == 'DAILYTREATMENTFEE'
+                                  (widget.fee['type'] == 'DAILYTREATMENTFEE' ||
+                                          widget.fee['type'] == 'ROOMFEE')
                                       ? "Pay Later "
                                       : "Cancel ",
                                   style: TextStyle(fontSize: 18),
                                 ),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor:
-                                      widget.fee['type'] == 'DAILYTREATMENTFEE'
+                                      (widget.fee['type'] ==
+                                              'DAILYTREATMENTFEE' ||
+                                          widget.fee['type'] == 'ROOMFEE')
                                       ? Colors.blueAccent
                                       : Colors.redAccent,
                                   foregroundColor: Colors.white,
@@ -3013,7 +3155,8 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
             ),
           ),
           // Editable amount field for pending payments
-          if (widget.index != 1)
+          if (widget.index != 1 &&
+              (charge['status'] ?? '').toString().toUpperCase() != 'PAID')
             SizedBox(
               width: 80,
               child: _EditableAmountField(
@@ -3030,7 +3173,26 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
               ),
             )
           else
-            Text('₹${charge['amount']}', style: const TextStyle(fontSize: 13)),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '₹${charge['amount']}',
+                  style: const TextStyle(fontSize: 13),
+                ),
+                if ((charge['status'] ?? '').toString().toUpperCase() ==
+                        'PAID' &&
+                    widget.index == 0)
+                  const Padding(
+                    padding: EdgeInsets.only(left: 4),
+                    child: Icon(
+                      Icons.check_circle,
+                      size: 14,
+                      color: Colors.green,
+                    ),
+                  ),
+              ],
+            ),
         ],
       ),
     );
@@ -3374,13 +3536,14 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                 borderRadius: BorderRadius.circular(14),
               ),
               title: Text(
-                widget.fee['type'] == 'DAILYTREATMENTFEE'
+                (widget.fee['type'] == 'DAILYTREATMENTFEE' ||
+                        widget.fee['type'] == 'ROOMFEE')
                     ? "Pay Later Confirmation"
                     : "Cancel Confirmation",
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               content: Text(
-                "Are you sure you want to ${widget.fee['type'] == 'DAILYTREATMENTFEE' ? 'Pay later' : 'cancel'} this payment and consultation?",
+                "Are you sure you want to ${(widget.fee['type'] == 'DAILYTREATMENTFEE' || widget.fee['type'] == 'ROOMFEE') ? 'Pay later' : 'cancel'} this payment and consultation?",
               ),
               actions: [
                 /// ❌ CANCEL BUTTON
@@ -3408,13 +3571,15 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                             /// 🔹 Update Payment
                             await PaymentService().updatePayment(paymentId, {
                               'status':
-                                  widget.fee['type'] == 'DAILYTREATMENTFEE'
+                                  (widget.fee['type'] == 'DAILYTREATMENTFEE' ||
+                                      widget.fee['type'] == 'ROOMFEE')
                                   ? 'PAYLATER'
                                   : 'CANCELLED',
                               'staff_Id': staffId.toString(),
                               'updatedAt': dateTime.toString(),
                             });
-                            if (widget.fee['type'] != 'DAILYTREATMENTFEE') {
+                            if (widget.fee['type'] != 'DAILYTREATMENTFEE' &&
+                                widget.fee['type'] != 'ROOMFEE') {
                               widget.fee['type'] == 'ADMISSIONFEE'
                                   ? await ChargeService()
                                         .updateStatusByAdmission(
@@ -3435,12 +3600,16 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                    widget.fee['type'] == 'DAILYTREATMENTFEE'
+                                    (widget.fee['type'] ==
+                                                'DAILYTREATMENTFEE' ||
+                                            widget.fee['type'] == 'ROOMFEE')
                                         ? " Pay later successfully"
                                         : "❌ Cancelled successfully",
                                   ),
                                   backgroundColor:
-                                      widget.fee['type'] == 'DAILYTREATMENTFEE'
+                                      (widget.fee['type'] ==
+                                              'DAILYTREATMENTFEE' ||
+                                          widget.fee['type'] == 'ROOMFEE')
                                       ? Colors.blueAccent
                                       : Colors.redAccent,
                                 ),
