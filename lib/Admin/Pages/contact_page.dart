@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'AddingPage/submit_tickets.dart';
 
@@ -16,6 +17,19 @@ class _ContactPageState extends State<ContactPage> {
   void initState() {
     // TODO: implement initState
     super.initState();
+    grtAccountType();
+  }
+
+  String? accountType = 'DEMO';
+
+  Future<void> grtAccountType() async {
+    final prefs = await SharedPreferences.getInstance();
+    final accountType = prefs.getString('accountType');
+    print('accountType $accountType');
+    if (!mounted) return;
+    setState(() {
+      this.accountType = accountType;
+    });
   }
 
   int step = 0;
@@ -180,91 +194,96 @@ class _ContactPageState extends State<ContactPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset: true,
-      backgroundColor: Colors.white,
+    return accountType == 'DEMO'
+        ? Scaffold(
+            resizeToAvoidBottomInset: true,
+            backgroundColor: Colors.white,
 
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(120),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          height: 100,
-          decoration: const BoxDecoration(
-            color: primaryColor,
-            borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
-          ),
-          child: SafeArea(
-            child: Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-                  onPressed: () => Navigator.pop(context),
-                ),
-                const Text(
-                  "Contact Us",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
+            appBar: PreferredSize(
+              preferredSize: const Size.fromHeight(120),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                height: 100,
+                decoration: const BoxDecoration(
+                  color: primaryColor,
+                  borderRadius: BorderRadius.vertical(
+                    bottom: Radius.circular(16),
                   ),
                 ),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(
-                    Icons.support_agent_sharp,
-                    color: Colors.white,
+                child: SafeArea(
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(
+                          Icons.arrow_back_ios,
+                          color: Colors.white,
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      const Text(
+                        "Contact Us",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.support_agent_sharp,
+                          color: Colors.white,
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => SubmitTicketPage(),
+                            ),
+                          );
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.notifications,
+                          color: Colors.white,
+                        ),
+                        onPressed: () {},
+                      ),
+                    ],
                   ),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => SubmitTicketPage()),
-                    );
-                  },
                 ),
-                IconButton(
-                  icon: const Icon(Icons.notifications, color: Colors.white),
-                  onPressed: () {},
-                ),
-                // IconButton(
-                //   icon: const Icon(Icons.home, color: Colors.white),
-                //   onPressed: () {
-                //     int count = 0;
-                //     Navigator.popUntil(context, (route) => count++ >= 2);
-                //   },
-                // ),
-              ],
-            ),
-          ),
-        ),
-      ),
-
-      body: Column(
-        children: [
-          /// 🔥 CUSTOM STEP INDICATOR
-          _buildStepIndicator(),
-
-          /// 📄 CONTENT
-          // Expanded(
-          //   child: AnimatedSwitcher(
-          //     duration: const Duration(milliseconds: 300),
-          //     child: _buildStepContent(),
-          //   ),
-          // ),
-          Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.only(bottom: 20),
-                child: _buildStepContent(),
               ),
             ),
-          ),
 
-          /// 🔘 BUTTONS
-          _buildButtons(),
-        ],
-      ),
-    );
+            body: Column(
+              children: [
+                /// 🔥 CUSTOM STEP INDICATOR
+                _buildStepIndicator(),
+
+                /// 📄 CONTENT
+                // Expanded(
+                //   child: AnimatedSwitcher(
+                //     duration: const Duration(milliseconds: 300),
+                //     child: _buildStepContent(),
+                //   ),
+                // ),
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.only(bottom: 20),
+                      child: _buildStepContent(),
+                    ),
+                  ),
+                ),
+
+                /// 🔘 BUTTONS
+                _buildButtons(),
+              ],
+            ),
+          )
+        : SubmitTicketPage();
   }
 
   /// ================= STEP INDICATOR =================

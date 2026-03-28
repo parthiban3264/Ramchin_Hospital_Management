@@ -10,6 +10,7 @@ import '../Drawer/AdminDrawer.dart';
 import '../Pages/DashboardPages/administrator_dashboard.dart';
 import '../Pages/NotificationsPage.dart';
 import '../Services/hospital_Service.dart';
+import 'Adminstrator_Tickets.dart';
 import 'administrator_app_version_page.dart';
 
 class OverallAdministratorDashPage extends StatefulWidget {
@@ -895,6 +896,17 @@ class _OverallAdministratorDashPageState
                                     ),
                                   );
                                 },
+                              ),
+                              _buildActionItem(
+                                Icons.receipt_long_rounded,
+                                "Tickets",
+                                () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const AdministratorTickets(),
+                                  ),
+                                ),
                               ),
                               // _buildActionItem(
                               //   Icons.bloodtype,

@@ -39,12 +39,24 @@ class _AdminMobileDrawerState extends State<AdminMobileDrawer> {
   void initState() {
     super.initState();
     loadUserId();
+    grtAccountType();
   }
 
   Future<void> loadUserId() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       userId = prefs.getString('userId');
+    });
+  }
+
+  String? accountType;
+
+  Future<void> grtAccountType() async {
+    final prefs = await SharedPreferences.getInstance();
+    final accountType = prefs.getString('accountType');
+    if (!mounted) return;
+    setState(() {
+      this.accountType = accountType;
     });
   }
 
@@ -83,7 +95,7 @@ class _AdminMobileDrawerState extends State<AdminMobileDrawer> {
       },
       {
         "icon": Icons.contact_phone,
-        "label": "Contact Us",
+        "label": accountType == 'DEMO' ? "Contact Us" : "Submit Ticket",
         "page": ContactPage(),
       },
       {

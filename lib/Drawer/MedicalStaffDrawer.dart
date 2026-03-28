@@ -37,7 +37,7 @@ class MedicalStaffMobileDrawer extends StatefulWidget {
 class _MedicalStaffMobileDrawerState extends State<MedicalStaffMobileDrawer> {
   int selectedIndex = 0;
 
-  final List<Map<String, dynamic>> allDrawerItems = [
+  late final List<Map<String, dynamic>> allDrawerItems = [
     {
       "icon": Icons.person,
       "label": "Profile",
@@ -118,7 +118,7 @@ class _MedicalStaffMobileDrawerState extends State<MedicalStaffMobileDrawer> {
     },
     {
       "icon": Icons.contact_phone,
-      "label": "Contact Us",
+      "label": accountType == 'DEMO' ? "Contact Us" : "Submit Ticket",
       "page": ContactPage(),
       "roles": [
         "cashier",
@@ -150,6 +150,7 @@ class _MedicalStaffMobileDrawerState extends State<MedicalStaffMobileDrawer> {
   void initState() {
     super.initState();
     userIdload();
+    grtAccountType();
     // Filter drawer items based on the user's role
     drawerItems = allDrawerItems
         .where((item) => item["roles"].contains(widget.designation))
@@ -162,6 +163,7 @@ class _MedicalStaffMobileDrawerState extends State<MedicalStaffMobileDrawer> {
   }
 
   String? userId;
+  String? accountType;
 
   Future<void> userIdload() async {
     final prefs = await SharedPreferences.getInstance();
@@ -172,6 +174,16 @@ class _MedicalStaffMobileDrawerState extends State<MedicalStaffMobileDrawer> {
     setState(() {
       userId = storedUserId;
     });
+  }
+
+  Future<void> grtAccountType() async {
+    final prefs = await SharedPreferences.getInstance();
+    final acType = prefs.getString('accountType');
+    if (!mounted) return;
+    setState(() {
+      accountType = acType;
+    });
+    print('accountTypem $accountType');
   }
 
   void onSelectItem(int index) {

@@ -48,6 +48,16 @@ class _FirstLoginWrapperState extends State<FirstLoginWrapper> {
     }
   }
 
+  // String? accountType = 'DEMO';
+  // Future<void> grtAccountType() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   final accountType = prefs.getString('accountType');
+  //   if (mounted) return;
+  //   setState(() {
+  //     this.accountType = accountType;
+  //   });
+  // }
+
   Future<void> _updateFirstLoginStatus(String? accountType) async {
     final prefs = await SharedPreferences.getInstance();
 
