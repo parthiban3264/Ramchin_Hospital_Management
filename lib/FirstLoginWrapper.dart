@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'Admin/Pages/contact_page.dart';
@@ -21,9 +22,19 @@ class _FirstLoginWrapperState extends State<FirstLoginWrapper> {
     _checkFirstLogin();
   }
 
+  String? version;
+
   Future<void> _checkFirstLogin() async {
     final prefs = await SharedPreferences.getInstance();
     bool isFirstLogin = prefs.getBool('isFirstLogin') ?? false;
+    final info = await PackageInfo.fromPlatform();
+    final currentVersion = info.version;
+
+    if (!mounted) return;
+
+    setState(() {
+      version = currentVersion;
+    });
 
     if (isFirstLogin) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -32,17 +43,18 @@ class _FirstLoginWrapperState extends State<FirstLoginWrapper> {
 
       /// 🔥 IMPORTANT: make it false after showing
       await prefs.setBool('isFirstLogin', false);
-      await _updateFirstLoginStatus();
+      final accountType = await prefs.getString('accountType');
+      await _updateFirstLoginStatus(accountType);
     }
   }
 
-  Future<void> _updateFirstLoginStatus() async {
+  Future<void> _updateFirstLoginStatus(String? accountType) async {
     final prefs = await SharedPreferences.getInstance();
 
     try {
       final userId = prefs.getInt("id");
 
-      if (userId != null) {
+      if (userId != null && accountType != 'DEMO') {
         await AdminService().updateUser(userId, {"isFirstLogin": false});
       }
 
@@ -60,7 +72,7 @@ class _FirstLoginWrapperState extends State<FirstLoginWrapper> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const FirstLoginDialog(),
+      builder: (_) => FirstLoginDialog(version: version),
     );
   }
 
@@ -78,7 +90,8 @@ const Color darkPrimary = Color(0xFF8B6B3F);
 /// 🔥 MAIN DIALOG
 /// =======================
 class FirstLoginDialog extends StatefulWidget {
-  const FirstLoginDialog({super.key});
+  final String? version;
+  const FirstLoginDialog({super.key, this.version});
 
   @override
   State<FirstLoginDialog> createState() => _FirstLoginDialogState();
@@ -131,87 +144,74 @@ class _FirstLoginDialogState extends State<FirstLoginDialog>
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(28),
               color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 18,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                /// 🔶 HEADER (GOLD THEME)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 14,
-                    horizontal: 16,
-                  ),
-                  decoration: const BoxDecoration(
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(28),
-                    ),
-                    gradient: LinearGradient(
-                      colors: [primaryColor, darkPrimary],
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      /// 🏥 ICON
-                      CircleAvatar(
-                        radius: 16,
-                        backgroundColor: Colors.white,
-                        child: const Icon(
-                          Icons.local_hospital,
-                          size: 16,
-                          color: primaryColor,
-                        ),
-                      ),
-
-                      const SizedBox(width: 10),
-
-                      /// TEXT
-                      const Expanded(
-                        child: Text(
-                          "Ramchin Hospital Management",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16.5,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-
-                      /// VERSION BADGE
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.25),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Text(
-                          "v3.0.3",
-                          style: TextStyle(color: Colors.white, fontSize: 11),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
                 /// 📄 BODY
                 Padding(
                   padding: const EdgeInsets.all(14),
                   child: Column(
                     children: [
-                      /// TITLE
-                      const Text(
-                        "Welcome 👋",
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF222222),
-                        ),
+                      /// TITLE ROW (FIXED ALIGNMENT ✅)
+                      Row(
+                        children: [
+                          /// empty space same as close button
+                          const SizedBox(width: 40),
+
+                          /// CENTER TITLE
+                          Expanded(
+                            child: Column(
+                              children: [
+                                const Text(
+                                  "Welcome 👋",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF222222),
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                                Text(
+                                  'version ${widget.version}',
+                                  style: TextStyle(
+                                    color: Colors.grey.shade600,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          /// ❌ CLOSE BUTTON (improved)
+                          InkWell(
+                            borderRadius: BorderRadius.circular(20),
+                            onTap: () => Navigator.pop(context),
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.close,
+                                size: 20,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
 
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
 
                       /// ✨ TYPEWRITER TEXT
                       const AnimatedTypewriterText(
@@ -219,37 +219,11 @@ class _FirstLoginDialogState extends State<FirstLoginDialog>
                             "Welcome to Ramchin Hospital Management System.\n\nManage patients records, doctors, nurse, staffs and hospital workflows efficiently.\n\nWould you like to connect with us for support or services?",
                       ),
 
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 26),
 
-                      /// 🔘 BUTTONS
+                      /// 🔘 BUTTON
                       Row(
                         children: [
-                          /// SKIP
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () => Navigator.pop(context),
-                              style: OutlinedButton.styleFrom(
-                                side: const BorderSide(color: primaryColor),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 13,
-                                ),
-                              ),
-                              child: const Text(
-                                "Skip",
-                                style: TextStyle(
-                                  color: primaryColor,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(width: 12),
-
-                          /// CONTACT
                           Expanded(
                             child: ElevatedButton(
                               onPressed: () {
@@ -260,17 +234,15 @@ class _FirstLoginDialogState extends State<FirstLoginDialog>
                                     builder: (context) => ContactPage(),
                                   ),
                                 );
-
-                                // 👉 Add WhatsApp / call here
                               },
                               style: ElevatedButton.styleFrom(
-                                elevation: 3,
-                                backgroundColor: primaryColor,
+                                elevation: 2,
+                                backgroundColor: Colors.blue,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                                 padding: const EdgeInsets.symmetric(
-                                  vertical: 13,
+                                  vertical: 14,
                                 ),
                               ),
                               child: const Text(
@@ -278,6 +250,8 @@ class _FirstLoginDialogState extends State<FirstLoginDialog>
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                  letterSpacing: 0.3,
                                 ),
                               ),
                             ),
@@ -285,11 +259,12 @@ class _FirstLoginDialogState extends State<FirstLoginDialog>
                         ],
                       ),
 
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 16),
 
                       /// FOOTER
                       Text(
                         "Powered by Ramchin Technologies Pvt Ltd",
+                        textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 11,
                           color: Colors.grey.shade600,

@@ -299,7 +299,7 @@ class _CashierOverviewPageState extends State<CashierOverviewPage>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "Registrations",
+                "LAST 7D REGISTRATIONS",
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
@@ -369,7 +369,9 @@ class _CashierOverviewPageState extends State<CashierOverviewPage>
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: List.generate(values.length, (i) {
-                    final height = (values[i] / maxValue) * 70;
+                    final height = maxValue == 0
+                        ? 0.0
+                        : (values[i] / maxValue) * 70;
 
                     return Expanded(
                       child: Column(

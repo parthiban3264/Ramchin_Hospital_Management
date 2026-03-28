@@ -437,7 +437,7 @@ Future<pw.Document> buildPdf({
               style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
             ),
             dashDivider(),
-            pw.SizedBox(height: 3),
+            //pw.SizedBox(height: 3),
             if (fee['type'] != 'ADVANCEFEE' &&
                 fee['type'] != 'DAILYTREATMENTFEE' &&
                 fee['type'] != 'DISCHARGEFEE' &&
@@ -648,37 +648,37 @@ Future<pw.Document> buildPdf({
             dashDivider(),
 
             // TABLE HEADER
-            if (fee['type'] != 'ADVANCEFEE' &&
-                fee['type'] != 'DAILYTREATMENTFEE' &&
-                fee['type'] != 'DISCHARGEFEE' &&
-                fee['type'] != 'ROOMFEE') ...[
-              pw.Row(
-                children: [
-                  pw.Expanded(
-                    flex: 3,
-                    child: pw.Text(
-                      "SERVICE",
-                      style: pw.TextStyle(
-                        fontSize: 9,
-                        fontWeight: pw.FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  pw.Expanded(
-                    flex: 1,
-                    child: pw.Text(
-                      "AMT",
-                      textAlign: pw.TextAlign.right,
-                      style: pw.TextStyle(
-                        fontSize: 9,
-                        fontWeight: pw.FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              dashDivider(),
-            ],
+            // if (fee['type'] != 'ADVANCEFEE' &&
+            //     fee['type'] != 'DAILYTREATMENTFEE' &&
+            //     fee['type'] != 'DISCHARGEFEE' &&
+            //     fee['type'] != 'ROOMFEE') ...[
+            //   pw.Row(
+            //     children: [
+            //       pw.Expanded(
+            //         flex: 3,
+            //         child: pw.Text(
+            //           "SERVICE",
+            //           style: pw.TextStyle(
+            //             fontSize: 9,
+            //             fontWeight: pw.FontWeight.bold,
+            //           ),
+            //         ),
+            //       ),
+            //       pw.Expanded(
+            //         flex: 1,
+            //         child: pw.Text(
+            //           "AMT",
+            //           textAlign: pw.TextAlign.right,
+            //           style: pw.TextStyle(
+            //             fontSize: 9,
+            //             fontWeight: pw.FontWeight.bold,
+            //           ),
+            //         ),
+            //       ),
+            //     ],
+            //   ),
+            //   dashDivider(),
+            // ],
 
             // FEE ROWS
             if (fee['type'] == 'REGISTRATIONFEE') ...[
@@ -1334,7 +1334,7 @@ pw.Widget _groupedFeeRow(
           //   ),
           // );
           return pw.Padding(
-            padding: const pw.EdgeInsets.only(top: 1),
+            padding: const pw.EdgeInsets.only(top: 2, bottom: 4),
             child: pw.Row(
               children: [
                 /// LEFT SIDE (Name + Date)

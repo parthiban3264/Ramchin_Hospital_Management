@@ -150,17 +150,25 @@ class _SplashPageState extends State<SplashPage> {
     String? isLogged = prefs.getString('isLogged') ?? 'false';
     String? role = prefs.getString('role');
     String? status = prefs.getString('hospitalStatus');
+    String? staffName = prefs.getString('staffName') ?? '';
+    String? staffPhoto = prefs.getString('staffPhoto') ?? '';
     // String? staffStatus = prefs.getString('staffStatus');
 
     if (isLogged == 'true' && role != null && status != null) {
       Widget dashboard;
 
       if ((role.toLowerCase() == "admin" && status.toUpperCase() == 'ACTIVE')) {
-        dashboard = const AdminDashboardPage();
+        dashboard = AdminDashboardPage(
+          staffName: staffName,
+          staffPhoto: staffPhoto,
+        );
       } else if (role.toLowerCase() == "patient") {
         dashboard = const PatientDashboardPage();
       } else if (role.toLowerCase() == "administrator") {
-        dashboard = OverallAdministratorDashPage();
+        dashboard = OverallAdministratorDashPage(
+          staffName: staffName,
+          staffPhoto: staffPhoto,
+        );
       } else {
         dashboard = const HospitalLoginPage();
       }

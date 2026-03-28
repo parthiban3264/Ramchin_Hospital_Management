@@ -7,7 +7,13 @@ import 'admin_dashboard_page.dart';
 import 'admin_overview_page.dart';
 
 class AdminDashboardPage extends StatefulWidget {
-  const AdminDashboardPage({super.key});
+  final String staffName;
+  final String staffPhoto;
+  const AdminDashboardPage({
+    super.key,
+    required this.staffName,
+    required this.staffPhoto,
+  });
 
   @override
   State<AdminDashboardPage> createState() => _AdminDashboardPageState();
@@ -40,7 +46,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           ),
         ),
         drawer: AdminMobileDrawer(
-          title: 'Menu',
+          title: widget.staffName,
+          staffPhoto: widget.staffPhoto,
+          designation: 'Admin',
           width: isMobile
               ? MediaQuery.of(context).size.width * 0.75
               : isSmallDesktop

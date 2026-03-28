@@ -26,6 +26,7 @@ class FeesPaymentPage extends StatefulWidget {
   final Map<String, dynamic> patient;
   final int index;
   final String page;
+  final bool isCtScan;
 
   const FeesPaymentPage({
     super.key,
@@ -33,6 +34,7 @@ class FeesPaymentPage extends StatefulWidget {
     required this.patient,
     required this.index,
     required this.page,
+    required this.isCtScan,
   });
 
   @override
@@ -856,9 +858,12 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
   @override
   Widget build(BuildContext context) {
     final List tests = widget.fee["TestingAndScanningPatients"] ?? [];
-    final List ctScanOnly = tests
-        .where((test) => test["type"] != "CT-SCAN")
-        .toList();
+    // final List ctScanOnly = tests
+    //     .where((test) => test["type"] != "CT-SCAN")
+    //     .toList();
+    final List ctScanOnly = (widget.isCtScan == false)
+        ? tests.where((test) => test["type"] != "CT-SCAN").toList()
+        : tests.toList();
     final consultation = widget.fee['Consultation'] ?? {};
     // final temperature = consultation['temperature'] ?? '';
     final bloodPressure = consultation['bp'] ?? {} ?? '_';
@@ -948,9 +953,12 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
       required num optionAmount,
     }) async {
       final tests = widget.fee['TestingAndScanningPatients'];
-      final List ctScanOnly = tests
-          .where((test) => test["type"] != "CT-SCAN")
-          .toList();
+      // final List ctScanOnly = tests
+      //     .where((test) => test["type"] != "CT-SCAN")
+      //     .toList();
+      final List ctScanOnly = (widget.isCtScan == false)
+          ? tests.where((test) => test["type"] != "CT-SCAN").toList()
+          : tests.toList();
       final test = ctScanOnly[testIndex];
       final Map options = Map.from(test['selectedOptionAmounts'] ?? {});
 
@@ -987,9 +995,12 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
 
     Future<void> removeTestAt(int index) async {
       final List tests = widget.fee['TestingAndScanningPatients'] ?? [];
-      final List ctScanOnly = tests
-          .where((test) => test["type"] != "CT-SCAN")
-          .toList();
+      // final List ctScanOnly = tests
+      //     .where((test) => test["type"] != "CT-SCAN")
+      //     .toList();
+      final List ctScanOnly = (widget.isCtScan == false)
+          ? tests.where((test) => test["type"] != "CT-SCAN").toList()
+          : tests.toList();
 
       if (ctScanOnly.length <= 1) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -2667,11 +2678,15 @@ class FeesPaymentPageState extends State<FeesPaymentPage> {
                                       widget
                                           .fee['TestingAndScanningPatients'] ??
                                       [];
-                                  final List ctScanOnly = tests
-                                      .where(
-                                        (test) => test["type"] != "CT-SCAN",
-                                      )
-                                      .toList();
+                                  final List ctScanOnly =
+                                      (widget.isCtScan == false)
+                                      ? tests
+                                            .where(
+                                              (test) =>
+                                                  test["type"] != "CT-SCAN",
+                                            )
+                                            .toList()
+                                      : tests.toList();
 
                                   if (ctScanOnly.isEmpty) {
                                     ScaffoldMessenger.of(context).showSnackBar(

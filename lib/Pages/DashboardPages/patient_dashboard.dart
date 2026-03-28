@@ -90,12 +90,14 @@ class PatientDashboardPageState extends State<PatientDashboardPage> {
         ),
 
         drawer: AdminMobileDrawer(
-          title: 'Menu',
+          staffPhoto: '',
+          title: 'Patient Dash',
           width: isMobile
               ? MediaQuery.of(context).size.width * 0.75
               : isSmallDesktop
               ? MediaQuery.of(context).size.width / 2
               : MediaQuery.of(context).size.width / 3,
+          designation: 'Patient',
         ),
 
         body: isListLoading

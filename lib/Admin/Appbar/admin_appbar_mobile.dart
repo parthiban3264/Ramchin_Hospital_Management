@@ -62,25 +62,38 @@ class AdminAppbarMobile extends StatelessWidget {
                     )
                   : const SizedBox(),
 
-              const Spacer(),
+              // const Spacer(),
+              const SizedBox(width: 2),
 
               // Title (px warning removed)
-              Padding(
-                padding: const EdgeInsets.only(left: 1),
+              // Padding(
+              //   padding: const EdgeInsets.only(left: 1),
+              //   child: Text(
+              //     title,
+              //
+              //     overflow: TextOverflow.ellipsis,
+              //     maxLines: 1,
+              //     style: Theme.of(context).textTheme.titleLarge!.copyWith(
+              //       color: Colors.white,
+              //       fontWeight: FontWeight.w600,
+              //     ),
+              //   ),
+              // ),
+              Expanded(
                 child: Text(
                   title,
-
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                  style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                  maxLines: 1, // ✅ prevents overflow
+                  overflow: TextOverflow.ellipsis, // ✅ adds "..."
+                  style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
+                    fontSize: 20, // slightly reduced for safety
                   ),
                 ),
               ),
-
+              const SizedBox(width: 2),
               // const SizedBox(width: 10),
-              const Spacer(),
+              // const Spacer(),
 
               // Notification button
               isNotificationEnable

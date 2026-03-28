@@ -21,7 +21,7 @@ class DemoIdsPage extends StatelessWidget {
                 DemoIdCard(
                   title: 'ADMIN',
                   hospitalId: '1001',
-                  userId: '010011',
+                  userId: '10011',
                   password: 'abc123',
                   description: 'Full system control',
                   icon: Icons.admin_panel_settings,
@@ -30,7 +30,7 @@ class DemoIdsPage extends StatelessWidget {
                 DemoIdCard(
                   title: 'DOCTOR',
                   hospitalId: '1001',
-                  userId: '010012',
+                  userId: '10012',
                   password: 'abc123',
                   description: 'Consultation access',
                   icon: Icons.medical_services,
@@ -39,7 +39,7 @@ class DemoIdsPage extends StatelessWidget {
                 DemoIdCard(
                   title: 'NURSE',
                   hospitalId: '1001',
-                  userId: '010013',
+                  userId: '10013',
                   password: 'abc123',
                   description: 'Patient care management',
                   icon: Icons.local_hospital,
@@ -48,7 +48,7 @@ class DemoIdsPage extends StatelessWidget {
                 DemoIdCard(
                   title: 'ASSISTANT DOCTOR',
                   hospitalId: '1001',
-                  userId: '010014',
+                  userId: '10014',
                   password: 'abc123',
                   description: 'Doctor assistant access',
                   icon: Icons.health_and_safety,
@@ -57,7 +57,7 @@ class DemoIdsPage extends StatelessWidget {
                 DemoIdCard(
                   title: 'CASHIER',
                   hospitalId: '1001',
-                  userId: '010015',
+                  userId: '10015',
                   password: 'abc123',
                   description: 'Billing and payment',
                   icon: Icons.payments,
@@ -66,7 +66,7 @@ class DemoIdsPage extends StatelessWidget {
                 DemoIdCard(
                   title: 'MEDICAL',
                   hospitalId: '1001',
-                  userId: '010016',
+                  userId: '10016',
                   password: 'abc123',
                   description: 'Pharmacy management',
                   icon: Icons.medication,
@@ -75,7 +75,7 @@ class DemoIdsPage extends StatelessWidget {
                 DemoIdCard(
                   title: 'LAB TECHNICIAN',
                   hospitalId: '1001',
-                  userId: '010017',
+                  userId: '10017',
                   password: 'abc123',
                   description: 'Pharmacy management',
                   icon: Icons.medication,

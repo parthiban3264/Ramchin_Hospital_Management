@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hospitrax/Pages/login/widget/forgot_password.dart';
+import 'package:hospitrax/Pages/login/widget/version_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../Admin/Pages/admin_app_wrapper.dart';
 import '../../../Admin/Pages/admin_dashboard.dart';
+import '../../../Admin/Pages/version_update_page.dart';
 import '../../../Administrator/Overall_Administrator_Dashboard.dart';
 import '../../../FirstLoginWrapper.dart';
 import '../../../Services/auth_service.dart';
@@ -28,6 +30,10 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
 
   final AuthService userService = AuthService();
 
+  bool isFirstLogin = false;
+  String accountType = 'REAL';
+  int id = 0;
+
   @override
   void initState() {
     super.initState();
@@ -36,6 +42,8 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
 
   Future<void> _checkAlreadyLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
+
+    if (!mounted) return; // ✅ ADD THIS
 
     String? isLogged = prefs.getString('isLogged');
     String? role = prefs.getString('role');
@@ -371,13 +379,6 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
 
     String deviceId = await AuthService().getDeviceId();
 
-    // if (hospitalId.isEmpty || userId.isEmpty || password.isEmpty) {
-    //   ScaffoldMessenger.of(
-    //     context,
-    //   ).showSnackBar(const SnackBar(content: Text("Please fill all fields")));
-    //   return;
-    // }
-
     if (mounted) {
       showDialog(
         context: context,
@@ -392,8 +393,11 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
       password: password,
       deviceId: deviceId,
     );
+    print('result $result');
 
-    if (mounted) Navigator.pop(context); // hide loading
+    // if (mounted) Navigator.pop(context); // hide loading
+    if (!mounted) return;
+    Navigator.pop(context);
 
     if (result["success"]) {
       final token = result["data"]["access_token"];
@@ -435,15 +439,20 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
       final String hospitalPlace = user["Hospital"] != null
           ? (user["Hospital"]["address"] ?? "Unknown Place")
           : "Unknown Place";
-      final bool isFirstLogin = user["Admin"] != null
-          ? (user["Admin"][0]["isFirstLogin"] ?? false)
-          : false;
-      final String accountType = user["Admin"] != null
-          ? (user["Admin"][0]["accountType"] ?? false)
-          : false;
-      final int id = user["Admin"] != null
-          ? (user["Admin"][0]["id"] ?? false)
-          : false;
+
+      if (role.toLowerCase() != 'administrator') {
+        setState(() {
+          isFirstLogin = user["Admin"] != null
+              ? (user["Admin"][0]["isFirstLogin"] ?? false)
+              : false;
+          accountType = user["Admin"] != null
+              ? (user["Admin"][0]["accountType"] ?? false)
+              : false;
+          id = user["Admin"] != null
+              ? (user["Admin"][0]["id"] ?? false)
+              : false;
+        });
+      }
 
       final String hospitalPhoto = user["Hospital"] != null
           ? (user["Hospital"]["photo"] ??
@@ -462,7 +471,7 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
       await prefs.setString('hospitalPhoto', hospitalPhoto);
       await prefs.setString('accessToken', token);
       await prefs.setBool('isFirstLogin', isFirstLogin);
-      print('isFirstLogin $isFirstLogin');
+      await prefs.setString('accountType', accountType);
       // await prefs.setString( 'userId',   userId);
       await prefs.setString('hospitalId', hospitalId);
       await prefs.setString('hospitalStatus', hospitalStatus);
@@ -476,6 +485,29 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
         // ScaffoldMessenger.of(
         //   context,
         // ).showSnackBar(SnackBar(content: Text("Login successful as $role")));
+      }
+      final appVersions = user["app_versions"] ?? [];
+      final versionResult = await VersionService.check(
+        appVersions: appVersions,
+      );
+
+      if (!mounted) return;
+
+      /// 🔴 FORCE UPDATE
+      if (versionResult["status"] == "force") {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => VersionUpdatePage()),
+        );
+        return;
+      }
+
+      /// 🟡 OPTIONAL UPDATE
+      if (versionResult["status"] == "optional") {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => VersionUpdatePage()),
+        );
       }
 
       _navigateToDashboard(
@@ -506,6 +538,7 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
     String staffName,
     String staffPhoto,
   ) async {
+    if (!mounted) return; // ✅ ADD THIS
     if (hospitalStatus.toUpperCase() != 'ACTIVE') {
       ScaffoldMessenger.of(
         context,
@@ -535,7 +568,7 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
     // ).showSnackBar(SnackBar(content: Text("Login successful as $role")));
 
     Widget page;
-
+    print(role.toLowerCase());
     switch (role.toLowerCase()) {
       // case "medical staff":
       //   page = AppWrapper(
@@ -638,13 +671,21 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
         break;
 
       case "admin":
-        page = const FirstLoginWrapper(
-          child: AppWrapper(child: AdminDashboardPage()),
+        page = FirstLoginWrapper(
+          child: AppWrapper(
+            child: AdminDashboardPage(
+              staffPhoto: staffPhoto,
+              staffName: staffName,
+            ),
+          ),
         );
         break;
 
       case "administrator":
-        page = OverallAdministratorDashPage();
+        page = OverallAdministratorDashPage(
+          staffPhoto: staffPhoto,
+          staffName: staffName,
+        );
         break;
 
       default:

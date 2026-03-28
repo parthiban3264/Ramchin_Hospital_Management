@@ -10,6 +10,7 @@ import '../Admin/Pages/flow_instruction_page.dart';
 import '../Admin/Pages/privacy_policy_page.dart';
 import '../Admin/Pages/terms_conditions_page.dart';
 import '../Admin/Pages/version_update_page.dart';
+import '../Pages/DashboardPages/medicalStaff_dashboard.dart';
 import '../Pages/NotificationsPage.dart';
 import '../Pages/login/widget/HospitalLoginPage.dart';
 import '../Services/auth_service.dart';
@@ -195,147 +196,273 @@ class _MedicalStaffMobileDrawerState extends State<MedicalStaffMobileDrawer> {
         child: Column(
           children: [
             DrawerHeader(
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.9),
-                borderRadius: const BorderRadius.only(
-                  bottomRight: Radius.circular(20),
-                  bottomLeft: Radius.circular(20),
+              padding: EdgeInsets.zero,
+              margin: EdgeInsets.zero,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(28),
+                  bottomRight: Radius.circular(28),
                 ),
               ),
-              child: SizedBox(
-                width: double.infinity,
-                child: Stack(
+              child: SafeArea(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      child: IconButton(
-                        icon: const Icon(
-                          Icons.close,
-                          color: Colors.black,
-                          size: 26,
-                        ),
-                        onPressed: () => Navigator.pop(context),
+                    /// 🔝 TOP BAR
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 10, 12, 6),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          /// 🏷 DESIGNATION (clean + aligned)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              /// 🔸 Accent Pill Line (better than flat line)
+                              Icon(
+                                Icons.menu_open_rounded,
+                                size: 22,
+                                color: Colors.black87,
+                                fontWeight: FontWeight.bold,
+                              ),
+
+                              const SizedBox(width: 4),
+
+                              /// 📝 TEXT
+                              Flexible(
+                                child: Text(
+                                  widget.designation.toUpperCase(),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: Colors
+                                        .black87, // 👈 softer, more premium
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 15,
+                                    letterSpacing: 0.4,
+                                    height: 1.1,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          /// ❌ CLOSE BUTTON (refined)
+                          InkWell(
+                            borderRadius: BorderRadius.circular(20),
+                            onTap: () => Navigator.pop(context),
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.close,
+                                size: 20,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            // 🔹 Reactive CircleAvatar
-                            CircleAvatar(
-                              radius: 30,
-                              backgroundColor: CustomColors.customGold,
+
+                    /// subtle spacing
+                    const SizedBox(height: 2),
+
+                    /// ➖ DIVIDER
+                    Divider(
+                      color: Colors.grey.shade200,
+                      thickness: 1.5,
+                      height: 1,
+                    ),
+                    const SizedBox(height: 6),
+
+                    /// 👤 PROFILE SECTION
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          /// 🧑 AVATAR
+                          Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: CustomColors.customGold.withOpacity(
+                                  0.35,
+                                ),
+                                width: 1.4,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.06),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: CircleAvatar(
+                              radius: 28,
+                              backgroundColor: Colors.grey.shade100,
                               backgroundImage: (widget.staffPhoto.isNotEmpty)
                                   ? NetworkImage(widget.staffPhoto)
                                   : null,
                               child: (widget.staffPhoto.isEmpty)
-                                  ? const Icon(
+                                  ? Icon(
                                       Icons.local_hospital,
-                                      color: Colors.white,
-                                      size: 30,
+                                      color: CustomColors.customGold,
+                                      size: 26,
                                     )
                                   : null,
                             ),
+                          ),
 
-                            const SizedBox(width: 16),
-                            Column(
+                          const SizedBox(width: 12),
+
+                          /// 📝 TEXT
+                          Expanded(
+                            child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                /// NAME
                                 Text(
                                   widget.title,
+                                  maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 24,
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.2,
                                   ),
                                 ),
-                                const SizedBox(height: 2),
+
+                                const SizedBox(height: 3),
+
+                                /// USER ID
                                 Text(
                                   userId ?? '',
+                                  maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: Colors.black54,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    color: Colors.grey.shade600,
                                   ),
                                 ),
                               ],
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          widget.designation.toUpperCase(),
-                          style: TextStyle(
-                            color: CustomColors.customGold,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 20,
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
+
+                    const SizedBox(height: 6),
                   ],
                 ),
               ),
             ),
+            //const SizedBox(height: ),
             Expanded(
               child: ListView.builder(
+                padding: const EdgeInsets.symmetric(vertical: 8),
                 itemCount: drawerItems.length,
                 itemBuilder: (context, index) {
                   final item = drawerItems[index];
                   final selected = index == selectedIndex;
-                  return Container(
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 8,
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
                       vertical: 4,
                     ),
-                    decoration: BoxDecoration(
-                      color: selected
-                          ? Colors.white.withValues(alpha: 0.3)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: ListTile(
-                      leading: Icon(
-                        item["icon"],
-                        color: selected ? Colors.black : Colors.white,
-                      ),
-                      title: Text(
-                        item["label"],
-                        style: TextStyle(
-                          color: selected ? Colors.black : Colors.white,
-                          fontWeight: selected
-                              ? FontWeight.bold
-                              : FontWeight.normal,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () => onSelectItem(index),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: selected ? Colors.white : Colors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+
+                          /// subtle shadow when selected
+                          boxShadow: selected
+                              ? [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ]
+                              : [],
+                        ),
+
+                        child: Row(
+                          children: [
+                            /// 🔸 ICON CONTAINER (better alignment)
+                            Container(
+                              width: 34,
+                              height: 34,
+                              decoration: BoxDecoration(
+                                color: selected
+                                    ? CustomColors.customGold.withOpacity(0.15)
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                item["icon"],
+                                size: 20,
+                                color: selected
+                                    ? CustomColors.customGold
+                                    : Colors.white,
+                              ),
+                            ),
+
+                            const SizedBox(width: 12),
+
+                            /// 📝 TEXT
+                            Expanded(
+                              child: Text(
+                                item["label"],
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: selected
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
+                                  color: selected
+                                      ? Colors.black87
+                                      : Colors.white,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                            ),
+
+                            /// 👉 OPTIONAL INDICATOR
+                            if (selected)
+                              Container(
+                                width: 4,
+                                height: 20,
+                                decoration: BoxDecoration(
+                                  color: CustomColors.customGold,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
-                      onTap: () => onSelectItem(index),
                     ),
                   );
                 },
               ),
             ),
             const Divider(color: Colors.white70, thickness: 1),
-            // ListTile(
-            //   leading: const Icon(Icons.logout, color: Colors.white),
-            //   title: const Text(
-            //     "Logout",
-            //     style: TextStyle(color: Colors.white),
-            //   ),
-            //   onTap: () async {
-            //     const secureStorage = FlutterSecureStorage();
-            //     await AuthService().logout();
-            //     await secureStorage.deleteAll();
-            //     Navigator.pushReplacement(
-            //       context,
-            //       MaterialPageRoute(builder: (_) => const HospitalLoginPage()),
-            //     );
-            //   },
-            // ),
+
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.white),
               title: const Text(

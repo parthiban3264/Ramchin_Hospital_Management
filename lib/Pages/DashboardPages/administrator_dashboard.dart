@@ -61,7 +61,9 @@ class _AdministratorDashboardPageState
                 ),
         ),
         drawer: AdminMobileDrawer(
-          title: 'Menu',
+          staffPhoto: '',
+          designation: '',
+          title: 'Administrator',
           width: isMobile
               ? MediaQuery.of(context).size.width * 0.75
               : isSmallDesktop

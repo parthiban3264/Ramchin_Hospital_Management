@@ -176,11 +176,11 @@ class PaymentService {
     return hospitalId;
   }
 
-  Future<List<dynamic>> getAllPendingFees() async {
+  Future<List<dynamic>> getAllPendingFees(bool? isCtscan) async {
     try {
       final hospitalId = await getHospitalId();
       final response = await http.get(
-        Uri.parse('$baseUrl/payments/all/pendingFee/$hospitalId'),
+        Uri.parse('$baseUrl/payments/all/pendingFee/$hospitalId/$isCtscan'),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {

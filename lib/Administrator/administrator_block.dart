@@ -77,7 +77,10 @@ class _AdministratorBlockState extends State<AdministratorBlock> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => OverallAdministratorDashPage(),
+                  builder: (_) => OverallAdministratorDashPage(
+                    staffName: widget.hospitalData["name"],
+                    staffPhoto: widget.hospitalData["photo"],
+                  ),
                 ),
               ),
               // widget.onHospitalUpdated?.call(),

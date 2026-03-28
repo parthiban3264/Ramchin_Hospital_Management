@@ -14,25 +14,46 @@ import '../Pages/NotificationsPage.dart';
 import '../Pages/login/widget/HospitalLoginPage.dart';
 import '../Services/auth_service.dart';
 
-class AdminMobileDrawer extends StatelessWidget {
+class AdminMobileDrawer extends StatefulWidget {
+  final String title;
+  final double width;
+  final String designation;
+  final String staffPhoto;
+
   const AdminMobileDrawer({
     super.key,
     required this.title,
     required this.width,
+    required this.designation,
+    required this.staffPhoto,
   });
-  final String title;
-  final double width;
+
+  @override
+  State<AdminMobileDrawer> createState() => _AdminMobileDrawerState();
+}
+
+class _AdminMobileDrawerState extends State<AdminMobileDrawer> {
+  String? userId;
+
+  @override
+  void initState() {
+    super.initState();
+    loadUserId();
+  }
+
+  Future<void> loadUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userId = prefs.getString('userId');
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     int selectedIndex = 0;
 
     // Drawer items with navigation targets
     final List<Map<String, dynamic>> drawerItems = [
-      // {
-      //   "icon": Icons.dashboard_outlined,
-      //   "label": "Overview",
-      //   "page": const OverviewPage(),
-      // },
       {"icon": Icons.person, "label": "Profile", "page": const ProfilePage()},
       {
         "icon": Icons.edit_outlined,
@@ -70,38 +91,6 @@ class AdminMobileDrawer extends StatelessWidget {
         "label": "App Version Check",
         "page": VersionUpdatePage(),
       },
-
-      // {
-      //   "icon": Icons.receipt_long,
-      //   "label": "REGISTER",
-      //   "page": PatientRegistrationPage(),
-      // },
-      // {
-      //   "icon": Icons.healing_outlined,
-      //   "label": "PAYMENTS",
-      //   "page": FeesQueuePage(),
-      // },
-      // {
-      //   "icon": Icons.healing_outlined,
-      //   "label": "SYMPTOMS",
-      //   "page": SymptomsQueuePage(),
-      // },
-      // {"icon": Icons.queue, "label": "OP QUEUE", "page": OutpatientQueuePage()},
-      // // {
-      // //   "icon": Icons.receipt,
-      // //   "label": "LAB",
-      // //   "page": const GenericPage(title: "Billing"),
-      // // },
-      // {
-      //   "icon": Icons.medical_information,
-      //   "label": "MEDICALS",
-      //   "page": MedicalQueuePage(),
-      // },
-      // {
-      //   "icon": Icons.medical_information,
-      //   "label": "INJECTION",
-      //   "page": const GenericPage(title: "INJECTION"),
-      // },
     ];
 
     void onSelectItem(int index) {
@@ -120,58 +109,175 @@ class AdminMobileDrawer extends StatelessWidget {
 
     return Drawer(
       backgroundColor: CustomColors.customGold,
-      width: width,
+      width: widget.width,
       child: SafeArea(
         child: Column(
           children: [
             DrawerHeader(
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.9),
-                borderRadius: const BorderRadius.only(
-                  bottomRight: Radius.circular(20),
-                  bottomLeft: Radius.circular(20),
+              padding: EdgeInsets.zero,
+              margin: EdgeInsets.zero,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(28),
+                  bottomRight: Radius.circular(28),
                 ),
               ),
-              child: SizedBox(
-                width: double.infinity,
-                child: Stack(
+              child: SafeArea(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      child: IconButton(
-                        icon: const Icon(
-                          Icons.close,
-                          color: Colors.black,
-                          size: 26,
-                        ),
-                        onPressed: () => Navigator.pop(context),
+                    /// 🔝 TOP BAR
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 10, 12, 6),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          /// 🏷 DESIGNATION (clean + aligned)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              /// 🔸 Accent Pill Line (better than flat line)
+                              Icon(
+                                Icons.menu_open_rounded,
+                                size: 22,
+                                color: Colors.black87,
+                                fontWeight: FontWeight.bold,
+                              ),
+
+                              const SizedBox(width: 4),
+
+                              /// 📝 TEXT
+                              Flexible(
+                                child: Text(
+                                  widget.designation.toUpperCase(),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: Colors
+                                        .black87, // 👈 softer, more premium
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 15,
+                                    letterSpacing: 0.4,
+                                    height: 1.1,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          /// ❌ CLOSE BUTTON (refined)
+                          InkWell(
+                            borderRadius: BorderRadius.circular(20),
+                            onTap: () => Navigator.pop(context),
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.close,
+                                size: 20,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    Column(
-                      // crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        CircleAvatar(
-                          radius: 30,
-                          backgroundColor: CustomColors.customGold,
-                          child: const Icon(
-                            Icons.local_hospital,
-                            color: Colors.white,
-                            size: 30,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          title,
-                          style: TextStyle(
-                            color: CustomColors.customGold,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                          ),
-                        ),
-                      ],
+
+                    /// subtle spacing
+                    const SizedBox(height: 2),
+
+                    /// ➖ DIVIDER
+                    Divider(
+                      color: Colors.grey.shade200,
+                      thickness: 1.5,
+                      height: 1,
                     ),
+                    const SizedBox(height: 6),
+
+                    /// 👤 PROFILE SECTION
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          /// 🧑 AVATAR
+                          Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: CustomColors.customGold.withOpacity(
+                                  0.35,
+                                ),
+                                width: 1.4,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.06),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: CircleAvatar(
+                              radius: 28,
+                              backgroundColor: Colors.grey.shade100,
+                              backgroundImage: (widget.staffPhoto.isNotEmpty)
+                                  ? NetworkImage(widget.staffPhoto)
+                                  : null,
+                              child: (widget.staffPhoto.isEmpty)
+                                  ? Icon(
+                                      Icons.local_hospital,
+                                      color: CustomColors.customGold,
+                                      size: 26,
+                                    )
+                                  : null,
+                            ),
+                          ),
+
+                          const SizedBox(width: 12),
+
+                          /// 📝 TEXT
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                /// NAME
+                                Text(
+                                  widget.title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.2,
+                                  ),
+                                ),
+
+                                const SizedBox(height: 3),
+
+                                /// USER ID
+                                Text(
+                                  userId ?? '',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 6),
                   ],
                 ),
               ),
@@ -215,26 +321,6 @@ class AdminMobileDrawer extends StatelessWidget {
             ),
             const Divider(color: Colors.white70, thickness: 1),
 
-            // Inside your ListTile:
-            // ListTile(
-            //   leading: const Icon(Icons.logout, color: Colors.white),
-            //   title: const Text(
-            //     "Logout",
-            //     style: TextStyle(color: Colors.white),
-            //   ),
-            //   onTap: () async {
-            //     const secureStorage = FlutterSecureStorage();
-            //
-            //     // Clear all stored data
-            //     await secureStorage.deleteAll();
-            //
-            //     // Navigate to login page
-            //     Navigator.pushReplacement(
-            //       context,
-            //       MaterialPageRoute(builder: (_) => const HospitalLoginPage()),
-            //     );
-            //   },
-            // ),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.white),
               title: const Text(

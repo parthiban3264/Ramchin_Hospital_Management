@@ -264,6 +264,7 @@ class _PatientRegistrationAndPaymentPagesState
             patient: paymentPatient,
             index: paymentIndex,
             page: 'reg',
+            isCtScan: false,
           ),
         ),
 

@@ -13,7 +13,7 @@ class FlowChartInstructionPage extends StatefulWidget {
 class _FlowChartInstructionPageState extends State<FlowChartInstructionPage> {
   List<RowItem> allItems = [
     RowItem(
-      image: "assets/reg.jpeg",
+      image: "assets/instruction_buttons/reg.jpeg",
       title: "Register",
       description:
           "To register a patient, enter basic details like mobile number, name, gender, and address. Fields marked with * are required. You can also use the microphone icon to enter details by voice.\n\n"
@@ -23,18 +23,18 @@ class _FlowChartInstructionPageState extends State<FlowChartInstructionPage> {
           "Make sure all required details are filled correctly before submitting. An internet connection may be needed. You can view and manage patients later in the app.",
     ),
     RowItem(
-      image: "assets/reg.jpeg",
+      image: "assets/instruction_buttons/vitals.jpeg",
       title: "vitals",
       description: "Use this button to login and access your dashboard.",
     ),
     RowItem(
-      image: "assets/reg.jpeg",
-      title: "Profile",
+      image: "assets/instruction_buttons/patientQueue.jpeg",
+      title: "Patient Queue",
       description: "Manage your profile settings and update your information.",
     ),
     RowItem(
-      image: "assets/reg.jpeg",
-      title: "Submit",
+      image: "assets/instruction_buttons/injection.jpeg",
+      title: "Injection",
       description:
           "Submit your data after completing all required step.Submit your data after completing all required steps.Submit your data after completing all required steps.Submit your data after completing all required steps.",
     ),

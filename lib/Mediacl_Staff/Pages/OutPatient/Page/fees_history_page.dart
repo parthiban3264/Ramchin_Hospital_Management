@@ -16,9 +16,9 @@ class _FeesHistoryPageState extends State<FeesHistoryPage> {
     super.initState();
 
     // Load ONLY PAID Fees
-    _historyFuture = PaymentService().getAllPendingFees().then(
-      (list) => list.where((c) => c['status'] == 'PAID').toList(),
-    );
+    _historyFuture = PaymentService()
+        .getAllPendingFees(false)
+        .then((list) => list.where((c) => c['status'] == 'PAID').toList());
   }
 
   @override

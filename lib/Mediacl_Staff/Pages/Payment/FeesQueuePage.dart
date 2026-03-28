@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:hospitrax/Services/admin_service.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../Pages/NotificationsPage.dart';
+import '../../../Services/Button_Service.dart';
 import '../../../Services/payment_service.dart';
 import 'PaymentPage.dart';
 
@@ -13,7 +16,7 @@ class FeesQueuePage extends StatefulWidget {
 }
 
 class _FeesQueuePageState extends State<FeesQueuePage> {
-  late Future<List<dynamic>> _feesFuture;
+  Future<List<dynamic>>? _feesFuture;
 
   List<dynamic> _allFees = []; // All payment data
   List<dynamic> _queueFees = []; // Pending fees
@@ -38,11 +41,46 @@ class _FeesQueuePageState extends State<FeesQueuePage> {
   @override
   void initState() {
     super.initState();
-    _loadFees();
+    _initialize();
   }
 
-  void _loadFees() {
-    _feesFuture = PaymentService().getAllPendingFees().then((list) {
+  Future<void> _initialize() async {
+    await _hasPermission43(); // runs first
+    await _loadFees(); // runs after above completes
+  }
+
+  bool hasPermission43 = false;
+
+  Future<void> _hasPermission43() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getString('userId');
+
+    if (userId != null) {
+      final buttonPermission = await AdminService().getProfile();
+
+      // Assuming buttonPermission is a List
+      final permissionsList = buttonPermission?['permissions'];
+      print(permissionsList);
+
+      bool exists = false;
+
+      if (permissionsList is List) {
+        exists = permissionsList.contains(43);
+      }
+      print(exists);
+      setState(() {
+        hasPermission43 = exists;
+      });
+
+      print(hasPermission43);
+    }
+  }
+
+  Future<void> _loadFees() async {
+    print('hasPermission43 $hasPermission43');
+    _feesFuture = PaymentService().getAllPendingFees(hasPermission43).then((
+      list,
+    ) {
       // Normalize status
       List<dynamic> normalized = list.map((e) {
         e["status"] = e["status"].toString().toLowerCase();
@@ -397,543 +435,589 @@ class _FeesQueuePageState extends State<FeesQueuePage> {
           ),
         ),
       ),
-      body: Column(
-        children: [
-          if (_currentIndex == 0)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Row(
-                children: [
-                  _TopTab(
-                    label: 'Today',
-                    selected: queueFilter == 'Today',
-                    onTap: () {
-                      setState(() {
-                        queueFilter = 'Today';
-                        _applyQueueFilter();
-                      });
-                    },
-                  ),
-                  const SizedBox(width: 12),
-                  _TopTab(
-                    label: 'Previous',
-                    selected: queueFilter == 'Before',
-                    onTap: () {
-                      setState(() {
-                        queueFilter = 'Before';
-                        _applyQueueFilter();
-                      });
-                    },
-                  ),
-                ],
+      body: _feesFuture == null
+          ? Center(
+              child: SizedBox(
+                height: 30,
+                width: 30,
+                child: CircularProgressIndicator(strokeWidth: 4),
               ),
-            ),
-
-          if (_currentIndex == 1)
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _TopTab(
-                        label: 'Today',
-                        selected: historyFilter == 'Today',
-                        onTap: () {
-                          setState(() {
-                            historyFilter = 'Today';
-                            _applyHistoryFilter();
-                          });
-                        },
-                      ),
-                      _TopTab(
-                        label: 'Previous',
-                        selected: historyFilter == 'Previous',
-                        onTap: () {
-                          setState(() {
-                            historyFilter = 'Previous';
-                            _applyHistoryFilter();
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10.0,
-                            vertical: 6.0,
-                          ),
-                          child: TextField(
-                            cursorColor: Color(0xFFBF955E),
-                            controller: searchController,
-                            decoration: InputDecoration(
-                              hintText: "Search by Name or User ID",
-                              prefixIcon: const Icon(Icons.search),
-
-                              // Rounded border
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-
-                              // Focused border prettier
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFFBF955E),
-                                  width: 2,
-                                ),
-                              ),
-
-                              // Enabled border
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: Colors.grey.shade400,
-                                ),
-                              ),
-
-                              filled: true,
-                              fillColor: Colors.white,
-                            ),
-                            onChanged: (_) {
-                              setState(() {
-                                _applyHistoryFilter();
-                              });
-                            },
-                          ),
+            )
+          : Column(
+              children: [
+                if (_currentIndex == 0)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    child: Row(
+                      children: [
+                        _TopTab(
+                          label: 'Today',
+                          selected: queueFilter == 'Today',
+                          onTap: () {
+                            setState(() {
+                              queueFilter = 'Today';
+                              _applyQueueFilter();
+                            });
+                          },
                         ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          if (_currentIndex == 2)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Row(
-                children: [
-                  _TopTab(
-                    label: 'Today',
-                    selected: cancelledFilter == 'Today',
-                    onTap: () {
-                      setState(() {
-                        cancelledFilter = 'Today';
-                        _applyCancelledFilter();
-                      });
-                    },
-                  ),
-                  _TopTab(
-                    label: 'Previous',
-                    selected: cancelledFilter == 'Before',
-                    onTap: () {
-                      setState(() {
-                        cancelledFilter = 'Before';
-                        _applyCancelledFilter();
-                      });
-                    },
-                  ),
-                ],
-              ),
-            ),
-
-          Expanded(
-            child: FutureBuilder<List<dynamic>>(
-              future: _feesFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return Center(
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: double.infinity,
-                      child: Lottie.asset(
-                        'assets/Lottie/error404.json',
-                        fit: BoxFit.contain,
-                        repeat: true,
-                      ),
-                    ),
-                  );
-                } else if (_currentIndex == 1 && _historyFees.isEmpty) {
-                  return const Center(
-                    child: Text(
-                      '📜 No Payment History Available!',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  );
-                } else if (_currentIndex == 0 && _queueFees.isEmpty) {
-                  return const Center(
-                    child: Text(
-                      '🎉 No Pending Fees!',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  );
-                } else {
-                  //final data = _currentIndex == 0 ? _queueFees : _historyFees;
-                  final data = _currentIndex == 0
-                      ? _queueFees
-                      : _currentIndex == 1
-                      ? _historyFees
-                      : _cancelledFees;
-                  if (data.isEmpty) {
-                    return Center(
-                      child: Text(
-                        _currentIndex == 2
-                            ? '❌ No Cancelled Payments!'
-                            : 'No Data Available',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
+                        const SizedBox(width: 12),
+                        _TopTab(
+                          label: 'Previous',
+                          selected: queueFilter == 'Before',
+                          onTap: () {
+                            setState(() {
+                              queueFilter = 'Before';
+                              _applyQueueFilter();
+                            });
+                          },
                         ),
-                      ),
-                    );
-                  }
+                      ],
+                    ),
+                  ),
 
-                  return ListView.builder(
-                    itemCount: data.length,
-                    itemBuilder: (context, index) {
-                      final item = data[index];
-
-                      final patient = item['Patient'] ?? {};
-                      final admission = item['Admission'];
-                      // final bed = admission?['bed'];
-                      // final ward = bed?['ward'];
-
-                      final num advanceAmount = (admission?['charges'] ?? [])
-                          .where(
-                            (c) =>
-                                (c['status'] ?? '').toString().toUpperCase() ==
-                                    'PAID' &&
-                                (c['description'] ?? '')
-                                        .toString()
-                                        .toUpperCase() ==
-                                    'INPATIENT ADVANCE FEE' &&
-                                c['admissionId'] == item['Admission']['id'],
-                          )
-                          .fold<num>(
-                            0,
-                            (num sum, dynamic c) =>
-                                sum +
-                                (num.tryParse(c['amount']?.toString() ?? '0') ??
-                                    0),
-                          );
-                      final num
-                      chargePendingAmount = (admission?['charges'] ?? [])
-                          .where(
-                            (c) =>
-                                (c['status'] ?? '').toString().toUpperCase() ==
-                                    'PENDING' &&
-                                c['admissionId'] == item['Admission']['id'],
-                          )
-                          .fold<num>(
-                            0,
-                            (num sum, dynamic c) =>
-                                sum +
-                                (num.tryParse(c['amount']?.toString() ?? '0') ??
-                                    0),
-                          );
-
-                      final num chargePaidAmount = (admission?['charges'] ?? [])
-                          .where(
-                            (c) =>
-                                (c['status'] ?? '').toString().toUpperCase() ==
-                                    'PAID' &&
-                                (c['description'] ?? '')
-                                        .toString()
-                                        .toUpperCase() !=
-                                    'INPATIENT ADVANCE FEE' &&
-                                c['admissionId'] == item['Admission']['id'],
-                          )
-                          .fold<num>(
-                            0,
-                            (num sum, dynamic c) =>
-                                (num.tryParse(c['amount']?.toString() ?? '0') ??
-                                    0),
-                          );
-
-                      final num chargePendingTreatmentAmount =
-                          (admission?['charges'] ?? [])
-                              .where(
-                                (c) =>
-                                    (c['status'] ?? '')
-                                            .toString()
-                                            .toUpperCase() ==
-                                        'PENDING' &&
-                                    (c['description'] ?? '')
-                                            .toString()
-                                            .toUpperCase() !=
-                                        'ROOM RENT' &&
-                                    c['admissionId'] == item['Admission']['id'],
-                              )
-                              .fold<num>(
-                                0,
-                                (num sum, dynamic c) =>
-                                    sum +
-                                    (num.tryParse(c['amount']?.toString() ??
-                                            '0') ??
-                                        0),
-                              );
-
-                      final num chargePendingRoomAmount =
-                          (admission?['charges'] ?? [])
-                              .where(
-                                (c) =>
-                                    (c['status'] ?? '')
-                                            .toString()
-                                            .toUpperCase() ==
-                                        'PENDING' &&
-                                    (c['description'] ?? '')
-                                            .toString()
-                                            .toUpperCase() ==
-                                        'ROOM RENT' &&
-                                    c['admissionId'] == item['Admission']['id'],
-                              )
-                              .fold<num>(
-                                0,
-                                (num sum, dynamic c) =>
-                                    sum +
-                                    (num.tryParse(c['amount']?.toString() ??
-                                            '0') ??
-                                        0),
-                              );
-
-                      final bool isDischarge = item['type'] == 'DISCHARGEFEE';
-
-                      final num safeAdvance = advanceAmount;
-
-                      //final num diff = chargePendingAmount - advanceAmount;
-                      final num diff = _currentIndex != 1
-                          ? chargePendingAmount - safeAdvance
-                          : chargePaidAmount - safeAdvance;
-
-                      final String label = isDischarge && diff < 0
-                          ? 'Return Amount'
-                          : 'Amount';
-
-                      final num displayAmount;
-                      if (isDischarge) {
-                        displayAmount = diff.abs();
-                      } else if (item['type'] == 'DAILYTREATMENTFEE') {
-                        displayAmount = chargePendingTreatmentAmount;
-                      } else if (item['type'] == 'ROOMFEE') {
-                        displayAmount = chargePendingRoomAmount;
-                      } else {
-                        displayAmount = item['amount'] ?? 0;
-                      }
-                      return GestureDetector(
-                        onTap: _currentIndex == 2
-                            ? null // ❌ Disable tap for Cancelled
-                            : () async {
-                                // if (_currentIndex == 1) return;
-
-                                final result = await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => FeesPaymentPage(
-                                      fee: item,
-                                      patient: patient,
-                                      index: _currentIndex,
-                                      page: 'queue',
-                                    ),
-                                  ),
-                                );
-
-                                if (result == true) {
-                                  _loadFees();
-                                }
+                if (_currentIndex == 1)
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            _TopTab(
+                              label: 'Today',
+                              selected: historyFilter == 'Today',
+                              onTap: () {
+                                setState(() {
+                                  historyFilter = 'Today';
+                                  _applyHistoryFilter();
+                                });
                               },
-                        child: Card(
-                          color: Colors.white,
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 8,
-                          shadowColor: themeColor.withValues(alpha: 0.5),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Center(
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 2.0,
-                                      horizontal: 16.0,
+                            ),
+                            _TopTab(
+                              label: 'Previous',
+                              selected: historyFilter == 'Previous',
+                              onTap: () {
+                                setState(() {
+                                  historyFilter = 'Previous';
+                                  _applyHistoryFilter();
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10.0,
+                                  vertical: 6.0,
+                                ),
+                                child: TextField(
+                                  cursorColor: Color(0xFFBF955E),
+                                  controller: searchController,
+                                  decoration: InputDecoration(
+                                    hintText: "Search by Name or User ID",
+                                    prefixIcon: const Icon(Icons.search),
+
+                                    // Rounded border
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize
-                                          .min, // so column takes minimal vertical space
-                                      crossAxisAlignment: CrossAxisAlignment
-                                          .center, // left-align text inside
-                                      children: [
-                                        Text(
-                                          item['reason'] ?? 'Unknown Fee',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 20,
-                                            color: Colors.black87,
+
+                                    // Focused border prettier
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: const BorderSide(
+                                        color: Color(0xFFBF955E),
+                                        width: 2,
+                                      ),
+                                    ),
+
+                                    // Enabled border
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                        color: Colors.grey.shade400,
+                                      ),
+                                    ),
+
+                                    filled: true,
+                                    fillColor: Colors.white,
+                                  ),
+                                  onChanged: (_) {
+                                    setState(() {
+                                      _applyHistoryFilter();
+                                    });
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                if (_currentIndex == 2)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    child: Row(
+                      children: [
+                        _TopTab(
+                          label: 'Today',
+                          selected: cancelledFilter == 'Today',
+                          onTap: () {
+                            setState(() {
+                              cancelledFilter = 'Today';
+                              _applyCancelledFilter();
+                            });
+                          },
+                        ),
+                        _TopTab(
+                          label: 'Previous',
+                          selected: cancelledFilter == 'Before',
+                          onTap: () {
+                            setState(() {
+                              cancelledFilter = 'Before';
+                              _applyCancelledFilter();
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+
+                Expanded(
+                  child: FutureBuilder<List<dynamic>>(
+                    future: _feesFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      } else if (snapshot.hasError) {
+                        return Center(
+                          child: SizedBox(
+                            width: double.infinity,
+                            height: double.infinity,
+                            child: Lottie.asset(
+                              'assets/Lottie/error404.json',
+                              fit: BoxFit.contain,
+                              repeat: true,
+                            ),
+                          ),
+                        );
+                      } else if (_currentIndex == 1 && _historyFees.isEmpty) {
+                        return const Center(
+                          child: Text(
+                            '📜 No Payment History Available!',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        );
+                      } else if (_currentIndex == 0 && _queueFees.isEmpty) {
+                        return const Center(
+                          child: Text(
+                            '🎉 No Pending Fees!',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        );
+                      } else {
+                        //final data = _currentIndex == 0 ? _queueFees : _historyFees;
+                        final data = _currentIndex == 0
+                            ? _queueFees
+                            : _currentIndex == 1
+                            ? _historyFees
+                            : _cancelledFees;
+                        if (data.isEmpty) {
+                          return Center(
+                            child: Text(
+                              _currentIndex == 2
+                                  ? '❌ No Cancelled Payments!'
+                                  : 'No Data Available',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          );
+                        }
+
+                        return ListView.builder(
+                          itemCount: data.length,
+                          itemBuilder: (context, index) {
+                            final item = data[index];
+
+                            final patient = item['Patient'] ?? {};
+                            final admission = item['Admission'];
+                            // final bed = admission?['bed'];
+                            // final ward = bed?['ward'];
+
+                            final num advanceAmount =
+                                (admission?['charges'] ?? [])
+                                    .where(
+                                      (c) =>
+                                          (c['status'] ?? '')
+                                                  .toString()
+                                                  .toUpperCase() ==
+                                              'PAID' &&
+                                          (c['description'] ?? '')
+                                                  .toString()
+                                                  .toUpperCase() ==
+                                              'INPATIENT ADVANCE FEE' &&
+                                          c['admissionId'] ==
+                                              item['Admission']['id'],
+                                    )
+                                    .fold<num>(
+                                      0,
+                                      (num sum, dynamic c) =>
+                                          sum +
+                                          (num.tryParse(
+                                                c['amount']?.toString() ?? '0',
+                                              ) ??
+                                              0),
+                                    );
+                            final num chargePendingAmount =
+                                (admission?['charges'] ?? [])
+                                    .where(
+                                      (c) =>
+                                          (c['status'] ?? '')
+                                                  .toString()
+                                                  .toUpperCase() ==
+                                              'PENDING' &&
+                                          c['admissionId'] ==
+                                              item['Admission']['id'],
+                                    )
+                                    .fold<num>(
+                                      0,
+                                      (num sum, dynamic c) =>
+                                          sum +
+                                          (num.tryParse(
+                                                c['amount']?.toString() ?? '0',
+                                              ) ??
+                                              0),
+                                    );
+
+                            final num chargePaidAmount =
+                                (admission?['charges'] ?? [])
+                                    .where(
+                                      (c) =>
+                                          (c['status'] ?? '')
+                                                  .toString()
+                                                  .toUpperCase() ==
+                                              'PAID' &&
+                                          (c['description'] ?? '')
+                                                  .toString()
+                                                  .toUpperCase() !=
+                                              'INPATIENT ADVANCE FEE' &&
+                                          c['admissionId'] ==
+                                              item['Admission']['id'],
+                                    )
+                                    .fold<num>(
+                                      0,
+                                      (num sum, dynamic c) =>
+                                          (num.tryParse(
+                                            c['amount']?.toString() ?? '0',
+                                          ) ??
+                                          0),
+                                    );
+
+                            final num chargePendingTreatmentAmount =
+                                (admission?['charges'] ?? [])
+                                    .where(
+                                      (c) =>
+                                          (c['status'] ?? '')
+                                                  .toString()
+                                                  .toUpperCase() ==
+                                              'PENDING' &&
+                                          (c['description'] ?? '')
+                                                  .toString()
+                                                  .toUpperCase() !=
+                                              'ROOM RENT' &&
+                                          c['admissionId'] ==
+                                              item['Admission']['id'],
+                                    )
+                                    .fold<num>(
+                                      0,
+                                      (num sum, dynamic c) =>
+                                          sum +
+                                          (num.tryParse(
+                                                c['amount']?.toString() ?? '0',
+                                              ) ??
+                                              0),
+                                    );
+
+                            final num chargePendingRoomAmount =
+                                (admission?['charges'] ?? [])
+                                    .where(
+                                      (c) =>
+                                          (c['status'] ?? '')
+                                                  .toString()
+                                                  .toUpperCase() ==
+                                              'PENDING' &&
+                                          (c['description'] ?? '')
+                                                  .toString()
+                                                  .toUpperCase() ==
+                                              'ROOM RENT' &&
+                                          c['admissionId'] ==
+                                              item['Admission']['id'],
+                                    )
+                                    .fold<num>(
+                                      0,
+                                      (num sum, dynamic c) =>
+                                          sum +
+                                          (num.tryParse(
+                                                c['amount']?.toString() ?? '0',
+                                              ) ??
+                                              0),
+                                    );
+
+                            final bool isDischarge =
+                                item['type'] == 'DISCHARGEFEE';
+
+                            final num safeAdvance = advanceAmount;
+
+                            //final num diff = chargePendingAmount - advanceAmount;
+                            final num diff = _currentIndex != 1
+                                ? chargePendingAmount - safeAdvance
+                                : chargePaidAmount - safeAdvance;
+
+                            final String label = isDischarge && diff < 0
+                                ? 'Return Amount'
+                                : 'Amount';
+
+                            final num displayAmount;
+                            if (isDischarge) {
+                              displayAmount = diff.abs();
+                            } else if (item['type'] == 'DAILYTREATMENTFEE') {
+                              displayAmount = chargePendingTreatmentAmount;
+                            } else if (item['type'] == 'ROOMFEE') {
+                              displayAmount = chargePendingRoomAmount;
+                            } else {
+                              displayAmount = item['amount'] ?? 0;
+                            }
+                            return GestureDetector(
+                              onTap: _currentIndex == 2
+                                  ? null // ❌ Disable tap for Cancelled
+                                  : () async {
+                                      // if (_currentIndex == 1) return;
+
+                                      final result = await Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => FeesPaymentPage(
+                                            fee: item,
+                                            patient: patient,
+                                            index: _currentIndex,
+                                            page: 'queue',
+                                            isCtScan: hasPermission43,
                                           ),
                                         ),
-                                        const SizedBox(height: 8),
-                                        Row(
-                                          mainAxisSize: MainAxisSize
-                                              .min, // row takes minimal horizontal space
-                                          children: [
-                                            Text(
-                                              'Token No: ',
-                                              style: TextStyle(
+                                      );
+
+                                      if (result == true) {
+                                        _loadFees();
+                                      }
+                                    },
+                              child: Card(
+                                color: Colors.white,
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 8,
+                                shadowColor: themeColor.withValues(alpha: 0.5),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      Center(
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 2.0,
+                                            horizontal: 16.0,
+                                          ),
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize
+                                                .min, // so column takes minimal vertical space
+                                            crossAxisAlignment: CrossAxisAlignment
+                                                .center, // left-align text inside
+                                            children: [
+                                              Text(
+                                                item['reason'] ?? 'Unknown Fee',
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 20,
+                                                  color: Colors.black87,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Row(
+                                                mainAxisSize: MainAxisSize
+                                                    .min, // row takes minimal horizontal space
+                                                children: [
+                                                  Text(
+                                                    'Token No: ',
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      color: Colors.grey[700],
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    getString(
+                                                      item['Consultation']?['displayToken'] ??
+                                                          '-',
+                                                    ),
+                                                    style: const TextStyle(
+                                                      fontSize: 18,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: Colors.black,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+
+                                      //const SizedBox(height: 8),
+                                      const Divider(thickness: 1),
+
+                                      const SizedBox(height: 8),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              'Patient: ${getString(patient['name'])}',
+                                              style: const TextStyle(
                                                 fontSize: 16,
-                                                fontWeight: FontWeight.w500,
-                                                color: Colors.grey[700],
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Text(
+                                            'AGE: ${calculateAge(getString(patient['dob']))}',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              color: Colors.grey.shade600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            'ID: ${getString(patient['id'])}',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.grey.shade700,
+                                            ),
+                                          ),
+                                          Text(
+                                            'DOB: ${formatDob(getString(patient['dob']))}',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.grey.shade600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        'Address: ${getString(patient['address']?['Address'])}',
+                                        style: const TextStyle(fontSize: 14),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        'createdAt: ${getString(item['createdAt'])}',
+                                        style: const TextStyle(fontSize: 14),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      const Divider(thickness: 1),
+                                      const SizedBox(height: 8),
+
+                                      Center(
+                                        child: Text(
+                                          // 'Amount: ₹ ${item['amount']?.toStringAsFixed(0) ?? '-'}',
+                                          "$label : ₹ $displayAmount",
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFFBF955E),
+                                          ),
+                                        ),
+                                      ),
+
+                                      const SizedBox(height: 6),
+
+                                      if (_currentIndex == 1) ...[
+                                        Row(
+                                          children: [
+                                            Center(
+                                              child: Text(
+                                                getFormattedDate(
+                                                  item['updatedAt'],
+                                                ),
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.grey.shade800,
+                                                ),
                                               ),
                                             ),
+                                            Spacer(),
                                             Text(
-                                              getString(
-                                                item['Consultation']?['displayToken'] ??
-                                                    '-',
-                                              ),
-                                              style: const TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold,
+                                              'Paid',
+                                              style: TextStyle(
                                                 color: Colors.black,
                                               ),
+                                            ),
+                                            SizedBox(width: 5),
+                                            Icon(
+                                              Icons.check_circle,
+                                              color: Colors.green,
                                             ),
                                           ],
                                         ),
                                       ],
-                                    ),
-                                  ),
-                                ),
-
-                                //const SizedBox(height: 8),
-                                const Divider(thickness: 1),
-
-                                const SizedBox(height: 8),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        'Patient: ${getString(patient['name'])}',
-                                        style: const TextStyle(fontSize: 16),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Text(
-                                      'AGE: ${calculateAge(getString(patient['dob']))}',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 6),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'ID: ${getString(patient['id'])}',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.grey.shade700,
-                                      ),
-                                    ),
-                                    Text(
-                                      'DOB: ${formatDob(getString(patient['dob']))}',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  'Address: ${getString(patient['address']?['Address'])}',
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  'createdAt: ${getString(item['createdAt'])}',
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                                const SizedBox(height: 8),
-                                const Divider(thickness: 1),
-                                const SizedBox(height: 8),
-
-                                Center(
-                                  child: Text(
-                                    // 'Amount: ₹ ${item['amount']?.toStringAsFixed(0) ?? '-'}',
-                                    "$label : ₹ $displayAmount",
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFFBF955E),
-                                    ),
-                                  ),
-                                ),
-
-                                const SizedBox(height: 6),
-
-                                if (_currentIndex == 1) ...[
-                                  Row(
-                                    children: [
-                                      Center(
-                                        child: Text(
-                                          getFormattedDate(item['updatedAt']),
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey.shade800,
-                                          ),
-                                        ),
-                                      ),
-                                      Spacer(),
-                                      Text(
-                                        'Paid',
-                                        style: TextStyle(color: Colors.black),
-                                      ),
-                                      SizedBox(width: 5),
-                                      Icon(
-                                        Icons.check_circle,
-                                        color: Colors.green,
-                                      ),
                                     ],
                                   ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      }
                     },
-                  );
-                }
-              },
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
 
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,

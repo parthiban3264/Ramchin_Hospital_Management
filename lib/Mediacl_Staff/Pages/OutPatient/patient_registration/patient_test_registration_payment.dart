@@ -443,6 +443,7 @@ class TestRegistrationAndPaymentState
             patient: paymentPatient,
             index: paymentIndex,
             page: 'reg',
+            isCtScan: false,
           ),
         ),
 

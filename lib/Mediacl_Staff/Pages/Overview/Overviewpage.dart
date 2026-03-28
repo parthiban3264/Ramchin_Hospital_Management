@@ -297,7 +297,7 @@ class _OverviewPageState extends State<OverviewPage>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "Registrations",
+                "LAST 7D REGISTRATIONS",
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
@@ -367,10 +367,13 @@ class _OverviewPageState extends State<OverviewPage>
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: List.generate(values.length, (i) {
-                    final height = (values[i] / maxValue) * 70;
+                    final height = maxValue == 0
+                        ? 0.0
+                        : (values[i] / maxValue) * 70;
 
                     return Expanded(
                       child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           /// TOOLTIP
