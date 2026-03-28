@@ -59,7 +59,6 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
     if (isLogged == 'true' && role != null) {
       _navigateToDashboard(
         role,
-
         designation ?? '',
         hospitalName ?? '',
         hospitalStatus ?? '',
@@ -431,6 +430,10 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
           ? adminList[0]["status"] ?? "INACTIVE"
           : "INACTIVE";
 
+      final assistantDoctorId = (adminList != null && adminList.isNotEmpty)
+          ? adminList[0]["assignDoctorId"] ?? ""
+          : '0';
+
       // final designation = user["admin"] != null
       //     ? user["Admin"][0]["designation"] ?? role
       //     : role;
@@ -443,9 +446,9 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
       // final staffStatus = user["admin"] != null
       //     ? user["Admin"][0]["status"] ?? "INACTIVE"
       //     : role;
-      final assistantDoctorId = user["admin"] != null
-          ? user["Admin"][0]["assignDoctorId"] ?? ""
-          : '0';
+      // final assistantDoctorId = user["admin"] != null
+      //     ? user["Admin"][0]["assignDoctorId"] ?? ""
+      //     : '0';
       // Get hospital name properly
       final String hospitalStatus = user["Hospital"] != null
           ? (user["Hospital"]["HospitalStatus"] ?? "Unknown Status")
@@ -533,16 +536,33 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
           MaterialPageRoute(builder: (_) => VersionUpdatePage()),
         );
       }
+      // _navigateToDashboard(
+      //   role,
+      //   designation,
+      //   hospitalName,
+      //   hospitalStatus,
+      //   staffStatus,
+      //   staffName,
+      //   staffPhoto,
+      // );
+      if (!mounted) return;
 
-      _navigateToDashboard(
-        role,
-        designation,
-        hospitalName,
-        hospitalStatus,
-        staffStatus,
-        staffName,
-        staffPhoto,
-      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (_) => _getDashboardPage(
+              role,
+              designation,
+              hospitalName,
+              hospitalStatus,
+              staffStatus,
+              staffName,
+              staffPhoto,
+            ),
+          ),
+          (route) => false,
+        );
+      });
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -724,6 +744,129 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
         context,
         MaterialPageRoute(builder: (_) => page),
       );
+    }
+  }
+
+  Widget _getDashboardPage(
+    String role,
+    String designation,
+    String hospitalName,
+    String hospitalStatus,
+    String staffStatus,
+    String staffName,
+    String staffPhoto,
+  ) {
+    switch (role.toLowerCase()) {
+      case "doctor":
+        return FirstLoginWrapper(
+          child: AppWrapper(
+            child: AdminAppWrapper(
+              child: MedicalStaffDashboardPage(
+                designation: "doctor",
+                hospitalName: hospitalName,
+                staffName: staffName,
+                staffPhoto: staffPhoto,
+              ),
+            ),
+          ),
+        );
+        break;
+      case "nurse":
+        return FirstLoginWrapper(
+          child: AppWrapper(
+            child: AdminAppWrapper(
+              child: MedicalStaffDashboardPage(
+                designation: "nurse",
+                hospitalName: hospitalName,
+                staffName: staffName,
+                staffPhoto: staffPhoto,
+              ),
+            ),
+          ),
+        );
+        break;
+      case "lab technician":
+        return FirstLoginWrapper(
+          child: AppWrapper(
+            child: AdminAppWrapper(
+              child: MedicalStaffDashboardPage(
+                designation: "lab technician",
+                hospitalName: hospitalName,
+                staffName: staffName,
+                staffPhoto: staffPhoto,
+              ),
+            ),
+          ),
+        );
+        break;
+
+      case "medical staff":
+        return FirstLoginWrapper(
+          child: AppWrapper(
+            child: AdminAppWrapper(
+              child: MedicalStaffDashboardPage(
+                designation: "medical staff",
+                hospitalName: hospitalName,
+                staffName: staffName,
+                staffPhoto: staffPhoto,
+              ),
+            ),
+          ),
+        );
+        break;
+      case "cashier":
+        return FirstLoginWrapper(
+          child: AppWrapper(
+            child: AdminAppWrapper(
+              child: MedicalStaffDashboardPage(
+                designation: "cashier",
+                hospitalName: hospitalName,
+                staffName: staffName,
+                staffPhoto: staffPhoto,
+              ),
+            ),
+          ),
+        );
+        break;
+      case "assistant doctor":
+        return FirstLoginWrapper(
+          child: AppWrapper(
+            child: AdminAppWrapper(
+              child: MedicalStaffDashboardPage(
+                designation: "assistant doctor",
+                hospitalName: hospitalName,
+                staffName: staffName,
+                staffPhoto: staffPhoto,
+              ),
+            ),
+          ),
+        );
+        break;
+
+      case "patient":
+        return PatientDashboardPage();
+        break;
+
+      case "admin":
+        return FirstLoginWrapper(
+          child: AppWrapper(
+            child: AdminDashboardPage(
+              staffPhoto: staffPhoto,
+              staffName: staffName,
+            ),
+          ),
+        );
+        break;
+
+      case "administrator":
+        return OverallAdministratorDashPage(
+          staffPhoto: staffPhoto,
+          staffName: staffName,
+        );
+        break;
+
+      default:
+        return const HospitalLoginPage();
     }
   }
 }
