@@ -393,7 +393,6 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
       password: password,
       deviceId: deviceId,
     );
-    print('result $result');
 
     // if (mounted) Navigator.pop(context); // hide loading
     if (!mounted) return;
@@ -414,18 +413,36 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
       print('user $user');
 
       final role = user["role"] ?? "Unknown";
-      final designation = user["admin"] != null
-          ? user["Admin"][0]["designation"] ?? role
+      final adminList = user["Admin"];
+
+      final designation = (adminList != null && adminList.isNotEmpty)
+          ? adminList[0]["designation"] ?? role
           : role;
-      final staffName = user["admin"] != null
-          ? user["Admin"][0]["name"] ?? role
+
+      final staffName = (adminList != null && adminList.isNotEmpty)
+          ? adminList[0]["name"] ?? role
           : role;
-      final staffPhoto = user["admin"] != null
-          ? user["Admin"][0]["photo"] ?? role
-          : role;
-      final staffStatus = user["admin"] != null
-          ? user["Admin"][0]["status"] ?? "INACTIVE"
-          : role;
+
+      final staffPhoto = (adminList != null && adminList.isNotEmpty)
+          ? adminList[0]["photo"] ?? ""
+          : "";
+
+      final staffStatus = (adminList != null && adminList.isNotEmpty)
+          ? adminList[0]["status"] ?? "INACTIVE"
+          : "INACTIVE";
+
+      // final designation = user["admin"] != null
+      //     ? user["Admin"][0]["designation"] ?? role
+      //     : role;
+      // final staffName = user["admin"] != null
+      //     ? user["Admin"][0]["name"] ?? role
+      //     : role;
+      // final staffPhoto = user["admin"] != null
+      //     ? user["Admin"][0]["photo"] ?? role
+      //     : role;
+      // final staffStatus = user["admin"] != null
+      //     ? user["Admin"][0]["status"] ?? "INACTIVE"
+      //     : role;
       final assistantDoctorId = user["admin"] != null
           ? user["Admin"][0]["assignDoctorId"] ?? ""
           : '0';
@@ -445,12 +462,18 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
           isFirstLogin = user["Admin"] != null
               ? (user["Admin"][0]["isFirstLogin"] ?? false)
               : false;
-          accountType = user["Admin"] != null
-              ? (user["Admin"][0]["accountType"] ?? false)
-              : false;
-          id = user["Admin"] != null
-              ? (user["Admin"][0]["id"] ?? false)
-              : false;
+          // accountType = user["Admin"] != null
+          //     ? (user["Admin"][0]["accountType"] ?? false)
+          //     : false;
+          accountType = (adminList != null && adminList.isNotEmpty)
+              ? (adminList[0]["accountType"] ?? "REAL").toString()
+              : "REAL";
+          // id = user["Admin"] != null
+          //     ? (user["Admin"][0]["id"] ?? false)
+          //     : false;
+          id = (adminList != null && adminList.isNotEmpty)
+              ? (adminList[0]["id"] ?? 0)
+              : 0;
         });
       }
 
@@ -462,7 +485,8 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
       // Save login info securely
       final prefs = await SharedPreferences.getInstance();
 
-      await prefs.setString('isLogged', 'true');
+      // await prefs.setString('isLogged', 'true');
+      await prefs.setBool('isLogged', true);
       await prefs.setString('role', role);
       await prefs.setInt('id', id);
       await prefs.setString('designation', designation);
