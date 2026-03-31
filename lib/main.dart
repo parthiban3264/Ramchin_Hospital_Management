@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'Admin/Pages/admin_dashboard.dart';
+import 'Admin/Pages/globals.dart';
 import 'Administrator/Overall_Administrator_Dashboard.dart';
 import 'Pages/DashboardPages/patient_dashboard.dart';
 import 'Pages/login/widget/HospitalLoginPage.dart';
@@ -9,7 +10,9 @@ import 'app_wrapper.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await loadStaffPhoto();
   runApp(AppWrapper(child: const MyApp()));
 }
 
@@ -41,71 +44,22 @@ class _SplashPageState extends State<SplashPage> {
     _checkLoginStatus();
   }
 
-  // Future<void> _checkLoginStatus() async {
-  //   final prefs = await SharedPreferences.getInstance();
-  //   // final hospitalId = prefs.getString('hospitalId');
-  //   // String? isLogged = prefs.getString('isLogged') ?? 'false';
-  //   bool isLogged = prefs.getBool('isLogged') ?? false;
-  //   String? role = prefs.getString('role');
-  //   String? status = prefs.getString('hospitalStatus');
-  //   String? staffName = prefs.getString('staffName') ?? '';
-  //   String? staffPhoto = prefs.getString('staffPhoto') ?? '';
-  //   prefs.setBool('isLogged', true); // ✅ correct
-  //   // String? staffStatus = prefs.getString('staffStatus');
-  //
-  //   // if (isLogged == 'true' && role != null && status != null)
-  //   if (isLogged &&
-  //       role != null &&
-  //       status != null &&
-  //       status.toUpperCase() == 'ACTIVE') {
-  //     Widget dashboard;
-  //     if ((role.toLowerCase() == "admin" && status.toUpperCase() == 'ACTIVE')) {
-  //       dashboard = AdminDashboardPage(
-  //         staffName: staffName,
-  //         staffPhoto: staffPhoto,
-  //       );
-  //     } else if (role.toLowerCase() == "patient") {
-  //       dashboard = const PatientDashboardPage();
-  //     } else if (role.toLowerCase() == "administrator") {
-  //       dashboard = OverallAdministratorDashPage(
-  //         staffName: staffName,
-  //         staffPhoto: staffPhoto,
-  //       );
-  //     } else {
-  //       dashboard = const HospitalLoginPage();
-  //     }
-  //
-  //     if (mounted) {
-  //       Navigator.pushReplacement(
-  //         context,
-  //         MaterialPageRoute(builder: (_) => dashboard),
-  //       );
-  //     }
-  //   } else {
-  //     if (mounted) {
-  //       Navigator.pushReplacement(
-  //         context,
-  //         MaterialPageRoute(builder: (_) => const HospitalLoginPage()),
-  //       );
-  //     }
-  //   }
-  // }
-
   Future<void> _checkLoginStatus() async {
     final prefs = await SharedPreferences.getInstance();
-
+    // final hospitalId = prefs.getString('hospitalId');
+    // String? isLogged = prefs.getString('isLogged') ?? 'false';
     bool isLogged = prefs.getBool('isLogged') ?? false;
     String? role = prefs.getString('role');
     String? status = prefs.getString('hospitalStatus');
-    String staffName = prefs.getString('staffName') ?? '';
-    String staffPhoto = prefs.getString('staffPhoto') ?? '';
+    String? staffName = prefs.getString('staffName') ?? '';
+    String? staffPhoto = prefs.getString('staffPhoto') ?? '';
+    prefs.setBool('isLogged', true); // ✅ correct
+    // String? staffStatus = prefs.getString('staffStatus');
 
-    await Future.delayed(const Duration(milliseconds: 300));
-
+    // if (isLogged == 'true' && role != null && status != null)
     if (isLogged && role != null && status != null) {
       Widget dashboard;
-
-      if (role.toLowerCase() == "admin" && status.toUpperCase() == 'ACTIVE') {
+      if ((role.toLowerCase() == "admin" && status.toUpperCase() == 'ACTIVE')) {
         dashboard = AdminDashboardPage(
           staffName: staffName,
           staffPhoto: staffPhoto,
@@ -136,6 +90,52 @@ class _SplashPageState extends State<SplashPage> {
       }
     }
   }
+
+  // Future<void> _checkLoginStatus() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //
+  //   bool isLogged = prefs.getBool('isLogged') ?? false;
+  //   String? role = prefs.getString('role');
+  //   String? status = prefs.getString('hospitalStatus');
+  //   String staffName = prefs.getString('staffName') ?? '';
+  //   String staffPhoto = prefs.getString('staffPhoto') ?? '';
+  //
+  //   //await Future.delayed(const Duration(milliseconds: 300));
+  //
+  //   if (isLogged && role != null && status != null) {
+  //     Widget dashboard;
+  //
+  //     if (role.toLowerCase() == "admin" && status.toUpperCase() == 'ACTIVE') {
+  //       dashboard = AdminDashboardPage(
+  //         staffName: staffName,
+  //         staffPhoto: staffPhoto,
+  //       );
+  //     } else if (role.toLowerCase() == "patient") {
+  //       dashboard = const PatientDashboardPage();
+  //     } else if (role.toLowerCase() == "administrator") {
+  //       dashboard = OverallAdministratorDashPage(
+  //         staffName: staffName,
+  //         staffPhoto: staffPhoto,
+  //       );
+  //     } else {
+  //       dashboard = const HospitalLoginPage();
+  //     }
+  //
+  //     if (mounted) {
+  //       Navigator.pushReplacement(
+  //         context,
+  //         MaterialPageRoute(builder: (_) => dashboard),
+  //       );
+  //     }
+  //   } else {
+  //     if (mounted) {
+  //       Navigator.pushReplacement(
+  //         context,
+  //         MaterialPageRoute(builder: (_) => const HospitalLoginPage()),
+  //       );
+  //     }
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {

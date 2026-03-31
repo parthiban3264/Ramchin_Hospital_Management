@@ -390,7 +390,8 @@ class _AddStaffPageState extends State<AddStaffPage> {
             children: [
               _buildTextField(
                 controller: userIdController,
-                keyboardType: TextInputType.visiblePassword,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 label: "User Id",
                 icon: Icons.person_outline,
                 color: gold,

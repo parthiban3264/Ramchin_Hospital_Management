@@ -359,7 +359,10 @@ class _AddAdminPageState extends State<AddAdminPage> {
                 // ),
                 _buildTextField(
                   controller: userIdController,
-                  keyboardType: TextInputType.visiblePassword,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly, // ✅ only digits
+                  ],
                   label: "User Id",
                   icon: Icons.person_outline,
                   color: gold,

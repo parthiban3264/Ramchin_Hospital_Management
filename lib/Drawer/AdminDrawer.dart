@@ -7,6 +7,7 @@ import '../Admin/Pages/admin_profile_page.dart';
 import '../Admin/Pages/change_password_page.dart';
 import '../Admin/Pages/contact_page.dart';
 import '../Admin/Pages/flow_instruction_page.dart';
+import '../Admin/Pages/globals.dart';
 import '../Admin/Pages/privacy_policy_page.dart';
 import '../Admin/Pages/terms_conditions_page.dart';
 import '../Admin/Pages/version_update_page.dart';
@@ -152,7 +153,7 @@ class _AdminMobileDrawerState extends State<AdminMobileDrawer> {
                               /// 🔸 Accent Pill Line (better than flat line)
                               Icon(
                                 Icons.menu_open_rounded,
-                                size: 22,
+                                size: 23,
                                 color: Colors.black87,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -235,19 +236,19 @@ class _AdminMobileDrawerState extends State<AdminMobileDrawer> {
                                 ),
                               ],
                             ),
-                            child: CircleAvatar(
-                              radius: 28,
-                              backgroundColor: Colors.grey.shade100,
-                              backgroundImage: (widget.staffPhoto.isNotEmpty)
-                                  ? NetworkImage(widget.staffPhoto)
-                                  : null,
-                              child: (widget.staffPhoto.isEmpty)
-                                  ? Icon(
-                                      Icons.local_hospital,
-                                      color: CustomColors.customGold,
-                                      size: 26,
-                                    )
-                                  : null,
+                            child: ValueListenableBuilder<String>(
+                              valueListenable: staffPhotoNotifier,
+                              builder: (context, photo, _) {
+                                final imageUrl = (photo.isNotEmpty)
+                                    ? photo
+                                    : "https://www.shutterstock.com/image-vector/stylized-doctor-vector-260nw-163380338.jpg";
+
+                                return CircleAvatar(
+                                  radius: 28,
+                                  backgroundColor: Colors.grey.shade100,
+                                  backgroundImage: NetworkImage(imageUrl),
+                                );
+                              },
                             ),
                           ),
 

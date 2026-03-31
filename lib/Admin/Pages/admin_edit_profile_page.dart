@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../Pages/NotificationsPage.dart';
 import '../../Services/admin_service.dart';
+import '../../Widgets/animated_dot_text.dart';
 import 'globals.dart';
 
 const Color primaryColor = Color(0xFFBF955E);
@@ -78,6 +79,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   Future<void> _fetchAdminData() async {
     try {
+      setState(() => _isLoading = true);
+      // await Future.delayed(const Duration(seconds: 15));
       final response = await _adminService.getProfile();
 
       if (response != null) {
@@ -90,7 +93,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           _addressController.text = data['address'] ?? '';
           _photoController.text =
               data['photo'] ??
-              "https://cdn-icons-png.flaticon.com/512/387/387561.png";
+              "https://www.shutterstock.com/image-vector/stylized-doctor-vector-260nw-163380338.jpg";
 
           // 🔹 Store initial values
           _initialData = {
@@ -106,6 +109,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         });
       } else {
         if (mounted) {
+          setState(() => _isLoading = false);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("⚠️ Failed to fetch admin profile")),
           );
@@ -113,9 +117,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
       }
     } catch (e) {
       if (mounted) {
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text("Error fetching data: $e")));
+        ).showSnackBar(SnackBar(content: Text("⚠️ Failed to fetch profile")));
       }
     } finally {
       setState(() => _isLoading = false);
@@ -232,7 +237,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
         });
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString("staffPhoto", photoUrl);
+
         staffPhotoNotifier.value = photoUrl;
+
         if (mounted) {
           ScaffoldMessenger.of(
             context,
@@ -304,7 +311,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         ? null
         : (_photoController.text.isNotEmpty
               ? _photoController.text
-              : "https://cdn-icons-png.flaticon.com/512/387/387561.png");
+              : "https://www.shutterstock.com/image-vector/stylized-doctor-vector-260nw-163380338.jpg");
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
@@ -363,9 +370,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: primaryColor))
+          ? const Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [AnimatedDotsText(text: "Processing")],
+              ),
+            )
           : _isSaving
-          ? const Center(child: CircularProgressIndicator(color: primaryColor))
+          ? const Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [AnimatedDotsText(text: "Saving")],
+              ),
+            )
           : SingleChildScrollView(
               padding: const EdgeInsets.all(20),
               child: Center(

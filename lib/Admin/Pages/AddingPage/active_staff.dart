@@ -124,7 +124,11 @@ class _ActiveStaffPageState extends State<ActiveStaffPage> {
     });
   }
 
-  Future<void> resetPassword(int staffId) async {
+  Future<void> resetPassword(
+    int staffId,
+    bool resetPassword,
+    bool logout,
+  ) async {
     setState(() {
       resetLoading[staffId] = true;
     });
@@ -137,7 +141,12 @@ class _ActiveStaffPageState extends State<ActiveStaffPage> {
       final response = await http.patch(
         Uri.parse('$baseUrl/auth/admin/reset_password'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'hospitalId': hospitalId, 'userId': staffId}),
+        body: jsonEncode({
+          'hospitalId': hospitalId,
+          'userId': staffId,
+          'password': resetPassword, // ✅ FIXED
+          'logout': logout,
+        }),
       );
 
       if (!mounted) return;
@@ -145,7 +154,7 @@ class _ActiveStaffPageState extends State<ActiveStaffPage> {
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        _showMessage("✅ Password reset successful!", success: true);
+        _showMessage(data['message'] ?? "✅ successful!", success: true);
       } else {
         _showMessage(data['message'] ?? "❌ Failed to reset password");
       }
@@ -160,123 +169,286 @@ class _ActiveStaffPageState extends State<ActiveStaffPage> {
     }
   }
 
+  // void _confirmResetPassword(int staffId) {
+  //   showDialog(
+  //     context: context,
+  //     barrierDismissible: false,
+  //     builder: (context) {
+  //       return AlertDialog(
+  //         elevation: 8,
+  //         shape: RoundedRectangleBorder(
+  //           borderRadius: BorderRadius.circular(18),
+  //         ),
+  //         contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 10),
+  //         content: Column(
+  //           mainAxisSize: MainAxisSize.min,
+  //           children: [
+  //             // 🔶 Icon
+  //             Container(
+  //               padding: const EdgeInsets.all(14),
+  //               decoration: BoxDecoration(
+  //                 color: const Color(0xFFBF955E).withValues(alpha: 0.15),
+  //                 shape: BoxShape.circle,
+  //               ),
+  //               child: const Icon(
+  //                 Icons.lock_reset_rounded,
+  //                 size: 34,
+  //                 color: Color(0xFFBF955E),
+  //               ),
+  //             ),
+  //
+  //             const SizedBox(height: 16),
+  //
+  //             // 📝 Title
+  //             const Text(
+  //               "Reset?",
+  //               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+  //               textAlign: TextAlign.center,
+  //             ),
+  //
+  //             const SizedBox(height: 10),
+  //
+  //             // 📄 Description
+  //             const Text(
+  //               "Are you sure you want to reset this staff's password & Logout?",
+  //               textAlign: TextAlign.center,
+  //               style: TextStyle(fontSize: 14, color: Colors.black87),
+  //             ),
+  //
+  //             const SizedBox(height: 12),
+  //
+  //             // 🔑 Password highlight
+  //             Container(
+  //               padding: const EdgeInsets.symmetric(
+  //                 horizontal: 12,
+  //                 vertical: 8,
+  //               ),
+  //               decoration: BoxDecoration(
+  //                 color: Colors.grey.shade100,
+  //                 borderRadius: BorderRadius.circular(10),
+  //               ),
+  //               child: const Text(
+  //                 "New Password: abc123",
+  //                 style: TextStyle(
+  //                   fontWeight: FontWeight.w600,
+  //                   fontSize: 14,
+  //                   color: Colors.black87,
+  //                 ),
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //
+  //         actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+  //         actions: [
+  //           Row(
+  //             children: [
+  //               // ❌ No button
+  //               Expanded(
+  //                 child: OutlinedButton(
+  //                   style: ElevatedButton.styleFrom(
+  //                     backgroundColor: Colors.grey,
+  //                     shape: RoundedRectangleBorder(
+  //                       borderRadius: BorderRadius.circular(10),
+  //                     ),
+  //                     elevation: 2,
+  //                   ),
+  //                   onPressed: () => Navigator.pop(context),
+  //                   child: const Text(
+  //                     "No",
+  //                     style: TextStyle(color: Colors.white),
+  //                   ),
+  //                 ),
+  //               ),
+  //
+  //               const SizedBox(width: 12),
+  //
+  //               // ✅ Yes button
+  //               Expanded(
+  //                 child: ElevatedButton(
+  //                   style: ElevatedButton.styleFrom(
+  //                     backgroundColor: Colors.redAccent,
+  //                     shape: RoundedRectangleBorder(
+  //                       borderRadius: BorderRadius.circular(10),
+  //                     ),
+  //                     elevation: 2,
+  //                   ),
+  //                   onPressed: () {
+  //                     Navigator.pop(context);
+  //                     resetPassword(staffId);
+  //                   },
+  //                   child: const Text(
+  //                     "Yes, Reset",
+  //                     style: TextStyle(color: Colors.white),
+  //                   ),
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
+
   void _confirmResetPassword(int staffId) {
+    bool resetPasswordSelected = true;
+    bool logoutSelected = true;
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) {
-        return AlertDialog(
-          elevation: 8,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-          ),
-          contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 10),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 🔶 Icon
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFBF955E).withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.lock_reset_rounded,
-                  size: 34,
-                  color: Color(0xFFBF955E),
-                ),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              elevation: 8,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
               ),
-
-              const SizedBox(height: 16),
-
-              // 📝 Title
-              const Text(
-                "Reset Password?",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-
-              const SizedBox(height: 10),
-
-              // 📄 Description
-              const Text(
-                "Are you sure you want to reset this staff's password?",
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: Colors.black87),
-              ),
-
-              const SizedBox(height: 12),
-
-              // 🔑 Password highlight
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Text(
-                  "New Password: abc123",
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    color: Colors.black87,
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          actions: [
-            Row(
-              children: [
-                // ❌ No button
-                Expanded(
-                  child: OutlinedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      elevation: 2,
+              contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 10),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 🔶 Icon
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFBF955E).withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
                     ),
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text(
-                      "No",
-                      style: TextStyle(color: Colors.white),
+                    child: const Icon(
+                      Icons.lock_reset_rounded,
+                      size: 34,
+                      color: Color(0xFFBF955E),
                     ),
                   ),
-                ),
 
-                const SizedBox(width: 12),
+                  const SizedBox(height: 16),
 
-                // ✅ Yes button
-                Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.redAccent,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      elevation: 2,
-                    ),
-                    onPressed: () {
-                      Navigator.pop(context);
-                      resetPassword(staffId);
+                  const Text(
+                    "Reset?",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  const Text(
+                    "Choose what you want to do:",
+                    textAlign: TextAlign.center,
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // 🔘 Rounded Checkbox - Reset Password
+                  CheckboxListTile(
+                    value: resetPasswordSelected,
+                    onChanged: (value) {
+                      setState(() {
+                        resetPasswordSelected = value!;
+                      });
                     },
-                    child: const Text(
-                      "Yes, Reset",
-                      style: TextStyle(color: Colors.white),
+                    title: const Text("Reset Password Only"),
+                    controlAffinity: ListTileControlAffinity.leading,
+
+                    // 🎨 Style
+                    activeColor: Colors.green, // ✅ green background
+                    checkColor: Colors.white, // ✅ white tick
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8), // ✅ rounded
                     ),
+                    side: const BorderSide(color: Colors.grey, width: 1.5),
                   ),
+
+                  // 🔘 Rounded Checkbox - Logout
+                  CheckboxListTile(
+                    value: logoutSelected,
+                    onChanged: (value) {
+                      setState(() {
+                        logoutSelected = value!;
+                      });
+                    },
+                    title: const Text("Logout from all devices"),
+                    controlAffinity: ListTileControlAffinity.leading,
+
+                    activeColor: Colors.green,
+                    checkColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    side: const BorderSide(color: Colors.grey, width: 1.5),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // 🔑 Password preview (only if password selected)
+                  if (resetPasswordSelected)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Text(
+                        "New Password: abc123",
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                ],
+              ),
+
+              actionsPadding: const EdgeInsets.fromLTRB(16, 6, 16, 16),
+              actions: [
+                Row(
+                  children: [
+                    // ❌ No Button
+                    Expanded(
+                      child: OutlinedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey,
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text(
+                          "No",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(width: 12),
+
+                    // ✅ Yes Button
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.redAccent,
+                        ),
+                        onPressed: (resetPasswordSelected || logoutSelected)
+                            ? () {
+                                Navigator.pop(context);
+
+                                // 🔥 Your logic
+                                resetPassword(
+                                  staffId,
+                                  resetPasswordSelected,
+                                  logoutSelected,
+                                );
+                              }
+                            : null, // 🚫 disabled if none selected
+                        child: const Text(
+                          "Yes, Confirm",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
-            ),
-          ],
+            );
+          },
         );
       },
     );
@@ -512,7 +684,7 @@ class _ActiveStaffPageState extends State<ActiveStaffPage> {
                                               child: const Padding(
                                                 padding: EdgeInsets.all(4),
                                                 child: Text(
-                                                  "Reset Password",
+                                                  "Reset ?",
                                                   style: TextStyle(
                                                     fontSize: 13,
                                                     fontWeight: FontWeight.w600,

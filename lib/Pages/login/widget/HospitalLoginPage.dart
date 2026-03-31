@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../Admin/Pages/admin_app_wrapper.dart';
 import '../../../Admin/Pages/admin_dashboard.dart';
+import '../../../Admin/Pages/globals.dart';
 import '../../../Admin/Pages/version_update_page.dart';
 import '../../../Administrator/Overall_Administrator_Dashboard.dart';
 import '../../../FirstLoginWrapper.dart';
@@ -44,8 +45,8 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
     final prefs = await SharedPreferences.getInstance();
 
     if (!mounted) return; // ✅ ADD THIS
-
-    String? isLogged = prefs.getString('isLogged');
+    bool? isLogged = prefs.getBool('isLogged');
+    //String? isLogged = prefs.getString('isLogged');
     String? role = prefs.getString('role');
     String? designation = prefs.getString('designation');
     String? hospitalName = prefs.getString('hospitalName');
@@ -56,7 +57,7 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
     String? staffName = prefs.getString('staffName');
     String? staffPhoto = prefs.getString('staffPhoto');
 
-    if (isLogged == 'true' && role != null) {
+    if (isLogged == true && role != null) {
       _navigateToDashboard(
         role,
         designation ?? '',
@@ -430,6 +431,8 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
           ? adminList[0]["status"] ?? "INACTIVE"
           : "INACTIVE";
 
+      print('staffStatus $staffStatus');
+
       final assistantDoctorId = (adminList != null && adminList.isNotEmpty)
           ? adminList[0]["assignDoctorId"] ?? ""
           : '0';
@@ -502,9 +505,11 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
       // await prefs.setString( 'userId',   userId);
       await prefs.setString('hospitalId', hospitalId);
       await prefs.setString('hospitalStatus', hospitalStatus);
+      await prefs.setString('staffStatus', staffStatus);
 
       await prefs.setString('staffName', staffName);
       await prefs.setString('staffPhoto', staffPhoto);
+      staffPhotoNotifier.value = staffPhoto;
       await prefs.setString('assistantDoctorId', assistantDoctorId);
 
       if (hospitalStatus.toUpperCase() == 'ACTIVE' &&
@@ -589,9 +594,9 @@ class _HospitalLoginPageState extends State<HospitalLoginPage> {
       ).showSnackBar(const SnackBar(content: Text("Hospital is not active")));
       return;
     }
-    final prefs = await SharedPreferences.getInstance();
+    //final prefs = await SharedPreferences.getInstance();
 
-    await prefs.setString('staffStatus', staffStatus);
+    // await prefs.setString('staffStatus', staffStatus);
 
     if (role.toUpperCase() != 'ADMIN' &&
         role.toUpperCase() != 'ADMINISTRATOR' &&

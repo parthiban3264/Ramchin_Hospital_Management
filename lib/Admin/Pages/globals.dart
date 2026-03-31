@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-ValueNotifier<String> staffPhotoNotifier = ValueNotifier(
-  "https://cdn-icons-png.flaticon.com/512/387/387561.png", // default photo
-);
+/// 🔥 Global notifier
+ValueNotifier<String> staffPhotoNotifier = ValueNotifier('');
+
+/// 🔥 Load from SharedPreferences
+Future<void> loadStaffPhoto() async {
+  final prefs = await SharedPreferences.getInstance();
+  staffPhotoNotifier.value = prefs.getString("staffPhoto") ?? '';
+}
