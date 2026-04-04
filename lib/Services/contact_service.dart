@@ -9,7 +9,7 @@ class ContactService {
   Future<Map<String, dynamic>?> createContact(Map<String, dynamic> data) async {
     try {
       final response = await http.post(
-        Uri.parse(baseUrl),
+        Uri.parse("$baseUrl/play_store_contact/create"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode(data),
       );
@@ -24,9 +24,11 @@ class ContactService {
   // ✅ GET ALL
   Future<List<dynamic>> getContacts() async {
     try {
-      final response = await http.get(Uri.parse(baseUrl));
+      final response = await http.get(
+        Uri.parse("$baseUrl/play_store_contact/get"),
+      );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         return jsonDecode(response.body);
       }
       return [];
@@ -43,7 +45,7 @@ class ContactService {
   ) async {
     try {
       final response = await http.put(
-        Uri.parse("$baseUrl/$id"),
+        Uri.parse("$baseUrl/play_store_contact/update/$id"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode(data),
       );
@@ -58,7 +60,9 @@ class ContactService {
   // ✅ DELETE
   Future<bool> deleteContact(int id) async {
     try {
-      final response = await http.delete(Uri.parse("$baseUrl/$id"));
+      final response = await http.delete(
+        Uri.parse("$baseUrl/play_store_contact/delete/$id"),
+      );
 
       return response.statusCode == 200;
     } catch (e) {

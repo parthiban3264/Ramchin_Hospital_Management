@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:hospitrax/Services/contact_service.dart';
+import 'package:hospitrax/Widgets/animated_dot_text.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:animated_text_kit/animated_text_kit.dart';
 
+import '../../Widgets/animated_text_typer.dart';
 import 'AddingPage/submit_tickets.dart';
 
 const Color primaryColor = Color(0xFFBF955E);
@@ -17,12 +22,36 @@ class _ContactPageState extends State<ContactPage> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    grtAccountType();
+    _updateTime();
+    getAccountType();
+    checkSubmissionStatus();
+  }
+
+  String? _dateTime;
+  void _updateTime() {
+    setState(() {
+      _dateTime = DateFormat('yyyy-MM-dd hh:mm a').format(DateTime.now());
+    });
   }
 
   String? accountType = 'DEMO';
+  final ContactService _contactService = ContactService();
 
-  Future<void> grtAccountType() async {
+  Future<void> checkSubmissionStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    bool submitted = prefs.getBool('isSubmit') ?? false;
+
+    if (submitted) {
+      isSubmit = true;
+
+      /// 🔥 Show dialog AFTER UI builds
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        AlreadySubmittedDialog();
+      });
+    }
+  }
+
+  Future<void> getAccountType() async {
     final prefs = await SharedPreferences.getInstance();
     final accountType = prefs.getString('accountType');
     print('accountType $accountType');
@@ -32,10 +61,61 @@ class _ContactPageState extends State<ContactPage> {
     });
   }
 
+  Map<String, dynamic> personalData = {};
+  Map<String, dynamic> hospitalData = {};
+  bool loading = false;
+  bool isSubmit = false;
+
+  Future<void> createContact() async {
+    setState(() => loading = true);
+
+    // ✅ Fill personal details
+    personalData = {
+      "name": nameController.text.trim(),
+      "phone": phoneController.text.trim(),
+      "gender": genderController.text.trim(),
+      "email": emailController.text.trim(),
+    };
+
+    // ✅ Fill hospital details
+    hospitalData = {
+      "hospitalName": hospitalNameController.text.trim(),
+      "phone": hospitalPhoneController.text.trim(),
+      "email": hospitalEmailController.text.trim(),
+      "address": addressController.text.trim(),
+    };
+
+    final contactData = {
+      "isAgreement": acceptedTerms,
+      "isInterested": interested,
+      "personalDetails": personalData,
+      "hospitalDetails": hospitalData,
+      "createdAt": _dateTime.toString(),
+    };
+
+    try {
+      final data = await _contactService.createContact(contactData);
+
+      // ⚠️ Your logic is reversed here
+      if (data == null) {
+        showMsg("Something went wrong");
+      } else {
+        submit();
+        showMsg("Contact created successfully");
+      }
+    } catch (e) {
+      showMsg("Failed to create Contact: ${e.toString()}");
+      setState(() => loading = false);
+    } finally {
+      setState(() => loading = false);
+    }
+  }
+
   int step = 0;
 
   /// CONTROLLERS
   final nameController = TextEditingController();
+  final genderController = TextEditingController();
   final phoneController = TextEditingController();
   final emailController = TextEditingController();
   final hospitalNameController = TextEditingController();
@@ -57,6 +137,7 @@ class _ContactPageState extends State<ContactPage> {
 
     if (step == 1) {
       if (nameController.text.isEmpty) return showMsg("Enter name");
+      if (genderController.text.isEmpty) return showMsg("Select gender");
       if (!phoneRegex.hasMatch(phoneController.text)) {
         return showMsg("Invalid phone");
       }
@@ -78,8 +159,8 @@ class _ContactPageState extends State<ContactPage> {
       if (addressController.text.isEmpty) {
         return showMsg("Enter address");
       }
-
       submit();
+      //createContact();
       return;
     }
 
@@ -100,6 +181,7 @@ class _ContactPageState extends State<ContactPage> {
     if (step == 2) {
       return hospitalNameController.text.isNotEmpty &&
           phoneRegex.hasMatch(hospitalPhoneController.text) &&
+          emailRegex.hasMatch(hospitalEmailController.text) &&
           addressController.text.isNotEmpty;
     }
 
@@ -114,6 +196,85 @@ class _ContactPageState extends State<ContactPage> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
+  // void submit() {
+  //   showDialog(
+  //     context: context,
+  //     barrierDismissible: false,
+  //     builder: (_) => Dialog(
+  //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+  //       child: Container(
+  //         padding: const EdgeInsets.all(20),
+  //         decoration: BoxDecoration(
+  //           borderRadius: BorderRadius.circular(20),
+  //           color: Colors.white,
+  //         ),
+  //         child: Column(
+  //           mainAxisSize: MainAxisSize.min,
+  //           children: [
+  //             /// ✅ SUCCESS ICON WITH CIRCLE
+  //             Container(
+  //               padding: const EdgeInsets.all(18),
+  //               decoration: BoxDecoration(
+  //                 shape: BoxShape.circle,
+  //                 color: Colors.green.withOpacity(0.1),
+  //               ),
+  //               child: const Icon(
+  //                 Icons.check_circle,
+  //                 color: Colors.green,
+  //                 size: 48,
+  //               ),
+  //             ),
+  //
+  //             const SizedBox(height: 16),
+  //
+  //             /// 🎉 TITLE
+  //             const Text(
+  //               "Success!",
+  //               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+  //             ),
+  //
+  //             const SizedBox(height: 8),
+  //
+  //             /// 📄 MESSAGE
+  //             const Text(
+  //               "Your details have been submitted successfully.\nWe will contact you shortly.",
+  //               textAlign: TextAlign.center,
+  //               style: TextStyle(fontSize: 14.5, color: Colors.black87),
+  //             ),
+  //
+  //             const SizedBox(height: 20),
+  //
+  //             /// 🔘 BUTTON
+  //             SizedBox(
+  //               width: double.infinity,
+  //               child: ElevatedButton(
+  //                 onPressed: () async {
+  //                   final prefs = await SharedPreferences.getInstance();
+  //                   await prefs.setBool('isSubmit', true);
+  //
+  //                   //Navigator.pop(context); // close dialog
+  //                   // Navigator.pop(context); // go back page (optional)
+  //                 },
+  //                 style: ElevatedButton.styleFrom(
+  //                   backgroundColor: Colors.green,
+  //                   padding: const EdgeInsets.symmetric(vertical: 14),
+  //                   shape: RoundedRectangleBorder(
+  //                     borderRadius: BorderRadius.circular(12),
+  //                   ),
+  //                 ),
+  //                 child: const Text(
+  //                   "Done",
+  //                   style: TextStyle(fontSize: 15, color: Colors.white),
+  //                 ),
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
+
   void submit() {
     showDialog(
       context: context,
@@ -121,7 +282,8 @@ class _ContactPageState extends State<ContactPage> {
       builder: (_) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Container(
-          padding: const EdgeInsets.all(20),
+          margin: const EdgeInsets.all(2),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             color: Colors.white,
@@ -129,9 +291,9 @@ class _ContactPageState extends State<ContactPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              /// ✅ SUCCESS ICON WITH CIRCLE
+              /// ✅ SUCCESS ICON
               Container(
-                padding: const EdgeInsets.all(18),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: Colors.green.withOpacity(0.1),
@@ -151,24 +313,60 @@ class _ContactPageState extends State<ContactPage> {
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
 
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
 
-              /// 📄 MESSAGE
-              const Text(
-                "Your details have been submitted successfully.\nWe will contact you shortly.",
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14.5, color: Colors.black87),
+              /// ✨ ALL TEXT ANIMATED (STEP BY STEP)
+              SizedBox(
+                width: double.infinity,
+                child: Column(
+                  children: [
+                    /// 1️⃣ FIRST MESSAGE
+                    AnimatedTypewriterText(
+                      text:
+                          "➼ Your details have been submitted successfully.\nWe will contact you shortly.\n",
+                      fontSize: 14,
+                      delay: 0,
+                    ),
+
+                    /// 2️⃣ SECOND MESSAGE
+                    AnimatedTypewriterText(
+                      text:
+                          "① Our team will send your Hospital ID & password to your personal and hospital email within 24 hours.\n",
+                      fontSize: 13,
+                      delay: 2200, // adjust timing
+                    ),
+
+                    /// 3️⃣ THIRD MESSAGE
+                    AnimatedTypewriterText(
+                      text:
+                          "② You can use the system free for 1 week. After that, payment details will be shared.",
+                      fontSize: 13,
+                      delay: 4200, // adjust timing
+                    ),
+                  ],
+                ),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
 
               /// 🔘 BUTTON
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context); // close dialog
-                    // Navigator.pop(context); // go back page (optional)
+                  onPressed: () async {
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.setBool('isSubmit', true);
+                    isSubmit = true;
+                    Navigator.pop(context);
+                    // WidgetsBinding.instance.addPostFrameCallback((_) {
+                    //   showDialog(
+                    //     context: context,
+                    //     barrierDismissible: false,
+                    //     builder: (_) => const AlreadySubmittedDialog(),
+                    //   );
+                    // });
+                    setState(() => step = 0);
+                    setState(() {});
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
@@ -256,32 +454,36 @@ class _ContactPageState extends State<ContactPage> {
               ),
             ),
 
-            body: Column(
-              children: [
-                /// 🔥 CUSTOM STEP INDICATOR
-                _buildStepIndicator(),
+            body: isSubmit == true
+                ? AlreadySubmittedDialog()
+                : loading
+                ? Center(child: AnimatedDotsText(text: 'Submitting'))
+                : Column(
+                    children: [
+                      /// 🔥 CUSTOM STEP INDICATOR
+                      _buildStepIndicator(),
 
-                /// 📄 CONTENT
-                // Expanded(
-                //   child: AnimatedSwitcher(
-                //     duration: const Duration(milliseconds: 300),
-                //     child: _buildStepContent(),
-                //   ),
-                // ),
-                Expanded(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.only(bottom: 20),
-                      child: _buildStepContent(),
-                    ),
+                      /// 📄 CONTENT
+                      // Expanded(
+                      //   child: AnimatedSwitcher(
+                      //     duration: const Duration(milliseconds: 300),
+                      //     child: _buildStepContent(),
+                      //   ),
+                      // ),
+                      Expanded(
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 300),
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.only(bottom: 20),
+                            child: _buildStepContent(),
+                          ),
+                        ),
+                      ),
+
+                      /// 🔘 BUTTONS
+                      _buildButtons(),
+                    ],
                   ),
-                ),
-
-                /// 🔘 BUTTONS
-                _buildButtons(),
-              ],
-            ),
           )
         : SubmitTicketPage();
   }
@@ -289,14 +491,14 @@ class _ContactPageState extends State<ContactPage> {
   /// ================= STEP INDICATOR =================
   Widget _buildStepIndicator() {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       child: Row(
         children: List.generate(3, (index) {
           bool active = index <= step;
 
           return Expanded(
             child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 10),
+              margin: const EdgeInsets.symmetric(horizontal: 4),
               height: 6,
               decoration: BoxDecoration(
                 color: active ? primaryColor : Colors.grey.shade300,
@@ -541,6 +743,15 @@ class _ContactPageState extends State<ContactPage> {
           const SizedBox(height: 14),
 
           _inputField(
+            label: "Your Gender",
+            controller: genderController,
+            icon: Icons.person,
+            maxLines: 1,
+          ),
+
+          const SizedBox(height: 14),
+
+          _inputField(
             label: "Mobile Number",
             controller: phoneController,
             icon: Icons.phone,
@@ -742,7 +953,7 @@ class _ContactPageState extends State<ContactPage> {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
-          child: Padding(padding: const EdgeInsets.all(16), child: child),
+          child: Padding(padding: const EdgeInsets.all(10), child: child),
         ),
       ),
     );
@@ -760,7 +971,7 @@ class _ContactPageState extends State<ContactPage> {
   /// ================= BUTTONS =================
   Widget _buildButtons() {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(8),
       child: Row(
         children: [
           if (step > 0)
@@ -791,6 +1002,125 @@ class _ContactPageState extends State<ContactPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class AlreadySubmittedDialog extends StatelessWidget {
+  const AlreadySubmittedDialog({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: TweenAnimationBuilder<double>(
+        duration: const Duration(milliseconds: 500),
+        tween: Tween(begin: 0.7, end: 1),
+        curve: Curves.easeOutBack,
+        builder: (context, scale, child) {
+          return Transform.scale(scale: scale, child: child);
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            color: Colors.white,
+
+            /// OPTIONAL: soft shadow (premium feel)
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+
+          child: Card(
+            elevation: 6, // ✅ remove double shadow
+            color: Colors.white,
+
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: BorderSide(
+                // ✅ CORRECT
+                color: Colors.green.withOpacity(0.4),
+                width: 1.3,
+              ),
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  /// ✅ ANIMATED ICON (UNCHANGED)
+                  TweenAnimationBuilder<double>(
+                    duration: const Duration(milliseconds: 600),
+                    tween: Tween(begin: 0, end: 1),
+                    builder: (context, value, child) {
+                      return Opacity(
+                        opacity: value,
+                        child: Transform.scale(scale: value, child: child),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.green.withOpacity(0.12),
+                      ),
+                      child: const Icon(
+                        Icons.verified_rounded,
+                        color: Colors.green,
+                        size: 48,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  const Text(
+                    "Request Already Submitted",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  const Text(
+                    "Thank you for your interest in Ramchin Hospital System.\n\n"
+                    "We have already received your request successfully. "
+                    "Our team is currently reviewing your details.\n\n"
+                    "📧 Your Hospital ID and login credentials will be sent to your registered email shortly.\n\n"
+                    "⏳ Please allow up to 24 hours for activation.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 14.5, height: 1.5),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        "OK, Got It",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

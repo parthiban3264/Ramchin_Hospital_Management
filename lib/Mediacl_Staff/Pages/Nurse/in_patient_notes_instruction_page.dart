@@ -11,12 +11,12 @@ import '../../../../../Services/prescription_service.dart';
 import '../../../../../Services/socket_service.dart';
 import '../../../../../utils/utils.dart';
 import '../../../Services/prescription_service.dart';
-import '../Doctor/pages/patient_description/doctor_prescription_page.dart';
-import '../Doctor/pages/patient_description/scanning_page.dart';
-import '../Doctor/pages/patient_description/testing_page.dart';
-import '../Doctor/pages/patient_description/widget.dart';
-import '../Doctor/pages/patient_description_in_patient/treatment_progress_widget.dart';
-import '../Doctor/widgets/patient_histroy_in_doctor.dart';
+import '../DoctorPages/pages/patient_description/doctor_prescription_page.dart';
+import '../DoctorPages/pages/patient_description/scanning_page.dart';
+import '../DoctorPages/pages/patient_description/testing_page.dart';
+import '../DoctorPages/pages/patient_description/widget.dart';
+import '../DoctorPages/pages/patient_description_in_patient/treatment_progress_widget.dart';
+import '../DoctorPages/widgets/patient_histroy_in_doctor.dart';
 import 'dr_instruction_update.dart';
 
 class NurseInPatientNotesAndInstructionPage extends StatefulWidget {

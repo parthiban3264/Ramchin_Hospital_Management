@@ -4,9 +4,8 @@ import 'package:health_icons/health_icons.dart';
 import 'package:hospitrax/Mediacl_Staff/Pages/tracking_status/blood_grp_page.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import '../../Mediacl_Staff/Pages/Doctor/pages/DrOpDashboard/DrInPatientQueuePage.dart';
-import '../../Mediacl_Staff/Pages/Doctor/pages/DrOpDashboard/dr_out_patient_queue_page.dart';
+import '../../Mediacl_Staff/Pages/DoctorPages/pages/DrInPatientQueuePage.dart';
+import '../../Mediacl_Staff/Pages/DoctorPages/pages/dr_out_patient_queue_page.dart';
 import '../../Mediacl_Staff/Pages/Medical/medical_queue_page.dart';
 
 import '../../Mediacl_Staff/Pages/Nurse/in_patient_notes_instruction_queue.dart';

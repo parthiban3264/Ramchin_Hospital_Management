@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:hospitrax/Mediacl_Staff/Pages/Doctor/pages/patient_description_in_patient/inpatient_description_page.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../../Pages/NotificationsPage.dart';
 import '../../../../../Services/Scan_Test_Get-Service.dart';
 import '../../../../../Services/socket_service.dart';
+import 'doctor_ip_description_page.dart';
 
 class ScanningPage extends StatefulWidget {
   final Map<String, dynamic> consultation;

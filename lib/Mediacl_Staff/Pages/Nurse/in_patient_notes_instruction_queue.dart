@@ -9,8 +9,6 @@ import '../../../../../Pages/NotificationsPage.dart';
 import '../../../../../Services/admin_service.dart';
 import '../../../../../Services/consultation_service.dart';
 import '../../../../../Services/socket_service.dart';
-import '../Doctor/pages/patient_description_in_patient/inpatient_description_page.dart';
-import '../Doctor/widgets/doctor_description_edit.dart';
 import 'global.dart';
 import 'in_patient_notes_instruction_page.dart';
 

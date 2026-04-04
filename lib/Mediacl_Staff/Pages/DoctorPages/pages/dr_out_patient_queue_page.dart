@@ -5,12 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../../../Pages/NotificationsPage.dart';
-import '../../../../../Services/admin_service.dart';
-import '../../../../../Services/consultation_service.dart';
-import '../../../../../Services/socket_service.dart';
-import '../../widgets/doctor_description_edit.dart';
-import '../patient_description/patient_description_page.dart';
+import '../../../../Pages/NotificationsPage.dart';
+import '../../../../Services/admin_service.dart';
+import '../../../../Services/consultation_service.dart';
+import '../../../../Services/socket_service.dart';
+import '../widgets/doctor_description_edit.dart';
+import 'patient_description/doctor_op_description_page.dart';
 
 class DrOutPatientQueuePage extends StatefulWidget {
   final String role;

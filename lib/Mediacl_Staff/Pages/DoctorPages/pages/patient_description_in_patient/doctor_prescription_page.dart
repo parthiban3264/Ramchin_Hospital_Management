@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:hospitrax/Mediacl_Staff/Pages/Doctor/pages/patient_description_in_patient/inpatient_description_page.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../../Pages/NotificationsPage.dart';
@@ -9,6 +8,7 @@ import '../../../../../Services/Tonic_service.dart';
 import '../../../../../Services/consultation_service.dart';
 import '../../../../../Services/socket_service.dart';
 import '../../widgets/medicine_card.dart';
+import 'doctor_ip_description_page.dart';
 
 class DoctorsPrescriptionPage extends StatefulWidget {
   final Map<String, dynamic> consultation;
@@ -254,9 +254,11 @@ class DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
 
       int remainingQty = finalQty;
       double qpd = (medEntry['qtyPerDose'] as num).toDouble();
-      int sds = [medEntry['morning'], medEntry['afternoon'], medEntry['night']]
-          .where((v) => v == true)
-          .length;
+      int sds = [
+        medEntry['morning'],
+        medEntry['afternoon'],
+        medEntry['night'],
+      ].where((v) => v == true).length;
       double qtyPerDay = qpd * sds;
 
       for (var batch in batches) {
@@ -353,7 +355,7 @@ class DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
         double unitPrice =
             double.tryParse(batch['selling_price_unit']?.toString() ?? '0') ??
             0;
-            
+
         double batchDays = usedQty / (qtyPerDay > 0 ? qtyPerDay : 1.0);
 
         allocated.add({

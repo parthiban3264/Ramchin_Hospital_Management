@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hospitrax/Mediacl_Staff/Pages/Doctor/pages/patient_description_in_patient/inpatient_description_page.dart';
 
 import '../../../../../Admin/Pages/admin_edit_profile_page.dart';
 import '../../../../../Services/admin_service.dart';
 import 'doctor_prescription_page.dart';
+import 'doctor_ip_description_page.dart';
 import 'scanning_page.dart';
 import 'testing_page.dart';
 

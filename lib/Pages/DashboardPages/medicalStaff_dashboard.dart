@@ -13,10 +13,10 @@ import '../../Mediacl_Staff/Pages/Dashboard/MedicalDashboard.dart';
 // === Other Roles ===
 import '../../Mediacl_Staff/Pages/Dashboard/OpDashboard.dart';
 // === Doctor Pages ===
-import '../../Mediacl_Staff/Pages/Doctor/pages/DoctorOverviewPage.dart';
-import '../../Mediacl_Staff/Pages/Doctor/pages/DrOpDashboard/AssistantDrOpDashboard.dart';
-import '../../Mediacl_Staff/Pages/Doctor/pages/DrOpDashboard/DrOpDashboardPage.dart'; // === Overview Pages ===
-import '../../Mediacl_Staff/Pages/Doctor/pages/DrOpOverview/AssistantDrOpOverview.dart';
+import '../../Mediacl_Staff/Pages/DoctorPages/dashboard/AssistantDrOpDashboard.dart';
+import '../../Mediacl_Staff/Pages/DoctorPages/dashboard/DrOpDashboardPage.dart';
+import '../../Mediacl_Staff/Pages/DoctorPages/overview/AssistantDrOpOverview.dart';
+import '../../Mediacl_Staff/Pages/DoctorPages/overview/DoctorOverviewPage.dart';
 import '../../Mediacl_Staff/Pages/Overview/CashierOverview.dart';
 import '../../Mediacl_Staff/Pages/Overview/LabOverview.dart';
 import '../../Mediacl_Staff/Pages/Overview/MedicalOverview.dart';

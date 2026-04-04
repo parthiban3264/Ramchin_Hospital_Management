@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'Admin/Pages/contact_page.dart';
 import 'Services/admin_service.dart';
+import 'Widgets/animated_text_typer.dart';
 
 class FirstLoginWrapper extends StatefulWidget {
   final Widget child;
@@ -111,9 +112,10 @@ class _FirstLoginDialogState extends State<FirstLoginDialog>
       curve: Curves.easeOutCubic,
     );
 
-    _scaleAnim = Tween<double>(begin: 0.88, end: 1).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
-    );
+    _scaleAnim = Tween<double>(
+      begin: 0.88,
+      end: 1,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
     _fadeAnim = Tween<double>(begin: 0, end: 1).animate(curved);
     _outerGlowAnim = Tween<double>(begin: 0.92, end: 1).animate(curved);
     _slideAnim = Tween<Offset>(
@@ -136,34 +138,34 @@ class _FirstLoginDialogState extends State<FirstLoginDialog>
     final horizontalInset = screenWidth >= 1400
         ? screenWidth * 0.18
         : screenWidth >= 1100
-            ? screenWidth * 0.14
-            : screenWidth >= 800
-                ? screenWidth * 0.1
-                : 20.0;
+        ? screenWidth * 0.14
+        : screenWidth >= 800
+        ? screenWidth * 0.1
+        : 20.0;
     final dialogMaxWidth = screenWidth >= 1400
         ? 860.0
         : screenWidth >= 1100
-            ? 760.0
-            : screenWidth >= 800
-                ? 660.0
-                : 520.0;
+        ? 760.0
+        : screenWidth >= 800
+        ? 660.0
+        : 520.0;
     final outerRadius = screenWidth >= 800 ? 34.0 : 28.0;
     final innerRadius = screenWidth >= 800 ? 32.0 : 26.0;
     final contentPadding = screenWidth >= 1100
         ? 32.0
         : screenWidth >= 800
-            ? 26.0
-            : 18.0;
+        ? 26.0
+        : 18.0;
     final titleFontSize = screenWidth >= 1100
         ? 30.0
         : screenWidth >= 800
-            ? 26.0
-            : 22.0;
+        ? 26.0
+        : 22.0;
     final bodyFontSize = screenWidth >= 1100
         ? 17.8
         : screenWidth >= 800
-            ? 16.6
-            : 15.5;
+        ? 16.6
+        : 15.5;
 
     return FadeTransition(
       opacity: _fadeAnim,
@@ -230,8 +232,8 @@ class _FirstLoginDialogState extends State<FirstLoginDialog>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Container(
-                                  width: screenWidth >= 800 ? 58 : 46,
-                                  height: screenWidth >= 800 ? 58 : 46,
+                                  width: screenWidth >= 800 ? 62 : 50,
+                                  height: screenWidth >= 800 ? 62 : 50,
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(18),
                                     gradient: const LinearGradient(
@@ -246,7 +248,7 @@ class _FirstLoginDialogState extends State<FirstLoginDialog>
                                   child: const Icon(
                                     Icons.local_hospital_rounded,
                                     color: darkPrimary,
-                                    size: 28,
+                                    size: 34,
                                   ),
                                 ),
                                 const SizedBox(width: 14),
@@ -256,7 +258,7 @@ class _FirstLoginDialogState extends State<FirstLoginDialog>
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'Welcome',
+                                        'Welcome👋',
                                         style: TextStyle(
                                           fontSize: titleFontSize,
                                           fontWeight: FontWeight.w700,
@@ -269,7 +271,9 @@ class _FirstLoginDialogState extends State<FirstLoginDialog>
                                         'Version ${widget.version ?? '-'}',
                                         style: TextStyle(
                                           color: Colors.grey.shade600,
-                                          fontSize: screenWidth >= 800 ? 14 : 13,
+                                          fontSize: screenWidth >= 800
+                                              ? 14
+                                              : 13,
                                         ),
                                       ),
                                     ],
@@ -364,58 +368,6 @@ class _FirstLoginDialogState extends State<FirstLoginDialog>
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class AnimatedTypewriterText extends StatefulWidget {
-  final String text;
-  final double fontSize;
-
-  const AnimatedTypewriterText({
-    super.key,
-    required this.text,
-    this.fontSize = 15.5,
-  });
-
-  @override
-  State<AnimatedTypewriterText> createState() => _AnimatedTypewriterTextState();
-}
-
-class _AnimatedTypewriterTextState extends State<AnimatedTypewriterText> {
-  String displayed = '';
-  int i = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _startTyping();
-  }
-
-  void _startTyping() async {
-    while (i < widget.text.length) {
-      await Future.delayed(const Duration(milliseconds: 20));
-
-      if (!mounted) return;
-
-      setState(() {
-        displayed += widget.text[i];
-        i++;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      displayed,
-      textAlign: TextAlign.center,
-      style: TextStyle(
-        fontSize: widget.fontSize,
-        height: 1.6,
-        color: Colors.black87,
-        letterSpacing: 0.2,
       ),
     );
   }

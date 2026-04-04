@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../../../Services/admin_service.dart';
-import 'DrInPatientQueuePage.dart';
-import 'dr_out_patient_queue_page.dart';
+import '../../../../Services/admin_service.dart';
+import '../pages/DrInPatientQueuePage.dart';
+import '../pages/dr_out_patient_queue_page.dart';
 
 class DrOpDashboardPage extends StatefulWidget {
   const DrOpDashboardPage({super.key});

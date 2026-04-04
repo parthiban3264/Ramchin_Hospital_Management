@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hospitrax/Mediacl_Staff/Pages/Doctor/pages/patient_description/patient_description_page.dart';
+import 'package:hospitrax/Mediacl_Staff/Pages/DoctorPages/pages/patient_description/doctor_op_description_page.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../../Pages/NotificationsPage.dart';
@@ -7,10 +7,7 @@ import '../../../../../Services/Injection_Service.dart';
 import '../../../../../Services/Medicine_Service.dart';
 import '../../../../../Services/Tonic_service.dart';
 import '../../../../../Services/socket_service.dart';
-// import '../../widgets/injection_card.dart';
 import '../../widgets/medicine_card.dart';
-// import '../../widgets/other_card.dart';
-// import '../../widgets/tonic_card.dart';
 
 class DoctorsPrescriptionPage extends StatefulWidget {
   final Map<String, dynamic> consultation;

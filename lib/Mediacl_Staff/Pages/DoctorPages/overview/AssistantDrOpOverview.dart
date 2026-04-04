@@ -4,10 +4,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../../../Admin/Pages/admin_overview_page.dart';
-import '../../../../../Services/consultation_service.dart';
-import '../../../../../Services/payment_service.dart';
-import '../../../../../Services/testing&scanning_service.dart';
+import '../../../../Admin/Pages/admin_overview_page.dart';
+import '../../../../Services/consultation_service.dart';
+import '../../../../Services/payment_service.dart';
+import '../../../../Services/testing&scanning_service.dart';
 
 class AssistantDrOverviewPage extends StatefulWidget {
   const AssistantDrOverviewPage({super.key});
