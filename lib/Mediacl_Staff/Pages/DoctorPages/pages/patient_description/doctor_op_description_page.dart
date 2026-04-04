@@ -171,12 +171,6 @@ class PatientDescriptionPageState extends State<PatientDescriptionPage>
     final pk = consultation['PK'].toString();
     final spo2 = consultation['SPO2'].toString();
 
-    // final LabId = consultation['Teat ing AndScanningPatient'][0]['staff_Id'];
-
-    // loadNames(LabId);
-
-    // Your hospital photo base64
-
     // Set testing and medicine states for enabling Finished button
     final bool isButtonEnabled = scanningTesting || medicineTonicInjection;
 
@@ -1119,11 +1113,11 @@ class PatientDescriptionPageState extends State<PatientDescriptionPage>
         'updatedAt': dateTime.toString(),
       });
       if (mounted) {
-        Navigator.pop(context, {
-          'medicine': submittedMedicines.isNotEmpty,
-          // 'tonic': submittedTonics.isNotEmpty,
-          // 'injection': submittedInjections.isNotEmpty,
-        });
+        // Navigator.pop(context, {
+        //   'medicine': submittedMedicines.isNotEmpty,
+        //   // 'tonic': submittedTonics.isNotEmpty,
+        //   // 'injection': submittedInjections.isNotEmpty,
+        // });
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -1219,7 +1213,7 @@ class PatientDescriptionPageState extends State<PatientDescriptionPage>
       });
 
       if (mounted) {
-        Navigator.pop(context, true);
+        // Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('tests submitted!'),
@@ -1238,7 +1232,7 @@ class PatientDescriptionPageState extends State<PatientDescriptionPage>
       }
     } finally {
       setState(() => isLoading = false);
-      setState(() => scanningTesting = false);
+      //setState(() => scanningTesting = false);
     }
   }
 
@@ -1311,7 +1305,7 @@ class PatientDescriptionPageState extends State<PatientDescriptionPage>
         'updatedAt': dateTime.toString(),
       });
       if (mounted) {
-        Navigator.pop(context, true);
+        //Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("Scan submitted!"),
@@ -1330,51 +1324,89 @@ class PatientDescriptionPageState extends State<PatientDescriptionPage>
       }
     } finally {
       setState(() => isLoading = false);
-      setState(() => scanningTesting = false);
+      //setState(() => scanningTesting = false);
     }
   }
 
+  // Future<void> _updateStatus() async {
+  //   final consultationId = widget.consultation['id'];
+  //   if (consultationId == null) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text('Consultation ID not found')),
+  //     );
+  //     return;
+  //   }
+  //
+  //   try {
+  //     setState(() => isLoading = true);
+  //
+  //     /// 🔥 COLLECT & STORE SELECTED ITEMS
+  //     _storeSelectedItems();
+  //
+  //     final bool hasSelectedTests =
+  //         PatientDescriptionPageState.savedTests.isNotEmpty;
+  //
+  //     final bool hasSelectedScans =
+  //         PatientDescriptionPageState.savedScans.isNotEmpty;
+  //
+  //     final bool hasSelectedMedicines =
+  //         PatientDescriptionPageState.submittedMedicines.isNotEmpty;
+  //
+  //     if (hasSelectedMedicines) await _handleSubmitPrescription();
+  //     if (hasSelectedTests) await _submitAllTests();
+  //     if (hasSelectedScans) await _submitAllScans();
+  //
+  //     await ConsultationService.updateQueueStatus(consultationId, 'COMPLETED');
+  //
+  //     setState(() => isLoading = false);
+  //
+  //     if (mounted) Navigator.pop(context, true);
+  //   } catch (e) {
+  //     setState(() => isLoading = false);
+  //
+  //     if (mounted) {
+  //       ScaffoldMessenger.of(
+  //         context,
+  //       ).showSnackBar(SnackBar(content: Text('Error updating status: $e')));
+  //     }
+  //   }
+  // }
+
   Future<void> _updateStatus() async {
     final consultationId = widget.consultation['id'];
-    if (consultationId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Consultation ID not found')),
-      );
-      return;
-    }
 
     try {
       setState(() => isLoading = true);
 
-      /// 🔥 COLLECT & STORE SELECTED ITEMS
       _storeSelectedItems();
 
-      final bool hasSelectedTests =
-          PatientDescriptionPageState.savedTests.isNotEmpty;
+      final hasTests = savedTests.isNotEmpty;
+      final hasScans = savedScans.isNotEmpty;
+      final hasMedicines = submittedMedicines.isNotEmpty;
 
-      final bool hasSelectedScans =
-          PatientDescriptionPageState.savedScans.isNotEmpty;
+      // ✅ Run all submissions WITHOUT navigation
+      if (hasTests) await _submitAllTests();
+      if (hasScans) await _submitAllScans();
+      if (hasMedicines) await _handleSubmitPrescription();
 
-      final bool hasSelectedMedicines =
-          PatientDescriptionPageState.submittedMedicines.isNotEmpty;
-
-      if (hasSelectedTests) await _submitAllTests();
-      if (hasSelectedScans) await _submitAllScans();
-      if (hasSelectedMedicines) await _handleSubmitPrescription();
-
+      // ✅ Update status AFTER all done
       await ConsultationService.updateQueueStatus(consultationId, 'COMPLETED');
 
       setState(() => isLoading = false);
 
-      if (mounted) Navigator.pop(context, true);
+      // ✅ NOW navigate once
+      if (mounted) {
+        Navigator.pop(context, true);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("All data submitted successfully"),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     } catch (e) {
       setState(() => isLoading = false);
-
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error updating status: $e')));
-      }
     }
   }
 
