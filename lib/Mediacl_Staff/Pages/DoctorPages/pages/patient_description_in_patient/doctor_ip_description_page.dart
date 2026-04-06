@@ -295,14 +295,14 @@ class PatientDescriptionInState extends State<PatientDescriptionIn>
         ? nurseList[0]['name'].toString()
         : '-';
 
-    final temperature = consultation['temperature'].toString();
-    final bloodPressure = consultation['bp'] ?? '_';
-    final sugar = consultation['sugar'] ?? '_';
-    final height = consultation['height'].toString();
-    final weight = consultation['weight'].toString();
-    final bmi = consultation['BMI'].toString();
-    final pk = consultation['PK'].toString();
-    final spo2 = consultation['SPO2'].toString();
+    // final temperature = consultation['temperature'].toString();
+    // final bloodPressure = consultation['bp'] ?? '_';
+    // final sugar = consultation['sugar'] ?? '_';
+    // final height = consultation['height'].toString();
+    // final weight = consultation['weight'].toString();
+    // final bmi = consultation['BMI'].toString();
+    // final pk = consultation['PK'].toString();
+    // final spo2 = consultation['SPO2'].toString();
 
     // final LabId = consultation['Teat ing AndScanningPatient'][0]['staff_Id'];
 
@@ -1265,8 +1265,6 @@ class PatientDescriptionInState extends State<PatientDescriptionIn>
   }
 
   Future<void> _handleSubmitPrescription() async {
-    //I/flutter (24558): [{name: paracitamol , price: 7.57, qtyPerDose: 1.0, afterEat: true, morning: true, afternoon: false, night: false, days: 2605, weeks: 0, months: 0, total: 7369.85, medicineId: 1, route: Tablets, batch_No: 1, base_total_stock: 2605, medicine_Id: 1, batch_Id: 1, dosage: 1 tablet, frequency: once, total_quantity: 2605, after_food: true, instructions: , quantityNeeded: 2605.0, quantity: 2605, allocated_batches: [{batch_id: 33, batch_no: 1, allocated_qty: 105, unit_price: 7.57, batch_total: 794.85}, {batch_id: 34, batch_no: 2, allocated_qty: 2500, unit_price: 2.63, batch_total: 6575.0}]}]
-
     if (submittedMedicines.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please add at least one item!")),
@@ -1282,40 +1280,6 @@ class PatientDescriptionInState extends State<PatientDescriptionIn>
 
       for (var m in submittedMedicines) {
         final List allocatedBatches = m['allocated_batches'] ?? [];
-
-        // Future<void> submitBatch(
-        //   Map<String, dynamic> medicineData, {
-        //   dynamic bId,
-        //   dynamic dispensedQty,
-        //   dynamic bTotal,
-        // }) async {
-        //   final qtyPerDose = medicineData['qtyPerDose'] == 1 / 2
-        //       ? 0.5
-        //       : medicineData['qtyPerDose'];
-        //
-        //   final Map<String, dynamic> singlePrescriptionData = {
-        //     'hospital_Id': widget.consultation['hospital_Id'],
-        //     'patient_Id': widget.consultation['patient_Id'].toString(),
-        //     'doctor_Id': widget.consultation['Doctor']?['doctorId'].toString(),
-        //     'consultation_Id': widget.consultation['id'],
-        //     'createdAt': dateTime.toString(),
-        //     'medicines': [
-        //       {
-        //         'medicine_Id': int.parse(medicineData['medicineId'].toString()),
-        //         'consultation_Id': widget.consultation['id'],
-        //         'route': medicineData['route'].toString().toUpperCase(),
-        //         'quantity': qtyPerDose,
-        //         'afterEat': medicineData['afterEat'],
-        //         'morning': medicineData['morning'],
-        //         'afternoon': medicineData['afternoon'],
-        //         'night': medicineData['night'],
-        //         'days': medicineData['days'] ?? medicineData['days'],
-        //         'total_quantity': dispensedQty ?? medicineData['quantity'],
-        //         'dosage': medicineData['qtyPerDose'].toString(),
-        //         'total': bTotal ?? medicineData['total'],
-        //       },
-        //     ],
-        //   };
         Future<void> submitBatch(
           Map<String, dynamic> medicineData, {
           dynamic bId,
@@ -1384,16 +1348,6 @@ class PatientDescriptionInState extends State<PatientDescriptionIn>
           final prescription = await PrescriptionService().createPrescription(
             singlePrescriptionData,
           );
-
-          // final createdMedicineId = prescription['medicines'][0]['id'];
-          //
-          // await PrescriptionService().createPrescriptionDispense({
-          //   "hospital_Id": widget.consultation['hospital_Id'],
-          //   "prescription_medicine_Id": createdMedicineId,
-          //   "batch_Id": bId ?? medicineData['batch_Id'],
-          //   "dispensed_quantity": dispensedQty ?? medicineData['quantity'],
-          //   "pharmacist_Id": userId,
-          // });
         }
 
         if (allocatedBatches.isNotEmpty) {
@@ -1880,120 +1834,120 @@ class PatientDescriptionInState extends State<PatientDescriptionIn>
     return formattedResults;
   }
 
-  Widget _buildTestResultCard(dynamic firstTest) {
-    return Card(
-      color: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 4,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text(
-              firstTest?['title']?.toString().isNotEmpty == true
-                  ? firstTest['title']
-                  : "${firstTest?['type'] ?? 'UNKNOWN'}",
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Divider(color: Colors.grey.shade400, thickness: 1),
-            Text(
-              "${firstTest?['type'] ?? 'UNKNOWN'}",
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Card(
-              color: Colors.grey.shade50,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              elevation: 2,
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  vertical: 14,
-                  horizontal: 12,
-                ),
-                child: Center(
-                  child: Text(
-                    (firstTest?['result'] != null &&
-                            firstTest['result'].toString().isNotEmpty)
-                        ? firstTest['result'].toString()
-                        : 'No Result',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color:
-                          (firstTest?['result'] != null &&
-                              firstTest['result'].toString().isNotEmpty)
-                          ? Colors.black
-                          : Colors.grey,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 6),
-            TextButton.icon(
-              onPressed: () {
-                setState(() {
-                  _showSelectedOptions = !_showSelectedOptions;
-                });
-              },
-              icon: Icon(
-                _showSelectedOptions ? Icons.expand_less : Icons.expand_more,
-                color: Colors.blueAccent,
-              ),
-              label: Text(
-                _showSelectedOptions
-                    ? "Hide Selected Options"
-                    : "View Selected Options",
-                style: const TextStyle(
-                  color: Colors.blueAccent,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            AnimatedCrossFade(
-              duration: const Duration(milliseconds: 250),
-              crossFadeState: _showSelectedOptions
-                  ? CrossFadeState.showFirst
-                  : CrossFadeState.showSecond,
-              firstChild: Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children:
-                      (firstTest?['selectedOptions'] as List<dynamic>? ?? [])
-                          .map(
-                            (option) => Chip(
-                              label: Text(option.toString()),
-                              backgroundColor: Colors.blue.shade50,
-                              side: const BorderSide(color: Colors.blueAccent),
-                            ),
-                          )
-                          .toList(),
-                ),
-              ),
-              secondChild: const SizedBox.shrink(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // Widget _buildTestResultCard(dynamic firstTest) {
+  //   return Card(
+  //     color: Colors.white,
+  //     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+  //     elevation: 4,
+  //     child: Padding(
+  //       padding: const EdgeInsets.all(16),
+  //       child: Column(
+  //         crossAxisAlignment: CrossAxisAlignment.center,
+  //         children: [
+  //           Text(
+  //             firstTest?['title']?.toString().isNotEmpty == true
+  //                 ? firstTest['title']
+  //                 : "${firstTest?['type'] ?? 'UNKNOWN'}",
+  //             textAlign: TextAlign.center,
+  //             style: const TextStyle(
+  //               fontWeight: FontWeight.bold,
+  //               fontSize: 20,
+  //               color: Colors.black87,
+  //             ),
+  //           ),
+  //           const SizedBox(height: 6),
+  //           Divider(color: Colors.grey.shade400, thickness: 1),
+  //           Text(
+  //             "${firstTest?['type'] ?? 'UNKNOWN'}",
+  //             textAlign: TextAlign.center,
+  //             style: const TextStyle(
+  //               fontWeight: FontWeight.w600,
+  //               fontSize: 16,
+  //               color: Colors.black87,
+  //             ),
+  //           ),
+  //           const SizedBox(height: 8),
+  //           Card(
+  //             color: Colors.grey.shade50,
+  //             shape: RoundedRectangleBorder(
+  //               borderRadius: BorderRadius.circular(10),
+  //             ),
+  //             elevation: 2,
+  //             child: Container(
+  //               width: double.infinity,
+  //               padding: const EdgeInsets.symmetric(
+  //                 vertical: 14,
+  //                 horizontal: 12,
+  //               ),
+  //               child: Center(
+  //                 child: Text(
+  //                   (firstTest?['result'] != null &&
+  //                           firstTest['result'].toString().isNotEmpty)
+  //                       ? firstTest['result'].toString()
+  //                       : 'No Result',
+  //                   style: TextStyle(
+  //                     fontWeight: FontWeight.bold,
+  //                     fontSize: 16,
+  //                     color:
+  //                         (firstTest?['result'] != null &&
+  //                             firstTest['result'].toString().isNotEmpty)
+  //                         ? Colors.black
+  //                         : Colors.grey,
+  //                   ),
+  //                 ),
+  //               ),
+  //             ),
+  //           ),
+  //           const SizedBox(height: 6),
+  //           TextButton.icon(
+  //             onPressed: () {
+  //               setState(() {
+  //                 _showSelectedOptions = !_showSelectedOptions;
+  //               });
+  //             },
+  //             icon: Icon(
+  //               _showSelectedOptions ? Icons.expand_less : Icons.expand_more,
+  //               color: Colors.blueAccent,
+  //             ),
+  //             label: Text(
+  //               _showSelectedOptions
+  //                   ? "Hide Selected Options"
+  //                   : "View Selected Options",
+  //               style: const TextStyle(
+  //                 color: Colors.blueAccent,
+  //                 fontWeight: FontWeight.w600,
+  //               ),
+  //             ),
+  //           ),
+  //           AnimatedCrossFade(
+  //             duration: const Duration(milliseconds: 250),
+  //             crossFadeState: _showSelectedOptions
+  //                 ? CrossFadeState.showFirst
+  //                 : CrossFadeState.showSecond,
+  //             firstChild: Padding(
+  //               padding: const EdgeInsets.only(top: 6),
+  //               child: Wrap(
+  //                 spacing: 8,
+  //                 runSpacing: 8,
+  //                 children:
+  //                     (firstTest?['selectedOptions'] as List<dynamic>? ?? [])
+  //                         .map(
+  //                           (option) => Chip(
+  //                             label: Text(option.toString()),
+  //                             backgroundColor: Colors.blue.shade50,
+  //                             side: const BorderSide(color: Colors.blueAccent),
+  //                           ),
+  //                         )
+  //                         .toList(),
+  //               ),
+  //             ),
+  //             secondChild: const SizedBox.shrink(),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _buildPatientDetailsCard({
     required String name,
@@ -2209,633 +2163,3 @@ class PatientDescriptionInState extends State<PatientDescriptionIn>
     );
   }
 }
-
-///{ this my all backend data comes for Consultation
-//         "id": 3107,
-//         "patient_Id": 2007,
-//         "hospital_Id": 1,
-//         "purpose": "",
-//         "status": "ADMITTED",
-//         "patientType": "IP",
-//         "queueStatus": "ONGOING",
-//         "symptoms": false,
-//         "createdAt": "2026-02-04 05:26 PM",
-//         "updatedAt": "2026-02-11 12:37 PM",
-//         "medicineTonic": true,
-//         "Injection": false,
-//         "scanningTesting": true,
-//         "paymentStatus": true,
-//         "height": null,
-//         "weight": null,
-//         "bp": null,
-//         "sugar": null,
-//         "temperature": 0,
-//         "BMI": null,
-//         "SPO2": null,
-//         "PK": null,
-//         "notes": null,
-//         "tokenNo": 2,
-//         "tokenDate": "2026-02-04T00:00:00.000Z",
-//         "payment": [
-//           {
-//             "id": 6307,
-//             "hospital_Id": 1,
-//             "patient_Id": 2007,
-//             "staff_Id": "1234567891",
-//             "consultation_Id": 3107,
-//             "prescription_Id": null,
-//             "admission_Id": null,
-//             "reason": "Registration Fee",
-//             "status": "PAID",
-//             "amount": 400,
-//             "received_Amount": null,
-//             "paymentType": "ManualPay",
-//             "type": "REGISTRATIONFEE",
-//             "transactionId": null,
-//             "billingId": null,
-//             "createdBy": null,
-//             "updategdBy": null,
-//             "createdAt": "2026-02-04 05:26 PM",
-//             "updatedAt": "2026-02-04 05:27 PM"
-//           },
-//           {
-//             "id": 6417,
-//             "hospital_Id": 1,
-//             "patient_Id": 2007,
-//             "staff_Id": "1234567891",
-//             "consultation_Id": 3107,
-//             "prescription_Id": null,
-//             "admission_Id": null,
-//             "reason": "Testing & Scanning Fee",
-//             "status": "PAID",
-//             "amount": 299,
-//             "received_Amount": null,
-//             "paymentType": "ManualPay",
-//             "type": "TESTINGFEESANDSCANNINGFEE",
-//             "transactionId": null,
-//             "billingId": null,
-//             "createdBy": null,
-//             "updategdBy": null,
-//             "createdAt": "2026-02-05 04:17 PM",
-//             "updatedAt": "2026-02-05 04:18 PM"
-//           },
-//           {
-//             "id": 6419,
-//             "hospital_Id": 1,
-//             "patient_Id": 2007,
-//             "staff_Id": "1234567891",
-//             "consultation_Id": 3107,
-//             "prescription_Id": null,
-//             "admission_Id": null,
-//             "reason": "Testing & Scanning Fee",
-//             "status": "PAID",
-//             "amount": 20993,
-//             "received_Amount": null,
-//             "paymentType": "ManualPay",
-//             "type": "TESTINGFEESANDSCANNINGFEE",
-//             "transactionId": null,
-//             "billingId": null,
-//             "createdBy": null,
-//             "updategdBy": null,
-//             "createdAt": "2026-02-05 04:27 PM",
-//             "updatedAt": "2026-02-05 04:27 PM"
-//           },
-//           {
-//             "id": 6619,
-//             "hospital_Id": 1,
-//             "patient_Id": 2007,
-//             "staff_Id": "1234567891",
-//             "consultation_Id": 3107,
-//             "prescription_Id": null,
-//             "admission_Id": null,
-//             "reason": "Testing & Scanning Fee",
-//             "status": "PAID",
-//             "amount": 199,
-//             "received_Amount": null,
-//             "paymentType": "ManualPay",
-//             "type": "TESTINGFEESANDSCANNINGFEE",
-//             "transactionId": null,
-//             "billingId": null,
-//             "createdBy": null,
-//             "updategdBy": null,
-//             "createdAt": "2026-02-07 04:43 PM",
-//             "updatedAt": "2026-02-07 18:17:30.167143"
-//           },
-//           {
-//             "id": 6906,
-//             "hospital_Id": 1,
-//             "patient_Id": 2007,
-//             "staff_Id": "1234567891",
-//             "consultation_Id": 3107,
-//             "prescription_Id": null,
-//             "admission_Id": null,
-//             "reason": "Prescription Fee",
-//             "status": "PAID",
-//             "amount": 105,
-//             "received_Amount": null,
-//             "paymentType": "ManualPay",
-//             "type": "MEDICINETONICINJECTIONFEES",
-//             "transactionId": null,
-//             "billingId": null,
-//             "createdBy": null,
-//             "updategdBy": null,
-//             "createdAt": "2026-02-10 12:30 PM",
-//             "updatedAt": "2026-02-10 03:35 PM"
-//           },
-//           {
-//             "id": 7025,
-//             "hospital_Id": 1,
-//             "patient_Id": 2007,
-//             "staff_Id": null,
-//             "consultation_Id": 3107,
-//             "prescription_Id": null,
-//             "admission_Id": null,
-//             "reason": "Prescription Fee",
-//             "status": "PENDING",
-//             "amount": 0.6,
-//             "received_Amount": null,
-//             "paymentType": null,
-//             "type": "MEDICINETONICINJECTIONFEES",
-//             "transactionId": null,
-//             "billingId": null,
-//             "createdBy": null,
-//             "updategdBy": null,
-//             "createdAt": "2026-02-11 12:37 PM",
-//             "updatedAt": null
-//           }
-//         ],
-//         "isTestOnly": false,
-//         "referredByDoctorName": null,
-//         "Prescription": [
-//           {
-//             "id": 74,
-//             "hospital_Id": 1,
-//             "prescription_no": "RX-1770793667293",
-//             "patient_Id": 2007,
-//             "doctor_Id": "1234567891",
-//             "consultation_Id": 3107,
-//             "payment_Id": 7025,
-//             "status": "DRAFT",
-//             "notes": null,
-//             "follow_up_date": null,
-//             "valid_till": null,
-//             "created_at": "2026-02-11T07:07:47.297Z",
-//             "updated_at": "2026-02-11T07:07:47.297Z",
-//             "is_active": true,
-//             "medicines": [
-//               {
-//                 "id": 80,
-//                 "prescription_Id": 74,
-//                 "medicine_Id": 2,
-//                 "hospital_Id": 1,
-//                 "dosage": "1.0",
-//                 "route": "INJECTIONS",
-//                 "frequency": null,
-//                 "days": 0,
-//                 "total_quantity": 1,
-//                 "dispensed_quantity": 1,
-//                 "after_food": true,
-//                 "morning": false,
-//                 "afternoon": false,
-//                 "night": false,
-//                 "instructions": null,
-//                 "status": "COMPLETED",
-//                 "created_at": "2026-02-11T07:07:47.297Z",
-//                 "dispenses": [
-//                   {
-//                     "id": 50,
-//                     "hospital_Id": 1,
-//                     "prescription_medicine_Id": 80,
-//                     "medicine_Id": 2,
-//                     "batch_Id": 37,
-//                     "amount": 0,
-//                     "dispensed_quantity": 1,
-//                     "dispensed_by": 1234567891,
-//                     "dispensed_at": "2026-02-11T07:07:48.590Z"
-//                   }
-//                 ],
-//                 "medicine": {
-//                   "id": 2,
-//                   "hospital_Id": 1,
-//                   "name": "insulin ",
-//                   "category": "Injections",
-//                   "stock": 26248,
-//                   "ndc_code": "453",
-//                   "reorder": 10,
-//                   "is_active": true,
-//                   "created_at": "2026-02-10T05:11:04.749Z",
-//                   "order_status": "NOT_ORDERED",
-//                   "batches": [
-//                     {
-//                       "id": 37,
-//                       "hospital_Id": 1,
-//                       "medicine_id": 2,
-//                       "HSN": "D44",
-//                       "batch_no": "02",
-//                       "expiry_date": "2026-02-15T00:00:00.000Z",
-//                       "manufacture_date": "2026-02-10T00:00:00.000Z",
-//                       "total_stock": 26248,
-//                       "total_quantity": 1050,
-//                       "quantity": 1000,
-//                       "free_quantity": 50,
-//                       "unit": 25,
-//                       "rack_no": "10",
-//                       "mrp": 15,
-//                       "profit": 30,
-//                       "purchase_price_unit": 0.47,
-//                       "purchase_price_quantity": 11.8,
-//                       "selling_price_quantity": 15,
-//                       "selling_price_unit": 0.6,
-//                       "purchase_details": {
-//                         "base_amount": 10000,
-//                         "gst_percent": 18,
-//                         "purchase_date": "2026-02-10T10:36:58.328336",
-//                         "purchase_price": 11800,
-//                         "gst_per_quantity": 1.8,
-//                         "total_gst_amount": 1800,
-//                         "rate_per_quantity": 10
-//                       },
-//                       "supplier_id": 1,
-//                       "is_active": true,
-//                       "created_at": "2026-02-10T05:11:04.752Z"
-//                     }
-//                   ]
-//                 }
-//               }
-//             ]
-//           }
-//         ],
-//         "Patient": {
-//           "patient_Id": "5366365542",
-//           "name": "Mr. KKK",
-//           "dob": "2001-02-04T00:00:00.000Z",
-//           "phone": "+91 5366365542",
-//           "gender": "Male",
-//           "bldGrp": "A+",
-//           "address": {
-//             "Address": "TCR"
-//           },
-//           "createdAt": "2026-02-04 05:26 PM",
-//           "updatedAt": null
-//         },
-//         "Admission": [
-//           {
-//             "id": 92,
-//             "hospital_Id": 1,
-//             "consultation_Id": 3107,
-//             "patient_Id": 2007,
-//             "bedId": 46,
-//             "admitTime": "2026-02-04T12:02:31.008Z",
-//             "dischargeTime": null,
-//             "wardChange": [
-//               {
-//                 "toWard": {
-//                   "bedId": 6,
-//                   "bedNo": 11,
-//                   "wardId": 3,
-//                   "wardName": "303"
-//                 },
-//                 "movedAt": "2026-02-04T12:04:27.629Z",
-//                 "fromWard": {
-//                   "bedId": 5,
-//                   "bedNo": 10,
-//                   "wardId": 3,
-//                   "wardName": "303"
-//                 }
-//               },
-//               {
-//                 "toWard": {
-//                   "bedId": 44,
-//                   "bedNo": 3,
-//                   "wardId": 19,
-//                   "wardName": "kk"
-//                 },
-//                 "movedAt": "2026-02-04T12:07:16.543Z",
-//                 "fromWard": {
-//                   "bedId": 6,
-//                   "bedNo": 11,
-//                   "wardId": 3,
-//                   "wardName": "303"
-//                 }
-//               },
-//               {
-//                 "toWard": {
-//                   "bedId": 5,
-//                   "bedNo": 10,
-//                   "wardId": 3,
-//                   "wardName": "303"
-//                 },
-//                 "movedAt": "2026-02-04T12:11:21.388Z",
-//                 "fromWard": {
-//                   "bedId": 44,
-//                   "bedNo": 3,
-//                   "wardId": 19,
-//                   "wardName": "kk"
-//                 }
-//               },
-//               {
-//                 "toWard": {
-//                   "bedId": 44,
-//                   "bedNo": 3,
-//                   "wardId": 19,
-//                   "wardName": "kk"
-//                 },
-//                 "movedAt": "2026-02-04T12:29:50.662Z",
-//                 "fromWard": {
-//                   "bedId": 5,
-//                   "bedNo": 10,
-//                   "wardId": 3,
-//                   "wardName": "303"
-//                 }
-//               },
-//               {
-//                 "toWard": {
-//                   "bedId": 5,
-//                   "bedNo": 10,
-//                   "wardId": 3,
-//                   "wardName": "303"
-//                 },
-//                 "movedAt": "2026-02-04T12:37:14.347Z",
-//                 "fromWard": {
-//                   "bedId": 44,
-//                   "bedNo": 3,
-//                   "wardId": 19,
-//                   "wardName": "kk"
-//                 }
-//               },
-//               {
-//                 "toWard": {
-//                   "bedId": 45,
-//                   "bedNo": 4,
-//                   "wardId": 19,
-//                   "wardName": "kk"
-//                 },
-//                 "movedAt": "2026-02-04T12:43:47.124Z",
-//                 "fromWard": {
-//                   "bedId": 5,
-//                   "bedNo": 10,
-//                   "wardId": 3,
-//                   "wardName": "303"
-//                 }
-//               },
-//               {
-//                 "toWard": {
-//                   "bedId": 5,
-//                   "bedNo": 10,
-//                   "wardId": 3,
-//                   "wardName": "303"
-//                 },
-//                 "movedAt": "2026-02-04T12:47:57.243Z",
-//                 "fromWard": {
-//                   "bedId": 45,
-//                   "bedNo": 4,
-//                   "wardId": 19,
-//                   "wardName": "kk"
-//                 }
-//               },
-//               {
-//                 "toWard": {
-//                   "bedId": 45,
-//                   "bedNo": 4,
-//                   "wardId": 19,
-//                   "wardName": "kk"
-//                 },
-//                 "movedAt": "2026-02-04T12:49:09.301Z",
-//                 "fromWard": {
-//                   "bedId": 5,
-//                   "bedNo": 10,
-//                   "wardId": 3,
-//                   "wardName": "303"
-//                 }
-//               },
-//               {
-//                 "toWard": {
-//                   "bedId": 6,
-//                   "bedNo": 11,
-//                   "wardId": 3,
-//                   "wardName": "303"
-//                 },
-//                 "movedAt": "2026-02-04T12:49:58.406Z",
-//                 "fromWard": {
-//                   "bedId": 45,
-//                   "bedNo": 4,
-//                   "wardId": 19,
-//                   "wardName": "kk"
-//                 }
-//               },
-//               {
-//                 "toWard": {
-//                   "bedId": 5,
-//                   "bedNo": 10,
-//                   "wardId": 3,
-//                   "wardName": "303"
-//                 },
-//                 "movedAt": "2026-02-04T12:52:47.063Z",
-//                 "fromWard": {
-//                   "bedId": 6,
-//                   "bedNo": 11,
-//                   "wardId": 3,
-//                   "wardName": "303"
-//                 }
-//               },
-//               {
-//                 "toWard": {
-//                   "bedId": 6,
-//                   "bedNo": 11,
-//                   "wardId": 3,
-//                   "wardName": "303"
-//                 },
-//                 "movedAt": "2026-02-04T12:56:01.848Z",
-//                 "fromWard": {
-//                   "bedId": 5,
-//                   "bedNo": 10,
-//                   "wardId": 3,
-//                   "wardName": "303"
-//                 }
-//               },
-//               {
-//                 "toWard": {
-//                   "bedId": 45,
-//                   "bedNo": 4,
-//                   "wardId": 19,
-//                   "wardName": "kk"
-//                 },
-//                 "movedAt": "2026-02-04T12:56:24.160Z",
-//                 "fromWard": {
-//                   "bedId": 6,
-//                   "bedNo": 11,
-//                   "wardId": 3,
-//                   "wardName": "303"
-//                 }
-//               },
-//               {
-//                 "toWard": {
-//                   "bedId": 6,
-//                   "bedNo": 11,
-//                   "wardId": 3,
-//                   "wardName": "303"
-//                 },
-//                 "movedAt": "2026-02-04T12:57:09.655Z",
-//                 "fromWard": {
-//                   "bedId": 45,
-//                   "bedNo": 4,
-//                   "wardId": 19,
-//                   "wardName": "kk"
-//                 }
-//               },
-//               {
-//                 "toWard": {
-//                   "bedId": 5,
-//                   "bedNo": 10,
-//                   "wardId": 3,
-//                   "wardName": "303"
-//                 },
-//                 "movedAt": "2026-02-04T14:24:23.934Z",
-//                 "fromWard": {
-//                   "bedId": 6,
-//                   "bedNo": 11,
-//                   "wardId": 3,
-//                   "wardName": "303"
-//                 }
-//               },
-//               {
-//                 "toWard": {
-//                   "bedId": 45,
-//                   "bedNo": 4,
-//                   "wardId": 19,
-//                   "wardName": "kk"
-//                 },
-//                 "movedAt": "2026-02-04T14:26:00.930Z",
-//                 "fromWard": {
-//                   "bedId": 5,
-//                   "bedNo": 10,
-//                   "wardId": 3,
-//                   "wardName": "303"
-//                 }
-//               },
-//               {
-//                 "toWard": {
-//                   "bedId": 5,
-//                   "bedNo": 10,
-//                   "wardId": 3,
-//                   "wardName": "303"
-//                 },
-//                 "movedAt": "2026-02-04T14:26:46.135Z",
-//                 "fromWard": {
-//                   "bedId": 45,
-//                   "bedNo": 4,
-//                   "wardId": 19,
-//                   "wardName": "kk"
-//                 }
-//               },
-//               {
-//                 "toWard": {
-//                   "bedId": 1,
-//                   "bedNo": 34,
-//                   "wardId": 1,
-//                   "wardName": "Testing"
-//                 },
-//                 "movedAt": "2026-02-04T14:27:35.438Z",
-//                 "fromWard": {
-//                   "bedId": 5,
-//                   "bedNo": 10,
-//                   "wardId": 3,
-//                   "wardName": "303"
-//                 }
-//               },
-//               {
-//                 "toWard": {
-//                   "bedId": 45,
-//                   "bedNo": 4,
-//                   "wardId": 19,
-//                   "wardName": "kk"
-//                 },
-//                 "movedAt": "2026-02-04T14:28:16.040Z",
-//                 "fromWard": {
-//                   "bedId": 1,
-//                   "bedNo": 34,
-//                   "wardId": 1,
-//                   "wardName": "Testing"
-//                 }
-//               },
-//               {
-//                 "toWard": {
-//                   "bedId": 46,
-//                   "bedNo": 5,
-//                   "wardId": 19,
-//                   "wardName": "kk"
-//                 },
-//                 "movedAt": "2026-02-04T16:00:22.402Z",
-//                 "fromWard": {
-//                   "bedId": 45,
-//                   "bedNo": 4,
-//                   "wardId": 19,
-//                   "wardName": "kk"
-//                 }
-//               }
-//             ],
-//             "staffChange": [
-//               {
-//                 "nurse": "5675",
-//                 "doctor": "1234567891",
-//                 "dateTime": "2026-02-04 05:27 PM"
-//               }
-//             ],
-//             "attenderDetail": null,
-//             "status": "DISCHARGED",
-//             "createdAt": "2026-02-04T12:02:31.008Z",
-//             "updatedAt": "2026-02-04T16:00:22.416Z",
-//             "bed": {
-//               "id": 46,
-//               "bedNo": 5,
-//               "wardId": 19,
-//               "status": "OCCUPIED",
-//               "createdAt": "2026-01-20T05:46:30.789Z",
-//               "ward": {
-//                 "id": 19,
-//                 "hospital_Id": 1,
-//                 "name": "kk",
-//                 "type": "General",
-//                 "rent": 1000,
-//                 "createdAt": "2026-01-20T05:46:30.089Z"
-//               }
-//             }
-//           }
-//         ],
-//         "TeatingAndScanningPatient": [
-//           {
-//             "title": "X-RAY",
-//             "type": "X-RAY",
-//             "staff_Id": "1234567891",
-//             "payment_Id": 6417,
-//             "paymentStatus": true,
-//             "status": "COMPLETED",
-//             "scanImages": null,
-//             "results": "gh",
-//             "selectedOptions": [
-//               {
-//                 "name": "CHEST PA",
-//                 "selectedOption": "CHEST PA",
-//                 "result": "ggg",
-//                 "unit": "-",
-//                 "reference": "N/A"
-//               },
-//               {
-//                 "name": "CHEST LATERAL",
-//                 "selectedOption": "CHEST LATERAL",
-//                 "result": "fgg",
-//                 "unit": "-",
-//                 "reference": "N/A"
-//               }
-//             ]
-//           }
-//         ],
-//         "Doctor": {
-//           "doctorId": "1234567891",
-//           "name": "Dr Parthiban",
-//           "specialist": "Orthopedic"
-//         },
-//         "Hospital": {
-//           "name": "Green Valley Hospital"
-//         }
-//       },

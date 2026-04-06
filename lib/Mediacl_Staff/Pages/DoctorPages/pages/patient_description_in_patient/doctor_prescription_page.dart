@@ -25,8 +25,8 @@ class DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
   final socketService = SocketService();
 
   late MedicineService medicineService;
-  late TonicService tonicService;
-  late InjectionService injectionService;
+  // late TonicService tonicService;
+  // late InjectionService injectionService;
   bool medicineTonicInjection = false;
   bool injection = false;
 
@@ -53,8 +53,8 @@ class DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
     super.initState();
 
     medicineService = MedicineService();
-    tonicService = TonicService();
-    injectionService = InjectionService();
+    // tonicService = TonicService();
+    // injectionService = InjectionService();
 
     submittedMedicines = PatientDescriptionInState.submittedMedicines
         .map(
@@ -72,8 +72,8 @@ class DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
     );
 
     _loadAllMedicines();
-    _loadAllTonics();
-    _loadAllInjections();
+    // _loadAllTonics();
+    // _loadAllInjections();
     _updateTime();
   }
 
@@ -98,37 +98,37 @@ class DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
     }
   }
 
-  Future<void> _loadAllTonics() async {
-    try {
-      if (!tonicsLoaded) {
-        final results = await tonicService.getAllTonics();
-        if (mounted) {
-          setState(() {
-            allTonics = results;
-            tonicsLoaded = true;
-          });
-        }
-      }
-    } catch (e) {
-      setState(() {});
-    }
-  }
-
-  Future<void> _loadAllInjections() async {
-    try {
-      if (!injectionsLoaded) {
-        final results = await injectionService.getAllInjection();
-        if (mounted) {
-          setState(() {
-            allInjection = results;
-            injectionsLoaded = true;
-          });
-        }
-      }
-    } catch (e) {
-      setState(() {});
-    }
-  }
+  // Future<void> _loadAllTonics() async {
+  //   try {
+  //     if (!tonicsLoaded) {
+  //       final results = await tonicService.getAllTonics();
+  //       if (mounted) {
+  //         setState(() {
+  //           allTonics = results;
+  //           tonicsLoaded = true;
+  //         });
+  //       }
+  //     }
+  //   } catch (e) {
+  //     setState(() {});
+  //   }
+  // }
+  //
+  // Future<void> _loadAllInjections() async {
+  //   try {
+  //     if (!injectionsLoaded) {
+  //       final results = await injectionService.getAllInjection();
+  //       if (mounted) {
+  //         setState(() {
+  //           allInjection = results;
+  //           injectionsLoaded = true;
+  //         });
+  //       }
+  //     }
+  //   } catch (e) {
+  //     setState(() {});
+  //   }
+  // }
 
   Future<void> _onAddMedicine(List<Map<String, dynamic>> meds) async {
     final currentCall = ++_onAddCallCount;
@@ -332,7 +332,12 @@ class DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
     PatientDescriptionInState.onSavedPrescriptions(
       submittedMedicine: submittedMedicines,
     );
-    Navigator.pop(context, true);
+  }
+
+  Future<void> _savePrescription() async {
+    PatientDescriptionInState.onSavedPrescriptions(
+      submittedMedicine: submittedMedicines,
+    );
   }
 
   List<Map<String, dynamic>> allocateBatches(
@@ -417,7 +422,10 @@ class DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
                             Icons.arrow_back_ios,
                             color: Colors.white,
                           ),
-                          onPressed: () => _handleSubmitPrescription(),
+                          onPressed: () => {
+                            _handleSubmitPrescription(),
+                            Navigator.pop(context, true),
+                          },
                         ),
                         const SizedBox(width: 8),
                         const Text(
@@ -460,7 +468,13 @@ class DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
-          onPressed: isLoading ? null : _handleSubmitPrescription,
+          //onPressed: isLoading ? null : _handleSubmitPrescription,
+          onPressed: isLoading
+              ? null
+              : () async {
+                  await _savePrescription();
+                  Navigator.pop(context, true); // ✅ pop here
+                },
           label: isLoading
               ? Row(
                   children: [
@@ -732,198 +746,3 @@ class DoctorsPrescriptionPageState extends State<DoctorsPrescriptionPage> {
     );
   }
 }
-
-// Widget _buildTonicTab() {
-//   return SingleChildScrollView(
-//     padding: const EdgeInsets.all(4),
-//     child: Column(
-//       children: [
-//         TonicCard(
-//           primaryColor: primaryColor,
-//           tonicService: tonicService,
-//           allTonics: allTonics,
-//           tonicsLoaded: tonicsLoaded,
-//           onAdd: _onAddTonic,
-//           expanded: true,
-//           onExpandToggle: () {},
-//           initialSavedTonics: persistentTonicsEntries,
-//         ),
-//         const SizedBox(height: 16),
-//         if (submittedMedicines.isNotEmpty ||
-//             submittedTonics.isNotEmpty ||
-//             submittedInjections.isNotEmpty)
-//           _buildCombinedSummaryCard(),
-//         const SizedBox(height: 80),
-//       ],
-//     ),
-//   );
-// }
-//
-// Widget _buildInjectionTab() {
-//   return SingleChildScrollView(
-//     padding: const EdgeInsets.all(4),
-//     child: Column(
-//       children: [
-//         InjectionCard(
-//           primaryColor: primaryColor,
-//           injectionService: injectionService,
-//           allInjection: allInjection,
-//           injectionsLoaded: injectionsLoaded,
-//           onAdd: _onAddInjection,
-//           expanded: true,
-//           onExpandToggle: () {},
-//           initialSavedInjection: persistentInjectionEntries,
-//         ),
-//         const SizedBox(height: 16),
-//         if (submittedMedicines.isNotEmpty ||
-//             submittedTonics.isNotEmpty ||
-//             submittedInjections.isNotEmpty)
-//           _buildCombinedSummaryCard(),
-//         const SizedBox(height: 80),
-//       ],
-//     ),
-//   );
-// }
-//
-// Widget _buildOthersTab() {
-//   return Column(
-//     children: [
-//       // 🟢 Takes available height
-//       Expanded(child: OtherCard(onAdd: (othersList) {})),
-//
-//       // 🔽 Summary Card (Fixed at bottom)
-//       _buildCombinedSummaryCard(),
-//
-//       const SizedBox(height: 80),
-//     ],
-//   );
-// }
-
-// void _onAddTonic(List<Map<String, dynamic>> tonics) {
-//   setState(() {
-//     // Replace entire summary list with the latest from MedicineCard
-//     submittedTonics = List<Map<String, dynamic>>.from(tonics);
-//   });
-// }
-//
-// void _onAddInjection(List<Map<String, dynamic>> injections) {
-//   setState(() {
-//     // Replace entire summary list with the latest from MedicineCard
-//     submittedInjections = List<Map<String, dynamic>>.from(injections);
-//   });
-// }
-
-// Future<void> _handleSubmitPrescription() async {
-//   if (submittedMedicines.isEmpty) {
-//     ScaffoldMessenger.of(context).showSnackBar(
-//       const SnackBar(content: Text("Please add at least one item!")),
-//     );
-//     return;
-//   }
-//
-//   setState(() => _isLoading = true);
-//
-//   final List<Map<String, dynamic>> medicineList = submittedMedicines.map((m) {
-//     final qtyPerDose = m['qtyPerDose'] == 1 / 2 ? 0.5 : m['qtyPerDose'];
-//     return {
-//       'medicine_Id': int.parse(m['medicineId'].toString()),
-//       'consultation_Id': widget.consultation['id'],
-//       'route': m['route'].toString().toUpperCase(),
-//       'quantity': qtyPerDose,
-//       'afterEat': m['afterEat'],
-//       'morning': m['morning'],
-//       'afternoon': m['afternoon'],
-//       'night': m['night'],
-//       'days': m['days'],
-//       //'quantityNeeded': m['quantity'],
-//       'total_quantity': m['quantity'],
-//       'dosage': m['qtyPerDose'].toString(),
-//       'total': m['total'],
-//     };
-//   }).toList();
-//
-//   final Map<String, dynamic> prescriptionData = {
-//     'hospital_Id': widget.consultation['hospital_Id'],
-//     'patient_Id': widget.consultation['patient_Id'].toString(),
-//     'doctor_Id': widget.consultation['Doctor']?['doctorId'].toString(),
-//     'consultation_Id': widget.consultation['id'],
-//     'createdAt': _dateTime.toString(),
-//     'medicines': medicineList,
-//     // 'tonics': tonicList,
-//     // 'injections': injectionList,
-//   };
-//
-//   try {
-//     // await PrescriptionService().createPrescription(prescriptionData);
-//     final prescription = await PrescriptionService().createPrescription(
-//       prescriptionData,
-//     );
-//     final prefs = await SharedPreferences.getInstance();
-//     final userId = prefs.getString('userId');
-//
-//     final firstMedicine = submittedMedicines[0];
-//     await PrescriptionService().createPrescriptionDispense({
-//       "hospital_Id": widget.consultation['hospital_Id'],
-//       "prescription_medicine_Id": prescription['medicines'][0]['id'],
-//       "batch_Id": firstMedicine['batch_Id'],
-//       "dispensed_quantity": firstMedicine['quantity'],
-//       "pharmacist_Id": userId,
-//     });
-//
-//     // await PrescriptionService().createPrescriptionDispense(prescriptionData);
-//     final consultationId = widget.consultation['id'];
-//     if (consultationId == null && mounted) {
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         const SnackBar(content: Text('Consultation ID not found')),
-//       );
-//       return;
-//     }
-//     setState(() {
-//       // permanent flag for injection
-//       if (submittedInjections.isNotEmpty) {
-//         injection = true; // once true, stays true
-//       }
-//
-//       // permanent flag for medicine/tonic/injection combined
-//       if (submittedMedicines.isNotEmpty) {
-//         medicineTonicInjection = true; // once true, stays true
-//       }
-//     });
-//
-//     await ConsultationService().updateConsultation(consultationId, {
-//       'status': 'ONGOING',
-//       // 'scanningTesting': scanningTesting,
-//       'medicineTonic': medicineTonicInjection,
-//       'Injection': injection,
-//       'queueStatus': 'COMPLETED', //change
-//       'updatedAt': _dateTime.toString(),
-//     });
-//     if (mounted) {
-//       Navigator.pop(context, {
-//         'medicine': submittedMedicines.isNotEmpty,
-//         // 'tonic': submittedTonics.isNotEmpty,
-//         // 'injection': submittedInjections.isNotEmpty,
-//       });
-//
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         const SnackBar(
-//           content: Text("Prescription submitted successfully!"),
-//           backgroundColor: Colors.green,
-//         ),
-//       );
-//     }
-//   } catch (e) {
-//     if (mounted) {
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         SnackBar(
-//           content: Text("Failed to submit: $e"),
-//           backgroundColor: Colors.red,
-//         ),
-//       );
-//     }
-//   } finally {
-//     setState(() {
-//       _isLoading = false;
-//     });
-//   }
-// }

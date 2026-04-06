@@ -1027,6 +1027,132 @@ class PatientDescriptionPageState extends State<PatientDescriptionPage>
     });
   }
 
+  // Future<void> _handleSubmitPrescription() async {
+  //   if (submittedMedicines.isEmpty) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text("Please add at least one item!")),
+  //     );
+  //     return;
+  //   }
+  //
+  //   setState(() => isLoading = true);
+  //
+  //   final List<Map<String, dynamic>> medicineList = submittedMedicines.map((m) {
+  //     final qtyPerDose = m['qtyPerDose'] == 1 / 2 ? 0.5 : m['qtyPerDose'];
+  //     return {
+  //       'medicine_Id': int.parse(m['medicineId'].toString()),
+  //       'consultation_Id': widget.consultation['id'],
+  //       'route': m['route'].toString().toUpperCase(),
+  //       'quantity': qtyPerDose,
+  //       'afterEat': m['afterEat'],
+  //       'morning': m['morning'],
+  //       'afternoon': m['afternoon'],
+  //       'night': m['night'],
+  //       'days': m['days'],
+  //       'batch_No': m['batch_Id'],
+  //       //'quantityNeeded': m['quantity'],
+  //       'total_quantity': m['quantity'],
+  //       'dosage': m['qtyPerDose'].toString(),
+  //       'total': m['total'],
+  //     };
+  //   }).toList();
+  //
+  //   final Map<String, dynamic> prescriptionData = {
+  //     'hospital_Id': widget.consultation['hospital_Id'],
+  //     'patient_Id': widget.consultation['patient_Id'].toString(),
+  //     'doctor_Id': widget.consultation['Doctor']?['doctorId'].toString(),
+  //     'consultation_Id': widget.consultation['id'],
+  //     'createdAt': dateTime.toString(),
+  //     'medicines': medicineList,
+  //     // 'tonics': tonicList,
+  //     // 'injections': injectionList,
+  //   };
+  //
+  //   try {
+  //     final prescription = await PrescriptionService().createPrescription(
+  //       prescriptionData,
+  //     );
+  //     final prefs = await SharedPreferences.getInstance();
+  //     final userId = prefs.getString('userId');
+  //
+  //     // Load all medicines to allocate batches
+  //     final allMedicines = await MedicineService().getAllMedicines();
+  //
+  //     // await PrescriptionService().createPrescriptionDispense(prescriptionData);
+  //     final consultationId = widget.consultation['id'];
+  //     if (consultationId == null && mounted) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         const SnackBar(content: Text('Consultation ID not found')),
+  //       );
+  //       return;
+  //     }
+  //     setState(() {
+  //       // // permanent flag for injection
+  //       // if (submittedInjections.isNotEmpty) {
+  //       //   injection = true; // once true, stays true
+  //       // }
+  //       print('submittedMedicines $submittedMedicines');
+  //       // permanent flag for medicine/tonic/injection combined
+  //       if (submittedMedicines.isNotEmpty) {
+  //         medicineTonicInjection = true; // once true, stays true
+  //       }
+  //       for (final med in submittedMedicines) {
+  //         if (med['route']?.toString().toLowerCase() == 'injections') {
+  //           injection = true;
+  //           break; // once true, stop checking
+  //         }
+  //       }
+  //     });
+  //
+  //     await ConsultationService().updateConsultation(consultationId, {
+  //       'status': 'ONGOING',
+  //       // 'scanningTesting': scanningTesting,
+  //       'medicineTonic': medicineTonicInjection,
+  //       'Injection': injection,
+  //       'queueStatus': 'COMPLETED', //change
+  //       'updatedAt': dateTime.toString(),
+  //     });
+  //     if (mounted) {
+  //       // Navigator.pop(context, {
+  //       //   'medicine': submittedMedicines.isNotEmpty,
+  //       //   // 'tonic': submittedTonics.isNotEmpty,
+  //       //   // 'injection': submittedInjections.isNotEmpty,
+  //       // });
+  //
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         const SnackBar(
+  //           content: Text("Prescription submitted successfully!"),
+  //           backgroundColor: Colors.green,
+  //         ),
+  //       );
+  //     }
+  //   } catch (e) {
+  //     if (mounted) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(
+  //           content: Text("Failed to submit: $e"),
+  //           backgroundColor: Colors.red,
+  //         ),
+  //       );
+  //     }
+  //   } finally {
+  //     setState(() {
+  //       isLoading = false;
+  //     });
+  //   }
+  // }
+
+  double calculateDays({
+    required double allocatedQty,
+    required double qtyPerDose,
+    required int sessionsPerDay,
+  }) {
+    if (allocatedQty <= 0 || qtyPerDose <= 0 || sessionsPerDay <= 0) {
+      return 0;
+    }
+    return allocatedQty / (qtyPerDose * sessionsPerDay);
+  }
+
   Future<void> _handleSubmitPrescription() async {
     if (submittedMedicines.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1037,46 +1163,95 @@ class PatientDescriptionPageState extends State<PatientDescriptionPage>
 
     setState(() => isLoading = true);
 
-    final List<Map<String, dynamic>> medicineList = submittedMedicines.map((m) {
-      final qtyPerDose = m['qtyPerDose'] == 1 / 2 ? 0.5 : m['qtyPerDose'];
-      return {
-        'medicine_Id': int.parse(m['medicineId'].toString()),
-        'consultation_Id': widget.consultation['id'],
-        'route': m['route'].toString().toUpperCase(),
-        'quantity': qtyPerDose,
-        'afterEat': m['afterEat'],
-        'morning': m['morning'],
-        'afternoon': m['afternoon'],
-        'night': m['night'],
-        'days': m['days'],
-        'batch_No': m['batch_Id'],
-        //'quantityNeeded': m['quantity'],
-        'total_quantity': m['quantity'],
-        'dosage': m['qtyPerDose'].toString(),
-        'total': m['total'],
-      };
-    }).toList();
-
-    final Map<String, dynamic> prescriptionData = {
-      'hospital_Id': widget.consultation['hospital_Id'],
-      'patient_Id': widget.consultation['patient_Id'].toString(),
-      'doctor_Id': widget.consultation['Doctor']?['doctorId'].toString(),
-      'consultation_Id': widget.consultation['id'],
-      'createdAt': dateTime.toString(),
-      'medicines': medicineList,
-      // 'tonics': tonicList,
-      // 'injections': injectionList,
-    };
-
     try {
-      final prescription = await PrescriptionService().createPrescription(
-        prescriptionData,
-      );
       final prefs = await SharedPreferences.getInstance();
       final userId = prefs.getString('userId');
 
-      // Load all medicines to allocate batches
-      final allMedicines = await MedicineService().getAllMedicines();
+      for (var m in submittedMedicines) {
+        final List allocatedBatches = m['allocated_batches'] ?? [];
+        Future<void> submitBatch(
+          Map<String, dynamic> medicineData, {
+          dynamic bId,
+          dynamic dispensedQty,
+          dynamic bTotal,
+        }) async {
+          final double qtyPerDose =
+              (medicineData['qtyPerDose'] == 0.5 ||
+                  medicineData['qtyPerDose'] == 1 / 2)
+              ? 0.5
+              : double.parse(medicineData['qtyPerDose'].toString());
+
+          /// ✅ sessions per day
+          int sessionsPerDay = 0;
+          if (medicineData['morning'] == true) sessionsPerDay++;
+          if (medicineData['afternoon'] == true) sessionsPerDay++;
+          if (medicineData['night'] == true) sessionsPerDay++;
+
+          // /// 🔴 SAFETY CHECK
+          // if (sessionsPerDay == 0) {
+          //   throw Exception("No session selected (morning/afternoon/night)");
+          // }
+
+          final double allocatedQty = dispensedQty != null
+              ? double.parse(dispensedQty.toString())
+              : double.parse(medicineData['dosage'].toString());
+
+          final double batchDays = calculateDays(
+            allocatedQty: allocatedQty,
+            qtyPerDose: qtyPerDose,
+            sessionsPerDay: sessionsPerDay,
+          );
+
+          /// ✅ DEBUG (KEEP THIS TEMPORARILY)
+          debugPrint(
+            'Batch $bId → qty=$allocatedQty, dose=$qtyPerDose, sessions=$sessionsPerDay, days=$batchDays',
+          );
+
+          final Map<String, dynamic> singlePrescriptionData = {
+            'hospital_Id': widget.consultation['hospital_Id'],
+            'patient_Id': widget.consultation['patient_Id'].toString(),
+            'doctor_Id': widget.consultation['Doctor']?['doctorId'].toString(),
+            'consultation_Id': widget.consultation['id'],
+            'createdAt': dateTime.toString(),
+            'batch_No': m['batch_no'],
+            "pharmacist_Id": userId,
+            'medicines': [
+              {
+                'medicine_Id': int.parse(medicineData['medicineId'].toString()),
+                'consultation_Id': widget.consultation['id'],
+                'route': medicineData['route'].toString().toUpperCase(),
+                'quantity': qtyPerDose,
+                'afterEat': medicineData['afterEat'],
+                'morning': medicineData['morning'],
+                'afternoon': medicineData['afternoon'],
+                'night': medicineData['night'],
+                'days': batchDays, // ✅ CORRECT VALUE
+                'batch_No': m['batch_no'],
+                'total_quantity': allocatedQty,
+                'dosage': medicineData['qtyPerDose'].toString(),
+                'total': bTotal ?? medicineData['total'],
+              },
+            ],
+          };
+
+          final prescription = await PrescriptionService().createPrescription(
+            singlePrescriptionData,
+          );
+        }
+
+        if (allocatedBatches.isNotEmpty) {
+          for (var batch in allocatedBatches) {
+            await submitBatch(
+              m,
+              bId: batch['batch_no'],
+              dispensedQty: batch['allocated_qty'],
+              bTotal: batch['batch_total'],
+            );
+          }
+        } else {
+          await submitBatch(m);
+        }
+      }
 
       // await PrescriptionService().createPrescriptionDispense(prescriptionData);
       final consultationId = widget.consultation['id'];
@@ -1091,7 +1266,7 @@ class PatientDescriptionPageState extends State<PatientDescriptionPage>
         // if (submittedInjections.isNotEmpty) {
         //   injection = true; // once true, stays true
         // }
-        print('submittedMedicines $submittedMedicines');
+
         // permanent flag for medicine/tonic/injection combined
         if (submittedMedicines.isNotEmpty) {
           medicineTonicInjection = true; // once true, stays true
@@ -1105,11 +1280,11 @@ class PatientDescriptionPageState extends State<PatientDescriptionPage>
       });
 
       await ConsultationService().updateConsultation(consultationId, {
-        'status': 'ONGOING',
+        'status': 'ADMITTED',
         // 'scanningTesting': scanningTesting,
         'medicineTonic': medicineTonicInjection,
         'Injection': injection,
-        'queueStatus': 'COMPLETED', //change
+        'queueStatus': 'ONGOING', //change
         'updatedAt': dateTime.toString(),
       });
       if (mounted) {
