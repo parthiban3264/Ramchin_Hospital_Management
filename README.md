@@ -249,9 +249,9 @@ The system provides reporting capabilities for:
 </p>
 
 <p align="center">
-  <img src="assets/screenshots/scr4a.jpg" width="220"/>
   <img src="assets/screenshots/scr4aa.jpg" width="220"/>
   <img src="assets/screenshots/scr4ab.jpg" width="220"/>
+  <img src="assets/screenshots/scr4a.jpg" width="220"/>
   <img src="assets/screenshots/scr4c.jpg" width="220"/>
 </p>
 
