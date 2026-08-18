@@ -218,8 +218,6 @@ The system provides reporting capabilities for:
 
 * Flutter
 * Dart
-* BLoC
-* MVVM Architecture
 
 **Backend**
 
@@ -235,7 +233,6 @@ The system provides reporting capabilities for:
 * Git
 * GitHub
 * Postman
-* Swagger
 
 ---
 
@@ -306,8 +303,6 @@ The primary goal of this project is to provide a **centralized digital solution 
 
 * Flutter
 * Dart
-* BLoC
-* MVVM
 * REST API Integration
 * Node.js
 * NestJS
