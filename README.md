@@ -242,52 +242,52 @@ The system provides reporting capabilities for:
 ## 📱 Application Screenshots
 
 <p align="center">
-  <img src="assets/screenshots/scr1.png" width="220"/>
-  <img src="assets/screenshots/scr2.png" width="220"/>
-  <img src="assets/screenshots/scr3.png" width="220"/>
-  <img src="assets/screenshots/scr4.png" width="220"/>
+  <img src="assets/screenshots/scr1.jpg" width="220"/>
+  <img src="assets/screenshots/scr2.jpg" width="220"/>
+  <img src="assets/screenshots/scr3.jpg" width="220"/>
+  <img src="assets/screenshots/scr4.jpg" width="220"/>
 </p>
 
 <p align="center">
-  <img src="assets/screenshots/scr4a.png" width="220"/>
-  <img src="assets/screenshots/scr4aa.png" width="220"/>
-  <img src="assets/screenshots/scr4ab.png" width="220"/>
-  <img src="assets/screenshots/scr4c.png" width="220"/>
+  <img src="assets/screenshots/scr4a.jpg" width="220"/>
+  <img src="assets/screenshots/scr4aa.jpg" width="220"/>
+  <img src="assets/screenshots/scr4ab.jpg" width="220"/>
+  <img src="assets/screenshots/scr4c.jpg" width="220"/>
 </p>
 
 <p align="center">
-  <img src="assets/screenshots/scr4d.png" width="220"/>
-  <img src="assets/screenshots/scr4e.png" width="220"/>
-  <img src="assets/screenshots/scr5.png" width="220"/>
-  <img src="assets/screenshots/scr6.png" width="220"/>
+  <img src="assets/screenshots/scr4d.jpg" width="220"/>
+  <img src="assets/screenshots/scr4e.jpg" width="220"/>
+  <img src="assets/screenshots/scr5.jpg" width="220"/>
+  <img src="assets/screenshots/scr6.jpg" width="220"/>
 </p>
 
 <p align="center">
-  <img src="assets/screenshots/scr6a.png" width="220"/>
-  <img src="sassets/screenshots/scr6b.png" width="220"/>
-  <img src="assets/screenshots/scr6c.png" width="220"/>
-  <img src="assets/screenshots/scr6d.png" width="220"/>
+  <img src="assets/screenshots/scr6a.jpg" width="220"/>
+  <img src="sassets/screenshots/scr6b.jpg" width="220"/>
+  <img src="assets/screenshots/scr6c.jpg" width="220"/>
+  <img src="assets/screenshots/scr6d.jpg" width="220"/>
 </p>
 
 <p align="center">
-  <img src="assets/screenshots/scr6e.png" width="220"/>
-  <img src="assets/screenshots/scr7.png" width="220"/>
-  <img src="assets/screenshots/scr8.png" width="220"/>
-  <img src="assets/screenshots/scr9.png" width="220"/>
+  <img src="assets/screenshots/scr6e.jpg" width="220"/>
+  <img src="assets/screenshots/scr7.jpg" width="220"/>
+  <img src="assets/screenshots/scr8.jpg" width="220"/>
+  <img src="assets/screenshots/scr9.jpg" width="220"/>
 </p>
 
 <p align="center">
-  <img src="assets/screenshots/scr10.png" width="220"/>
-  <img src="assets/screenshots/scr11.png" width="220"/>
-  <img src="assets/screenshots/scr12.png" width="220"/>
-  <img src="assets/screenshots/scr13.png" width="220"/>
+  <img src="assets/screenshots/scr10.jpg" width="220"/>
+  <img src="assets/screenshots/scr11.jpg" width="220"/>
+  <img src="assets/screenshots/scr12.jpg" width="220"/>
+  <img src="assets/screenshots/scr13.jpg" width="220"/>
 </p>
 
 <p align="center">
-  <img src="assets/screenshots/scr14.png" width="220"/>
-  <img src="assets/screenshots/scr15.png" width="220"/>
-  <img src="assets/screenshots/scr15b.png" width="220"/>
-  <img src="assets/screenshots/scr16.png" width="220"/>
+  <img src="assets/screenshots/scr14.jpg" width="220"/>
+  <img src="assets/screenshots/scr15.jpg" width="220"/>
+  <img src="assets/screenshots/scr15b.jpg" width="220"/>
+  <img src="assets/screenshots/scr16.jpg" width="220"/>
 </p>
 
 ---
