@@ -264,7 +264,7 @@ The system provides reporting capabilities for:
 
 <p align="center">
   <img src="assets/screenshots/scr6a.jpg" width="220"/>
-  <img src="sassets/screenshots/scr6b.jpg" width="220"/>
+  <img src="assets/screenshots/scr6b.jpg" width="220"/>
   <img src="assets/screenshots/scr6c.jpg" width="220"/>
   <img src="assets/screenshots/scr6d.jpg" width="220"/>
 </p>
