@@ -241,29 +241,54 @@ The system provides reporting capabilities for:
 
 ## 📱 Application Screenshots
 
-Add screenshots of the major modules here:
+<p align="center">
+  <img src="assets/screenshots/scr1.png" width="220"/>
+  <img src="assets/screenshots/scr2.png" width="220"/>
+  <img src="assets/screenshots/scr3.png" width="220"/>
+  <img src="assets/screenshots/scr4.png" width="220"/>
+</p>
 
-```text
-📸 Login
-📸 Admin Dashboard
-📸 Patient Management
-📸 Doctor Dashboard
-📸 Nurse Dashboard
-📸 Billing
-📸 Laboratory
-📸 Pharmacy
-📸 Reports
-```
+<p align="center">
+  <img src="assets/screenshots/scr4a.png" width="220"/>
+  <img src="assets/screenshots/scr4aa.png" width="220"/>
+  <img src="assets/screenshots/scr4ab.png" width="220"/>
+  <img src="assets/screenshots/scr4c.png" width="220"/>
+</p>
 
-Example:
+<p align="center">
+  <img src="assets/screenshots/scr4d.png" width="220"/>
+  <img src="assets/screenshots/scr4e.png" width="220"/>
+  <img src="assets/screenshots/scr5.png" width="220"/>
+  <img src="assets/screenshots/scr6.png" width="220"/>
+</p>
 
-| Admin Dashboard     | Patient Management  |
-| ------------------- | ------------------- |
-| Add screenshot here | Add screenshot here |
+<p align="center">
+  <img src="assets/screenshots/scr6a.png" width="220"/>
+  <img src="sassets/screenshots/scr6b.png" width="220"/>
+  <img src="assets/screenshots/scr6c.png" width="220"/>
+  <img src="assets/screenshots/scr6d.png" width="220"/>
+</p>
 
-| Billing             | Pharmacy            |
-| ------------------- | ------------------- |
-| Add screenshot here | Add screenshot here |
+<p align="center">
+  <img src="assets/screenshots/scr6e.png" width="220"/>
+  <img src="assets/screenshots/scr7.png" width="220"/>
+  <img src="assets/screenshots/scr8.png" width="220"/>
+  <img src="assets/screenshots/scr9.png" width="220"/>
+</p>
+
+<p align="center">
+  <img src="assets/screenshots/scr10.png" width="220"/>
+  <img src="assets/screenshots/scr11.png" width="220"/>
+  <img src="assets/screenshots/scr12.png" width="220"/>
+  <img src="assets/screenshots/scr13.png" width="220"/>
+</p>
+
+<p align="center">
+  <img src="assets/screenshots/scr14.png" width="220"/>
+  <img src="assets/screenshots/scr15.png" width="220"/>
+  <img src="assets/screenshots/scr15b.png" width="220"/>
+  <img src="assets/screenshots/scr16.png" width="220"/>
+</p>
 
 ---
 
