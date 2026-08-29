@@ -216,8 +216,12 @@ class ScanningPageState extends State<ScanningPage> {
         child: ExpansionTile(
           tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           leading: CircleAvatar(
-            backgroundColor: primaryColor.withOpacity(0.15),
-            child: Icon(FontAwesomeIcons.vials, color: primaryColor, size: 18),
+            backgroundColor: primaryColor.withValues(alpha: 0.15),
+            child: Icon(
+              FontAwesomeIcons.vials as IconData,
+              color: primaryColor,
+              size: 18,
+            ),
           ),
           title: Text(
             scanName,

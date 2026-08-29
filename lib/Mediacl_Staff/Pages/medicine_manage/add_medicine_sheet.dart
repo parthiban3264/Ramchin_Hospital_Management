@@ -38,11 +38,29 @@ class _AddMedicineSheetState extends State<AddMedicineSheet>
   String _mfgDate = '';
   String _purchaseDate = '';
 
-  final List<String> _categories = ['Tablet', 'Capsule', 'Syrup', 'Injection', 'Ointment', 'Drops', 'Powder', 'Cream'];
-  final List<String> _units = ['Strips', 'Bottles', 'Vials', 'Tubes', 'Pcs', 'Boxes', 'Sachets', 'Ampoules'];
+  final List<String> _categories = [
+    'Tablet',
+    'Capsule',
+    'Syrup',
+    'Injection',
+    'Ointment',
+    'Drops',
+    'Powder',
+    'Cream',
+  ];
+  final List<String> _units = [
+    'Strips',
+    'Bottles',
+    'Vials',
+    'Tubes',
+    'Pcs',
+    'Boxes',
+    'Sachets',
+    'Ampoules',
+  ];
   final List<String> _gstOptions = ['0', '5', '12', '18', '28'];
 
-  static const Color primary = Color(0xFF1A5276);
+  static const Color primary = Color(0xFFBF955E);
 
   @override
   void initState() {
@@ -77,7 +95,22 @@ class _AddMedicineSheetState extends State<AddMedicineSheet>
   @override
   void dispose() {
     _tabController.dispose();
-    for (final c in [_nameCtrl, _genericCtrl, _mfrCtrl, _batchCtrl, _hsnCtrl, _locCtrl, _qtyCtrl, _reorderCtrl, _mrpCtrl, _costCtrl, _discCtrl, _supCtrl, _invCtrl, _notesCtrl]) {
+    for (final c in [
+      _nameCtrl,
+      _genericCtrl,
+      _mfrCtrl,
+      _batchCtrl,
+      _hsnCtrl,
+      _locCtrl,
+      _qtyCtrl,
+      _reorderCtrl,
+      _mrpCtrl,
+      _costCtrl,
+      _discCtrl,
+      _supCtrl,
+      _invCtrl,
+      _notesCtrl,
+    ]) {
       c.dispose();
     }
     super.dispose();
@@ -119,7 +152,10 @@ class _AddMedicineSheetState extends State<AddMedicineSheet>
       ),
     );
     if (picked != null) {
-      setState(() => _purchaseDate = '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}');
+      setState(
+        () => _purchaseDate =
+            '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}',
+      );
     }
   }
 
@@ -139,7 +175,8 @@ class _AddMedicineSheetState extends State<AddMedicineSheet>
       _showError('Expiry date is required');
       return;
     }
-    if (_mrpCtrl.text.trim().isEmpty || double.tryParse(_mrpCtrl.text) == null) {
+    if (_mrpCtrl.text.trim().isEmpty ||
+        double.tryParse(_mrpCtrl.text) == null) {
       _tabController.animateTo(1);
       _showError('Valid MRP is required');
       return;
@@ -175,7 +212,11 @@ class _AddMedicineSheetState extends State<AddMedicineSheet>
 
   void _showError(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: Colors.red.shade700, duration: const Duration(seconds: 2)),
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: Colors.red.shade700,
+        duration: const Duration(seconds: 2),
+      ),
     );
   }
 
@@ -191,8 +232,12 @@ class _AddMedicineSheetState extends State<AddMedicineSheet>
           // Handle
           Container(
             margin: const EdgeInsets.only(top: 10, bottom: 4),
-            width: 40, height: 4,
-            decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(4)),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(4),
+            ),
           ),
           // Header
           Container(
@@ -206,14 +251,21 @@ class _AddMedicineSheetState extends State<AddMedicineSheet>
                 const Icon(Icons.medication, color: Colors.white, size: 22),
                 const SizedBox(width: 10),
                 Text(
-                  widget.medicine == null ? 'Add New Medicine' : 'Edit Medicine',
-                  style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w600),
+                  widget.medicine == null
+                      ? 'Add New Medicine'
+                      : 'Edit Medicine',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 const Spacer(),
                 IconButton(
                   icon: const Icon(Icons.close, color: Colors.white),
                   onPressed: () => Navigator.pop(context),
-                  padding: EdgeInsets.zero, constraints: const BoxConstraints(),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
                 ),
               ],
             ),
@@ -226,7 +278,10 @@ class _AddMedicineSheetState extends State<AddMedicineSheet>
               labelColor: primary,
               unselectedLabelColor: Colors.grey,
               indicatorColor: primary,
-              labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              labelStyle: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
               tabs: const [
                 Tab(text: '📋 Basic Info'),
                 Tab(text: '📦 Stock & Price'),
@@ -260,9 +315,14 @@ class _AddMedicineSheetState extends State<AddMedicineSheet>
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       side: BorderSide(color: Colors.grey.shade400),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
-                    child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(color: Colors.grey),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -273,9 +333,18 @@ class _AddMedicineSheetState extends State<AddMedicineSheet>
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primary,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
-                    child: const Text('✔  Save Medicine', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
+                    child: const Text(
+                      '✔  Save Medicine',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -292,14 +361,34 @@ class _AddMedicineSheetState extends State<AddMedicineSheet>
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          _field('Medicine Name *', _nameCtrl, hint: 'e.g. Paracetamol 500mg Tablet'),
-          _field('Generic / Salt Name', _genericCtrl, hint: 'e.g. Acetaminophen'),
-          _dropdown('Category *', _category, _categories, (v) => setState(() => _category = v!)),
+          _field(
+            'Medicine Name *',
+            _nameCtrl,
+            hint: 'e.g. Paracetamol 500mg Tablet',
+          ),
+          _field(
+            'Generic / Salt Name',
+            _genericCtrl,
+            hint: 'e.g. Acetaminophen',
+          ),
+          _dropdown(
+            'Category *',
+            _category,
+            _categories,
+            (v) => setState(() => _category = v!),
+          ),
           _field('Manufacturer', _mfrCtrl, hint: 'Company name'),
           _field('Batch Number *', _batchCtrl, hint: 'e.g. BT2024001'),
           _field('HSN Code', _hsnCtrl, hint: 'e.g. 30049099'),
-          _field('Rack / Shelf Location', _locCtrl, hint: 'e.g. A-12, FRIDGE-1'),
-          _dropdown('Prescription Required?', _rxType, ['OTC', 'Rx'],
+          _field(
+            'Rack / Shelf Location',
+            _locCtrl,
+            hint: 'e.g. A-12, FRIDGE-1',
+          ),
+          _dropdown(
+            'Prescription Required?',
+            _rxType,
+            ['OTC', 'Rx'],
             (v) => setState(() => _rxType = v!),
             displayItems: ['No — OTC', 'Yes — Rx (Prescription)'],
           ),
@@ -316,28 +405,91 @@ class _AddMedicineSheetState extends State<AddMedicineSheet>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _sectionTitle('Stock Details'),
-          Row(children: [
-            Expanded(child: _field('Quantity *', _qtyCtrl, hint: '0', keyboard: TextInputType.number)),
-            const SizedBox(width: 12),
-            Expanded(child: _dropdown('Unit', _unit, _units, (v) => setState(() => _unit = v!))),
-          ]),
-          Row(children: [
-            Expanded(child: _field('Reorder Level', _reorderCtrl, hint: '10', keyboard: TextInputType.number)),
-            const SizedBox(width: 12),
-            Expanded(child: _datePicker('Mfg Date', _mfgDate, () => _pickMonth(false))),
-          ]),
+          Row(
+            children: [
+              Expanded(
+                child: _field(
+                  'Quantity *',
+                  _qtyCtrl,
+                  hint: '0',
+                  keyboard: TextInputType.number,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _dropdown(
+                  'Unit',
+                  _unit,
+                  _units,
+                  (v) => setState(() => _unit = v!),
+                ),
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: _field(
+                  'Reorder Level',
+                  _reorderCtrl,
+                  hint: '10',
+                  keyboard: TextInputType.number,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _datePicker(
+                  'Mfg Date',
+                  _mfgDate,
+                  () => _pickMonth(false),
+                ),
+              ),
+            ],
+          ),
           _datePicker('Expiry Date *', _expiryDate, () => _pickMonth(true)),
           _sectionTitle('Price Details'),
-          Row(children: [
-            Expanded(child: _field('MRP (₹) *', _mrpCtrl, hint: '0.00', keyboard: TextInputType.number)),
-            const SizedBox(width: 12),
-            Expanded(child: _field('Cost Price (₹)', _costCtrl, hint: '0.00', keyboard: TextInputType.number)),
-          ]),
-          Row(children: [
-            Expanded(child: _dropdown('GST %', _gst, _gstOptions, (v) => setState(() => _gst = v!))),
-            const SizedBox(width: 12),
-            Expanded(child: _field('Discount %', _discCtrl, hint: '0', keyboard: TextInputType.number)),
-          ]),
+          Row(
+            children: [
+              Expanded(
+                child: _field(
+                  'MRP (₹) *',
+                  _mrpCtrl,
+                  hint: '0.00',
+                  keyboard: TextInputType.number,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _field(
+                  'Cost Price (₹)',
+                  _costCtrl,
+                  hint: '0.00',
+                  keyboard: TextInputType.number,
+                ),
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: _dropdown(
+                  'GST %',
+                  _gst,
+                  _gstOptions,
+                  (v) => setState(() => _gst = v!),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _field(
+                  'Discount %',
+                  _discCtrl,
+                  hint: '0',
+                  keyboard: TextInputType.number,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -349,22 +501,50 @@ class _AddMedicineSheetState extends State<AddMedicineSheet>
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          _field('Supplier / Distributor Name', _supCtrl, hint: 'e.g. ABC Pharma'),
+          _field(
+            'Supplier / Distributor Name',
+            _supCtrl,
+            hint: 'e.g. ABC Pharma',
+          ),
           _field('Invoice Number', _invCtrl, hint: 'e.g. INV-2024-001'),
-          _datePicker('Purchase Date', _purchaseDate, _pickDate, isFullDate: true),
-          _field('Storage / Special Notes', _notesCtrl, hint: 'e.g. Refrigerate 2-8°C', maxLines: 3),
+          _datePicker(
+            'Purchase Date',
+            _purchaseDate,
+            _pickDate,
+            isFullDate: true,
+          ),
+          _field(
+            'Storage / Special Notes',
+            _notesCtrl,
+            hint: 'e.g. Refrigerate 2-8°C',
+            maxLines: 3,
+          ),
         ],
       ),
     );
   }
 
-  Widget _field(String label, TextEditingController ctrl, {String hint = '', TextInputType keyboard = TextInputType.text, int maxLines = 1}) {
+  Widget _field(
+    String label,
+    TextEditingController ctrl, {
+    String hint = '',
+    TextInputType keyboard = TextInputType.text,
+    int maxLines = 1,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF4A5568), letterSpacing: 0.3)),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF4A5568),
+              letterSpacing: 0.3,
+            ),
+          ),
           const SizedBox(height: 5),
           TextFormField(
             controller: ctrl,
@@ -373,11 +553,24 @@ class _AddMedicineSheetState extends State<AddMedicineSheet>
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: primary, width: 1.5)),
-              filled: true, fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 11,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: primary, width: 1.5),
+              ),
+              filled: true,
+              fillColor: Colors.white,
             ),
             style: const TextStyle(fontSize: 13),
           ),
@@ -386,26 +579,62 @@ class _AddMedicineSheetState extends State<AddMedicineSheet>
     );
   }
 
-  Widget _dropdown(String label, String value, List<String> items, ValueChanged<String?> onChanged, {List<String>? displayItems}) {
+  Widget _dropdown(
+    String label,
+    String value,
+    List<String> items,
+    ValueChanged<String?> onChanged, {
+    List<String>? displayItems,
+  }) {
     final display = displayItems ?? items;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF4A5568), letterSpacing: 0.3)),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF4A5568),
+              letterSpacing: 0.3,
+            ),
+          ),
           const SizedBox(height: 5),
           DropdownButtonFormField<String>(
             value: items.contains(value) ? value : null,
-            hint: Text('-- Select --', style: TextStyle(color: Colors.grey.shade400, fontSize: 13)),
-            items: List.generate(items.length, (i) => DropdownMenuItem(value: items[i], child: Text(display[i], style: const TextStyle(fontSize: 13)))),
+            hint: Text(
+              '-- Select --',
+              style: TextStyle(color: Colors.grey.shade400, fontSize: 13),
+            ),
+            items: List.generate(
+              items.length,
+              (i) => DropdownMenuItem(
+                value: items[i],
+                child: Text(display[i], style: const TextStyle(fontSize: 13)),
+              ),
+            ),
             onChanged: onChanged,
             decoration: InputDecoration(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: primary, width: 1.5)),
-              filled: true, fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 11,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: primary, width: 1.5),
+              ),
+              filled: true,
+              fillColor: Colors.white,
             ),
           ),
         ],
@@ -413,13 +642,26 @@ class _AddMedicineSheetState extends State<AddMedicineSheet>
     );
   }
 
-  Widget _datePicker(String label, String value, VoidCallback onTap, {bool isFullDate = false}) {
+  Widget _datePicker(
+    String label,
+    String value,
+    VoidCallback onTap, {
+    bool isFullDate = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF4A5568), letterSpacing: 0.3)),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF4A5568),
+              letterSpacing: 0.3,
+            ),
+          ),
           const SizedBox(height: 5),
           GestureDetector(
             onTap: onTap,
@@ -433,11 +675,20 @@ class _AddMedicineSheetState extends State<AddMedicineSheet>
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.calendar_today, size: 16, color: Color(0xFF1A5276)),
+                  const Icon(
+                    Icons.calendar_today,
+                    size: 16,
+                    color: Color(0xFF1A5276),
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     value.isEmpty ? 'Select date' : value,
-                    style: TextStyle(fontSize: 13, color: value.isEmpty ? Colors.grey.shade400 : Colors.black87),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: value.isEmpty
+                          ? Colors.grey.shade400
+                          : Colors.black87,
+                    ),
                   ),
                 ],
               ),
@@ -454,7 +705,15 @@ class _AddMedicineSheetState extends State<AddMedicineSheet>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: primary, letterSpacing: 0.5)),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: primary,
+              letterSpacing: 0.5,
+            ),
+          ),
           const Divider(color: Color(0xFFEAF0FB), thickness: 2, height: 8),
         ],
       ),

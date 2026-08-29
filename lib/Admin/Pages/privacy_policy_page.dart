@@ -426,34 +426,40 @@ class PrivacyPolicyPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  "Staff Information",
+                  "Patient Information",
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
-
                 const SizedBox(height: 6),
-
-                bullet("Full name"),
-                bullet("Role (Admin, Doctor, Nurse, Cashier, Lab Technician)"),
+                bullet("Full name, age, gender"),
                 bullet("Contact details"),
-                bullet("Login credentials"),
-                bullet("Profile information"),
+                bullet("Medical history and diagnosis"),
+                bullet("Prescriptions and laboratory reports"),
+                bullet("Admission and discharge records"),
+                bullet("Billing and payment details"),
 
                 const SizedBox(height: 10),
 
                 const Text(
-                  "Patient Information",
+                  "Staff Information",
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
-
                 const SizedBox(height: 6),
+                bullet("Name and role (Doctor, Nurse, Admin, etc.)"),
+                bullet("Contact details"),
+                bullet("Login credentials (securely stored)"),
+                bullet("Profile and department information"),
 
-                bullet("Patient name"),
-                bullet("Age and gender"),
-                bullet("Contact information"),
-                bullet("Medical records and treatment history"),
-                bullet("Prescriptions and reports"),
-                bullet("Admission and discharge details"),
-                bullet("Billing information"),
+                const SizedBox(height: 10),
+
+                const Text(
+                  "System & Clinical Data",
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 6),
+                bullet("Treatment notes and consultation records"),
+                bullet("Test results and care progress"),
+                bullet("Device information and IP address"),
+                bullet("Login activity and system logs"),
               ],
             ),
           ),
@@ -465,13 +471,13 @@ class PrivacyPolicyPage extends StatelessWidget {
             title: "How We Use Information",
             child: Column(
               children: [
-                bullet("Managing patient records"),
-                bullet("Handling appointments and treatments"),
-                bullet("Processing billing and payments"),
-                bullet("Managing pharmacy inventory"),
-                bullet("Generating hospital reports"),
-                bullet("Managing staff roles and permissions"),
-                bullet("Improving system functionality and security"),
+                bullet("Patient diagnosis and treatment management"),
+                bullet("Maintaining electronic medical records (EMR)"),
+                bullet("Appointment and consultation handling"),
+                bullet("Laboratory and pharmacy operations"),
+                bullet("Billing and financial processing"),
+                bullet("Hospital administration and reporting"),
+                bullet("System security and performance monitoring"),
               ],
             ),
           ),
@@ -480,29 +486,21 @@ class PrivacyPolicyPage extends StatelessWidget {
           sectionCard(
             number: 3,
             icon: Icons.admin_panel_settings,
-            title: "Role-Based Access",
+            title: "Role-Based Access Control",
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 paragraph(
-                  "The application uses role-based access control to ensure that only authorized hospital staff can access specific data.",
+                  "Access to sensitive data is restricted based on staff roles. All access is monitored and logged to ensure security.",
                 ),
 
                 const SizedBox(height: 10),
 
-                const Text(
-                  "Doctor Privileges",
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-
-                const SizedBox(height: 6),
-
-                bullet("Manage Out-Patient consultations"),
-                bullet("Manage In-Patient treatment records"),
-                bullet("Write digital prescriptions"),
-                bullet("Order laboratory tests and scans"),
-                bullet("View test results and patient history"),
-                bullet("Monitor treatment progress"),
+                bullet("Doctors access medical records and prescriptions"),
+                bullet("Nurses access assigned patient care data"),
+                bullet("Lab staff access test requests and reports"),
+                bullet("Billing staff access financial data only"),
+                bullet("Administrators manage system configuration"),
               ],
             ),
           ),
@@ -510,15 +508,17 @@ class PrivacyPolicyPage extends StatelessWidget {
           /// SECTION 4
           sectionCard(
             number: 4,
-            icon: Icons.meeting_room,
-            title: "Ward Management",
+            icon: Icons.share,
+            title: "Data Sharing",
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                bullet("Assigning rooms and beds"),
-                bullet("Tracking patient location"),
-                bullet("Managing ward transfers"),
-                bullet("Monitoring treatment progress"),
-                bullet("Handling discharge process"),
+                paragraph("We do not sell or misuse patient or staff data."),
+                const SizedBox(height: 8),
+                bullet("Shared only with authorized hospital staff"),
+                bullet("Shared with patients upon proper request"),
+                bullet("Shared with trusted service providers (SMS, hosting)"),
+                bullet("Shared when required by law"),
               ],
             ),
           ),
@@ -526,15 +526,15 @@ class PrivacyPolicyPage extends StatelessWidget {
           /// SECTION 5
           sectionCard(
             number: 5,
-            icon: Icons.payment,
-            title: "Payment Processing",
+            icon: Icons.lock,
+            title: "Data Security",
             child: Column(
               children: [
-                bullet("Registration fees"),
-                bullet("Consultation charges"),
-                bullet("Laboratory test payments"),
-                bullet("Pharmacy billing"),
-                bullet("In-patient room charges"),
+                bullet("Encrypted data transmission (HTTPS/TLS)"),
+                bullet("Secure database storage"),
+                bullet("Password encryption and authentication"),
+                bullet("Role-based access restrictions"),
+                bullet("Activity logging and monitoring"),
               ],
             ),
           ),
@@ -542,15 +542,14 @@ class PrivacyPolicyPage extends StatelessWidget {
           /// SECTION 6
           sectionCard(
             number: 6,
-            icon: Icons.lock,
-            title: "Data Security",
+            icon: Icons.access_time,
+            title: "Data Retention",
             child: Column(
               children: [
-                bullet("Secure login authentication"),
-                bullet("Role-based access control"),
-                bullet("Restricted patient data access"),
-                bullet("Secure database storage"),
-                bullet("Protection against unauthorized access"),
+                bullet("Maintained for patient care continuity"),
+                bullet("Stored as per legal requirements"),
+                bullet("Retained based on hospital policy"),
+                bullet("Archived or deleted when no longer required"),
               ],
             ),
           ),
@@ -558,34 +557,35 @@ class PrivacyPolicyPage extends StatelessWidget {
           /// SECTION 7
           sectionCard(
             number: 7,
-            icon: Icons.share,
-            title: "Data Sharing",
-            child: paragraph(
-              "Ramchin Hospital Management App does not sell or rent personal or medical information. Data may only be shared with authorized hospital staff or when required by law.",
+            icon: Icons.person,
+            title: "User Rights",
+            child: Column(
+              children: [
+                bullet("Access and update profile information"),
+                bullet("Request correction of inaccurate data"),
+                bullet("Request data access via hospital administration"),
+                bullet("Patients can obtain records through hospital"),
+              ],
             ),
           ),
 
           /// SECTION 8
           sectionCard(
             number: 8,
-            icon: Icons.person,
-            title: "User Access",
-            child: Column(
-              children: [
-                bullet("View and update profile information"),
-                bullet("Change account password"),
-                bullet("Access information based on assigned role"),
-              ],
+            icon: Icons.child_care,
+            title: "Children's Privacy",
+            child: paragraph(
+              "Data related to minors is handled with strict confidentiality under the supervision of authorized healthcare professionals and guardians.",
             ),
           ),
 
           /// SECTION 9
           sectionCard(
             number: 9,
-            icon: Icons.child_care,
-            title: "Children's Privacy",
+            icon: Icons.warning,
+            title: "Disclaimer",
             child: paragraph(
-              "The application is intended for use by authorized hospital staff only. Any patient data involving minors is handled by healthcare professionals.",
+              "This application is a hospital management system used by healthcare professionals and does not provide direct medical advice to the public.",
             ),
           ),
 
@@ -595,7 +595,7 @@ class PrivacyPolicyPage extends StatelessWidget {
             icon: Icons.update,
             title: "Policy Updates",
             child: paragraph(
-              "This Privacy Policy may be updated periodically to reflect improvements, legal requirements, or system updates.",
+              "This Privacy Policy may be updated periodically to reflect system improvements, legal requirements, or security updates.",
             ),
           ),
 

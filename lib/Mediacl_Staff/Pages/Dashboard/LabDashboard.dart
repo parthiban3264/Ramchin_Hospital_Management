@@ -1110,7 +1110,7 @@ class _LabDashboardPageState extends State<LabDashboardPage> {
     );
   }
 
-  Widget _buildActionItem(IconData icon, String label, VoidCallback onTap) {
+  Widget _buildActionItem(dynamic icon, String label, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Column(

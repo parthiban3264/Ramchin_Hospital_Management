@@ -10,6 +10,7 @@ import '../../Mediacl_Staff/Pages/a_new_medical/a_new_medical/reorder/reorder_li
 import '../../Mediacl_Staff/Pages/a_new_medical/a_new_medical/stock/stock_management.dart';
 import '../../Mediacl_Staff/Pages/a_new_medical/a_new_medical/supplier/supplier.dart';
 import '../../Mediacl_Staff/Pages/inpatient/add_rooms.dart';
+import '../../Mediacl_Staff/Pages/medicine_manage/medicine_inventory_screen.dart';
 import 'AddingPage/active_staff.dart';
 import 'AddingPage/adding_scan_data.dart';
 import 'AddingPage/adding_test_data.dart';
@@ -220,31 +221,11 @@ class _AdminAddingPageState extends State<AdminAddingPage> {
               _buildSection(
                 "ADD PHARMACY",
                 _responsiveGrid([
-                  // _buildActionItem(Icons.medical_information, "Medicine", () {
-                  //   Navigator.push(
-                  //     context,
-                  //     MaterialPageRoute(builder: (_) => const MedicianPage()),
-                  //   );
-                  // }),
-                  // _buildActionItem(Icons.vaccines, "Injection", () {
-                  //   Navigator.push(
-                  //     context,
-                  //     MaterialPageRoute(
-                  //       builder: (_) => const AddInjectionPage(),
-                  //     ),
-                  //   );
-                  // }),
-                  // _buildActionItem(Icons.local_drink_sharp, "Tonic", () {
-                  //   Navigator.push(
-                  //     context,
-                  //     MaterialPageRoute(builder: (_) => const TonicPage()),
-                  //   );
-                  // }),
                   _buildActionItem(Icons.medical_information, "Medicines", () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const InventoryPage(),
+                        builder: (context) => const MedicineInventoryScreen(),
                       ),
                     );
                   }),

@@ -643,6 +643,18 @@ class _MedicalDashboardPageState extends State<MedicalDashboardPage> {
                                       );
                                     },
                                   ),
+                                _buildActionItem(
+                                  Icons.medical_services,
+                                  "Billing",
+                                  () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => MedicalQueuePage(),
+                                      ),
+                                    );
+                                  },
+                                ),
                               ],
                             ),
                           const SizedBox(height: 25),

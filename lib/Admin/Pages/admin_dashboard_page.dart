@@ -25,6 +25,8 @@ import '../../Mediacl_Staff/Pages/OutPatient/Queue/SymptomsQueuePage.dart';
 
 import '../../Mediacl_Staff/Pages/Payment/ct-scan_payment_queue.dart';
 import '../../Mediacl_Staff/Pages/Payment/initial_payment_queue.dart';
+import '../../Mediacl_Staff/Pages/billing/create_billing_page.dart';
+import '../../Mediacl_Staff/Pages/billing/list_medicine.dart';
 import '../../Mediacl_Staff/Pages/inpatient/add_admission_charges_page.dart';
 
 import '../../Mediacl_Staff/Pages/inpatient/admit_patient.dart';
@@ -1399,6 +1401,18 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                                   );
                                 },
                               ),
+                              _buildActionItem(
+                                Icons.sticky_note_2,
+                                "Billing",
+                                () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => ListMedicinePage(),
+                                    ),
+                                  );
+                                },
+                              ),
                             ],
                           ),
                           const SizedBox(height: 25),
@@ -1606,7 +1620,7 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
     );
   }
 
-  Widget _buildActionItem(IconData icon, String label, VoidCallback onTap) {
+  Widget _buildActionItem(dynamic icon, String label, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -1631,7 +1645,9 @@ class _AdminOpDashboardPageState extends State<AdminOpDashboardPage> {
                 ),
               ],
             ),
-            child: Icon(icon, size: 34, color: const Color(0xFF8B6C3A)),
+            child: (icon is FaIconData)
+                ? FaIcon(icon, size: 34, color: const Color(0xFF8B6C3A))
+                : Icon(icon, size: 34, color: const Color(0xFF8B6C3A)),
           ),
           const SizedBox(height: 10),
           Text(

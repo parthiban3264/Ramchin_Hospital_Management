@@ -365,16 +365,19 @@ class _ScanQueueState extends State<ScanQueue>
                   icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
                   onPressed: () => Navigator.pop(context),
                 ),
-                Text(
-                  "${widget.type} Queue",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
+                Expanded(
+                  child: Text(
+                    "${widget.type} Queue",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      overflow: TextOverflow.ellipsis,
+                      letterSpacing: 0.5,
+                    ),
                   ),
                 ),
-                const Spacer(),
+                //const Spacer(),
                 IconButton(
                   icon: const Icon(Icons.notifications, color: Colors.white),
                   onPressed: () {

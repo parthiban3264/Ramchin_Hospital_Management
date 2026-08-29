@@ -356,7 +356,7 @@ class ScanningPageState extends State<ScanningPage> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ExpansionTile(
         key: ValueKey('exp_$index'),
-        leading: Icon(FontAwesomeIcons.vials, color: primaryColor),
+        leading: Icon(FontAwesomeIcons.vials as IconData, color: primaryColor),
         title: Center(
           child: Text(
             scanName,

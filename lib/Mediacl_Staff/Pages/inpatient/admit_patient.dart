@@ -597,96 +597,206 @@ Bed: ${p["bed"]?["bedNo"] ?? ""}
     final selectedBedIds = selectedBeds[key] ?? {};
     final isExpanded = expandedWards.contains(index);
 
-    return Card(
-      color: Colors.white,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: royal, width: 1),
-      ),
-      child: Column(
-        children: [
-          /// HEADER
-          ListTile(
-            title: Text(
-              "${ward['type'] ?? 'Ward'} - ${ward['name']}",
-              style: const TextStyle(
-                color: royal,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
+    return Container(
+      // decoration: BoxDecoration(
+      //   color: Colors.white,
+      //   borderRadius: BorderRadius.circular(16),
+      //   boxShadow: [
+      //     BoxShadow(
+      //       color: Colors.grey.withOpacity(0.2),
+      //       spreadRadius: 1,
+      //       blurRadius: 2,
+      //     ),
+      //   ],
+      // ),
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Card(
+        elevation: 3,
+        shadowColor: Colors.black,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Column(
+          children: [
+            /// HEADER
+            InkWell(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(12),
               ),
-            ),
-            subtitle: Text(
-              "Available: ${availableBeds.length} / ${beds.length}",
-              style: const TextStyle(color: royal),
-            ),
-            trailing: Icon(
-              isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-              color: royal,
-            ),
-            onTap: () {
-              setState(() {
-                if (isExpanded) {
-                  expandedWards.remove(index);
-                } else {
-                  expandedWards.add(index);
-                }
-              });
-            },
-          ),
-
-          /// BED CHIPS
-          if (isExpanded)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: beds.map<Widget>((bed) {
-                  final isAvailable = bed['status'] == 'AVAILABLE';
-                  final isSelected = selectedBedIds.contains(bed['id']);
-
-                  return ChoiceChip(
-                    label: Column(
-                      mainAxisSize: MainAxisSize.min,
+              onTap: () {
+                setState(() {
+                  isExpanded
+                      ? expandedWards.remove(index)
+                      : expandedWards.add(index);
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                // decoration: BoxDecoration(
+                //   color: royal.withOpacity(0.08),
+                //   borderRadius: const BorderRadius.vertical(
+                //     top: Radius.circular(16),
+                //   ),
+                // ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.2),
+                      spreadRadius: 1,
+                      blurRadius: 2,
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Row(
                       children: [
-                        Text(
-                          "Bed ${bed['bedNo']}",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: isAvailable
-                                ? (isSelected ? Colors.white : royal)
-                                : Colors.grey,
+                        const Icon(Icons.local_hospital, color: royal),
+                        const SizedBox(width: 10),
+
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "${ward['type']} - ${ward['name']}",
+                                style: const TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.bold,
+                                  color: royal,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                "${availableBeds.length} Available • ${beds.length} Total Beds",
+                                style: TextStyle(
+                                  color: Colors.grey.shade700,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
                           ),
+                        ),
+
+                        Icon(
+                          isExpanded ? Icons.expand_less : Icons.expand_more,
+                          color: royal,
                         ),
                       ],
                     ),
-                    selected: isSelected,
-                    selectedColor: royal,
-                    disabledColor: Colors.grey.shade300,
-                    backgroundColor: Colors.green.shade100,
-                    side: BorderSide(color: royal),
-                    checkmarkColor: Colors.white,
-                    onSelected: isAvailable
-                        ? (_) {
-                            setState(() {
-                              /// SINGLE selection (admission case)
-                              selectedBeds.clear();
-                              selectedBeds[key] = {bed['id']};
 
-                              selectedWard = ward;
-                              selectedBed = bed;
-                              wardId = ward['id'];
-                              bedId = bed['id'];
-                              bedLocked = true;
-                            });
-                          }
-                        : null,
-                  );
-                }).toList(),
+                    const SizedBox(height: 12),
+
+                    /// OCCUPANCY BAR
+                    LinearProgressIndicator(
+                      value: beds.isEmpty
+                          ? 0
+                          : availableBeds.length / beds.length,
+                      backgroundColor: Colors.grey.shade200,
+                      color: Colors.green,
+                      minHeight: 5,
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                  ],
+                ),
               ),
             ),
-        ],
+
+            /// BEDS
+            if (isExpanded)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 6,
+                  vertical: 16,
+                ),
+                child: Wrap(
+                  spacing: 6,
+                  runSpacing: 8,
+                  children: beds.map<Widget>((bed) {
+                    final isAvailable = bed['status'] == 'AVAILABLE';
+
+                    final isSelected = selectedBedIds.contains(bed['id']);
+
+                    return GestureDetector(
+                      onTap: isAvailable
+                          ? () {
+                              setState(() {
+                                selectedBeds.clear();
+                                selectedBeds[key] = {bed['id']};
+
+                                selectedWard = ward;
+                                selectedBed = bed;
+                                wardId = ward['id'];
+                                bedId = bed['id'];
+                                bedLocked = true;
+                              });
+                            }
+                          : null,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 85,
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? royal
+                              : isAvailable
+                              ? Colors.green.shade50
+                              : Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isSelected
+                                ? royal
+                                : isAvailable
+                                ? Colors.green
+                                : Colors.grey,
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.bed,
+                              size: 26,
+                              color: isSelected
+                                  ? Colors.white
+                                  : isAvailable
+                                  ? Colors.green
+                                  : Colors.grey,
+                            ),
+
+                            const SizedBox(height: 6),
+
+                            Text(
+                              "Bed ${bed['bedNo']}",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: isSelected
+                                    ? Colors.white
+                                    : Colors.black87,
+                              ),
+                            ),
+
+                            const SizedBox(height: 4),
+
+                            Text(
+                              isAvailable ? "Available" : "Occupied",
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: isSelected
+                                    ? Colors.white70
+                                    : isAvailable
+                                    ? Colors.green
+                                    : Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
